@@ -2,35 +2,15 @@ import Link from "next/link";
 import Pagination from '@/components/Pagination';
 
 // 模拟数据：管理员通知
-const notifications = [
-  {
-    id: 101,
-    title: "#1002 1002 数据已更新，深感抱歉",
-    time: "23:22:47, Mar 10",
-    replies: 1,
-  },
-  {
-    id: 102,
-    title: "#1009 09 样例解释有误，已修改",
-    time: "21:23:13, Mar 9",
-    replies: 2,
-  },
-  {
-    id: 103,
-    title: "#1007 对于本题的一些澄清",
-    time: "19:49:05, Mar 7",
-    replies: 0,
-  },
-  {
-    id: 104,
-    title: "必看公告，不看后果自负",
-    time: "19:29:36, Mar 7",
-    replies: 13,
-  },
-];
+const notifications = Array.from({ length: 0}).map((_, i) => ({
+  id: 101 + i,
+  title: "1002 数据已更新，深感抱歉",
+  time: "23:22:47, Mar 10",
+  replies: 1,
+}))
 
 // 模拟数据：选手提问
-const clarifications = Array.from({ length: 200 }).map((_, i) => ({
+const clarifications = Array.from({ length: 0 }).map((_, i) => ({
   id: 200 + i,
   title: `测试分页数据 - 第 ${i + 1} 条提问`,
   author: `team${1000 + i}`,
@@ -111,7 +91,7 @@ export default async function Clarifications({ params, searchParams }: Props) {
           </h2>
         </div>
 
-        <div className="overflow-x-auto min-h-75">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-600">
             <TableHeader hasAuthor={true} />
             <tbody>

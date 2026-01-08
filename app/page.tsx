@@ -1,65 +1,64 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+// 模拟比赛数据
+const contests = [
+  { id: 1001, title: '2025“钉耙编程”中国大学生算法设计暑期联赛（2）', status: 'Ended', type: 'Private', start: '2025-07-21 12:00:00', duration: '5h' },
+  { id: 1002, title: '2026 XCPC 寒假集训排位赛 (1)', status: 'Running', type: 'Public', start: '2026-01-07 14:00:00', duration: '5h' },
+  { id: 1003, title: '2026 新生选拔赛', status: 'Pending', type: 'Private', start: '2026-02-01 09:00:00', duration: '4h' },
+];
+
+export default function ContestList() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="bg-white shadow-sm border border-gray-100 rounded-sm p-6 mt-6">
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h2 className="text-2xl font-serif font-bold text-gray-800">Contest List</h2>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left text-gray-600">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+            <tr>
+              <th className="px-6 py-3 w-20">CID</th>
+              <th className="px-6 py-3">Title</th>
+              <th className="px-6 py-3 w-32">Status</th>
+              <th className="px-6 py-3 w-32">Type</th>
+              <th className="px-6 py-3 w-48">Start Time</th>
+              <th className="px-6 py-3 w-24">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            {contests.map((contest) => (
+              <tr key={contest.id} className="bg-white border-b hover:bg-blue-50 transition-colors">
+                <td className="px-6 py-4 font-bold text-gray-900">{contest.id}</td>
+                <td className="px-6 py-4">
+                  {/* 点击标题跳转到具体比赛的登录页 */}
+                  <Link href={`/contest/${contest.id}`} className="text-blue-600 hover:underline font-medium text-base">
+                    {contest.title}
+                  </Link>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`px-2.5 py-0.5 rounded text-xs font-medium 
+                    ${contest.status === 'Running' ? 'bg-green-100 text-green-800' : 
+                      contest.status === 'Ended' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                    {contest.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  {contest.type === 'Private' ? (
+                    <span className="text-red-600 font-bold flex items-center gap-1">
+                      🔒 Private
+                    </span>
+                  ) : (
+                    <span className="text-green-600">Public</span>
+                  )}
+                </td>
+                <td className="px-6 py-4">{contest.start}</td>
+                <td className="px-6 py-4">{contest.duration}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

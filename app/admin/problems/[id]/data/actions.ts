@@ -5,9 +5,28 @@ import path from "path";
 import yaml from "js-yaml";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getProblem } from "../../actions";
 
 const UPLOAD_ROOT = path.join(process.cwd(), "uploads", "problems");
+
+interface problemYml {
+  type?: string;
+  time?: number;
+  memory?: number;
+  cases?: {
+    input: string;
+    output: string;
+  }[];
+  checker?: string;
+  interactor?: string;
+  time_limit_rate?: {
+    java?: number;
+    pypy3?: number;
+  };
+  memory_limit_rate?: {
+    java?: number;
+    pypy3?: number;
+  };
+}
 
 function getDataDir(problemId: number) {
   if (!problemId || isNaN(problemId)) {
@@ -24,6 +43,8 @@ async function autoDetectCases(dir: string, currentYamlContent: string) {
   const files = await fs.readdir(dir);
   const inputs = files.filter((f) => f.endsWith(".in")).sort(naturalSort);
   const detectedCases = [];
+  const checker = files.find((f) => f === "chk.cc");
+  const interactor = files.find((f) => f === "interactor.cc");
   for (const input of inputs) {
     const basename = path.basename(input, ".in");
     const output = `${basename}.out`;
@@ -31,9 +52,8 @@ async function autoDetectCases(dir: string, currentYamlContent: string) {
       detectedCases.push({ input: input, output: output });
     }
   }
-  let parsed: {
-    cases?: { input: string; output: string }[];
-  } = {};
+
+  let parsed: problemYml = {};
   try {
     parsed = yaml.load(currentYamlContent) || {};
   } catch (e) {
@@ -42,13 +62,18 @@ async function autoDetectCases(dir: string, currentYamlContent: string) {
   if (detectedCases.length > 0) {
     parsed.cases = detectedCases;
   }
+  if (checker) {
+    parsed.checker = checker;
+  }
+  if (interactor) {
+    parsed.interactor = interactor;
+  }
   return yaml.dump(parsed);
 }
 
 // 1. 获取数据
 export async function getProblemData(problemId: number) {
   const dir = getDataDir(problemId);
-  const problem = await getProblem(problemId);
   try {
     await fs.access(dir);
   } catch {
@@ -68,7 +93,7 @@ export async function getProblemData(problemId: number) {
   try {
     yamlContent = await fs.readFile(yamlPath, "utf-8");
   } catch {
-    yamlContent = `type: ${problem?.type}\ntime: ${problem?.defaultTimeLimit}ms\nmemory: ${problem?.defaultMemoryLimit}m\n`;
+    yamlContent = "";
     await fs.writeFile(yamlPath, yamlContent);
   }
 
@@ -83,13 +108,14 @@ export async function saveYamlConfig(problemId: number, content: string) {
   const dir = getDataDir(problemId);
   await fs.writeFile(path.join(dir, "problem.yml"), content);
   try {
-    const parsed = yaml.load(content);
+    const parsed = yaml.load(content) as problemYml;
     await prisma.problem.update({
       where: { id: problemId },
       data: {
         judgeConfig: parsed as {
-          cases?: { input: string; output: string }[];
-        },
+          input: string;
+          output: string;
+        }[],
       },
     });
   } catch (e) {

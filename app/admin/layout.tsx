@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   TrophyIcon,
@@ -20,6 +22,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -31,7 +34,7 @@ export default function AdminLayout({
 
         {/* 2. 菜单导航区域 */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {/* [新增] 返回前台首页的按钮 - 放在最上面最显眼 */}
+          {/* 返回前台首页的按钮 */}
           <Link
             href="/"
             className="flex items-center px-4 py-3 text-sm font-medium rounded-md text-blue-300 hover:bg-slate-800 hover:text-white transition-colors mb-4 border border-slate-700/50 bg-slate-800/30"
@@ -44,16 +47,32 @@ export default function AdminLayout({
             Management
           </div>
 
-          {MENU_ITEMS.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex items-center px-4 py-3 text-sm font-medium rounded-md hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
-            >
-              <item.icon className="mr-3 h-5 w-5 text-slate-400 group-hover:text-white" />
-              {item.name}
-            </Link>
-          ))}
+          {MENU_ITEMS.map((item) => {
+            const isActive =
+              item.href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-md" // 激活样式：蓝色背景、白色文字
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white" // 普通样式
+                }`}
+              >
+                <item.icon
+                  className={`mr-3 h-5 w-5 transition-colors ${
+                    isActive
+                      ? "text-white" // 激活时图标白色
+                      : "text-slate-400 group-hover:text-white" // 普通时灰色，悬停变白
+                  }`}
+                />
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* 3. 底部操作区域 */}

@@ -23,29 +23,29 @@ interface Props {
   };
   params: {
     contestId: string;
-  }
+  };
 }
 
 const Allteams = Array.from({ length: 100 }).map((_, i) => ({
-      rank: (1 + i),
-      name: "team"+2472+i,
-      uni: "浙江省绍兴市第一中学",
-      menber: "杨铧12、张三22、三三三三",
-      solved: 10,
-      time: "20:03:18",
-      probs: [
-        { t: "03:30:12", s: "ac", tries: -2 },
-        { t: "00:17:55", s: "ac" },
-        { t: "00:12:37", s: "first", tries: -1 },
-        { t: "00:27:04", s: "ac", tries: -1 },
-        { t: "01:08:22", s: "ac", tries: -2 },
-        { t: "01:45:09", s: "ac" },
-        { t: "02:27:33", s: "ac" },
-        { t: "02:05:09", s: "ac" },
-        { t: "03:57:52", s: "ac" },
-        { t: "02:11:25", s: "ac" },
-      ],
-    }));
+  rank: 1 + i,
+  name: "team" + 2472 + i,
+  uni: "浙江省绍兴市第一中学",
+  menber: "杨铧12、张三22、三三三三",
+  solved: 10,
+  time: "20:03:18",
+  probs: [
+    { t: "03:30:12", s: "ac", tries: -2 },
+    { t: "00:17:55", s: "ac" },
+    { t: "00:12:37", s: "first", tries: -1 },
+    { t: "00:27:04", s: "ac", tries: -1 },
+    { t: "01:08:22", s: "ac", tries: -2 },
+    { t: "01:45:09", s: "ac" },
+    { t: "02:27:33", s: "ac" },
+    { t: "02:05:09", s: "ac" },
+    { t: "03:57:52", s: "ac" },
+    { t: "02:11:25", s: "ac" },
+  ],
+}));
 
 export default async function Rank({ params, searchParams }: Props) {
   const contestId = (await params).contestId;
@@ -124,7 +124,9 @@ export default async function Rank({ params, searchParams }: Props) {
             </thead>
             <tbody>
               <tr className="font-[Menlo] h-16 bg-sky-200">
-                <td className="text-gray-900 text-base font-serif">{myTeam.rank}</td>
+                <td className="text-gray-900 text-base font-serif">
+                  {myTeam.rank}
+                </td>
                 <td className="">
                   <div className="flex flex-col items-center max-h-full">
                     <div className="font-bold text-blue-900 truncate max-w-37.5">
@@ -171,7 +173,9 @@ export default async function Rank({ params, searchParams }: Props) {
                   key={team.rank}
                   className={"font-[Menlo] h-16 even:bg-[#eef5fc] odd:bg-white"}
                 >
-                  <td className="text-gray-900 text-base font-serif">{team.rank}</td>
+                  <td className="text-gray-900 text-base font-serif">
+                    {team.rank}
+                  </td>
                   <td className="">
                     <div className="flex flex-col items-center max-h-full">
                       <div className="font-bold text-blue-900 truncate max-w-37.5">

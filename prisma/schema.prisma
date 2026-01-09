@@ -1,0 +1,246 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ================= 枚举定义 =================
+
+enum ContestStatus {
+  PENDING
+  RUNNING
+  ENDED
+}
+
+enum ContestType {
+  PRIVATE
+  PUBLIC
+}
+
+enum ContestRole {
+  TEAM
+  JUDGE
+  BALLOON
+  OBSERVER
+  ADMIN
+}
+
+enum Verdict {
+  PENDING
+  JUDGING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILE_ERROR
+  PRESENTATION_ERROR
+  SYSTEM_ERROR
+}
+
+enum ClariCategory {
+  QUESTION
+  NOTICE
+}
+
+// ================= 用户模块 =================
+
+// 全局管理员
+model GlobalUser {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("global_users")
+}
+
+// 比赛用户 (User)
+model User {
+  id       String @id @default(uuid())
+  username String
+  password String
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  displayName String? // 显示名称
+  members     String? // 队员信息
+  school      String? // 学校
+  seat        String? // 座位号
+  coach       String? // 教练
+  category    String? // 队伍类别
+
+  role ContestRole @default(TEAM)
+
+  submissions    Submission[]
+  clarifications Clarification[]
+  replies        Reply[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 联合唯一索引：保证同一场比赛内 username 唯一
+  @@unique([contestId, username])
+  @@map("users")
+}
+
+// ================= 比赛模块 =================
+
+model Contest {
+  id          Int     @id @default(autoincrement()) // 从 1000 开始需在数据库层面设置 sequence
+  title       String
+  description String? @db.Text
+
+  startTime DateTime
+  endTime   DateTime
+
+  type     ContestType   @default(PUBLIC)
+  password String? // 私有赛密码
+  status   ContestStatus @default(PENDING)
+
+  config Json? // 封榜配置等
+
+  users          User[]
+  problems       ContestProblem[]
+  submissions    Submission[]
+  clarifications Clarification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contests")
+}
+
+// ================= 题目模块 (题库) =================
+
+model Problem {
+  id Int @id @default(autoincrement())
+
+  title String
+  type  String @default("default") // default, spj, interactive
+
+  // 默认限制
+  defaultTimeLimit   Int // ms
+  defaultMemoryLimit Int // MB
+
+  // 核心内容 (JSON)
+  sections Json
+  samples  Json
+  hint     String? @db.Text
+
+  // 判题配置缓存 (来自 YAML)
+  judgeConfig Json?
+
+  // 关联
+  contestProblems ContestProblem[]
+  submissions     Submission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("problems")
+}
+
+// ================= 比赛-题目关联 (ContestProblem) =================
+
+model ContestProblem {
+  id String @id @default(uuid())
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id])
+
+  displayId String // A, B, C
+
+  // 覆盖配置
+  realTimeLimit   Int? // ms
+  realMemoryLimit Int? // MB
+  color           String? // 气球颜色
+
+  @@unique([contestId, displayId]) // 比赛内展示ID唯一
+  @@unique([contestId, problemId]) // 比赛内题目不重复
+  @@map("contest_problems")
+}
+
+// ================= 提交记录 =================
+
+model Submission {
+  id String @id @default(uuid())
+
+  displayId Int // 比赛内的 Run ID (由 Redis 生成)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id])
+
+  language   String
+  code       String @db.Text
+  codeLength Int
+
+  verdict      Verdict @default(PENDING)
+  timeUsed     Int? // ms
+  memoryUsed   Int? // KB
+  errorMessage String? @db.Text
+
+  submittedAt DateTime @default(now())
+
+  @@index([contestId, userId])
+  @@index([contestId, problemId])
+  @@map("submissions")
+}
+
+// ================= 答疑模块 =================
+
+model Clarification {
+  id Int @id @default(autoincrement())
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  userId String? // 可选，Admin 发的公告可能没有 User
+  user   User?   @relation(fields: [userId], references: [id])
+
+  title    String
+  content  String        @db.Text
+  category ClariCategory @default(QUESTION)
+
+  replies Reply[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clarifications")
+}
+
+model Reply {
+  id Int @id @default(autoincrement())
+
+  clarificationId Int
+  clarification   Clarification @relation(fields: [clarificationId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@map("replies")
+}

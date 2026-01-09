@@ -1,6 +1,7 @@
 import { getContestData } from "@/lib/data";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
+import VerdictBadge from "@/components/VerdictBadge";
 
 interface Props {
   searchParams: {
@@ -11,17 +12,17 @@ interface Props {
   };
 }
 
-const renderStatus = (status: string) => {
-  if (status === "Compilation Error")
-    return (
-      <a href="#" className="text-blue-500 hover:underline ">
-        Compilation Error
-      </a>
-    );
-  if (status === "Accepted")
-    return <span className="text-green-500 ">Accepted</span>;
-  return <span className="text-red-500">{status}</span>;
-};
+// const renderStatus = (status: string) => {
+//   if (status === "Compilation Error")
+//     return (
+//       <a href="#" className="text-blue-500 hover:underline ">
+//         Compilation Error
+//       </a>
+//     );
+//   if (status === "Accepted")
+//     return <span className="text-green-500 ">Accepted</span>;
+//   return <span className="text-red-500">{status}</span>;
+// };
 
 const submissions = Array.from({ length: 500 }).map((_, i) => ({
   id: 1 + i,
@@ -30,7 +31,7 @@ const submissions = Array.from({ length: 500 }).map((_, i) => ({
   execTime: 281 + i,
   execMemory: 3492 + i,
   language: "C++",
-  status: i % 3 === 0 ? "Accepted" : "Wrong Answer",
+  status: i % 3 === 0 ? "ACCEPTED" : "WRONG_ANSWER",
 }));
 
 export default async function Status({ params, searchParams }: Props) {
@@ -156,7 +157,9 @@ export default async function Status({ params, searchParams }: Props) {
                       {prob.language}
                     </a>
                   </td>
-                  <td className="px-6 py-2">{renderStatus(prob.status)}</td>
+                  <td className="px-6 py-2">
+                    <VerdictBadge status={prob.status} />
+                  </td>
                 </tr>
               ))}
             </tbody>

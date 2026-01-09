@@ -4,6 +4,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
   ServerStackIcon,
+  BeakerIcon,
 } from "@heroicons/react/24/outline";
 import Pagination from "@/components/Pagination";
 
@@ -43,7 +44,13 @@ export default async function ProblemsPage({
               <tr key={problem.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-mono">#{problem.id}</td>
                 <td className="px-6 py-4 font-medium text-gray-900">
-                  {problem.title}
+                  <Link
+                    href={`/admin/problems/${problem.id}/test`}
+                    className="cursor-pointer"
+                    title="Test Problem"
+                  >
+                    {problem.title}
+                  </Link>
                 </td>
                 <td className="px-6 py-4">
                   <span
@@ -60,6 +67,13 @@ export default async function ProblemsPage({
                   {new Date(problem.updatedAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 flex justify-center gap-3">
+                  <Link
+                    href={`/admin/problems/${problem.id}/test`}
+                    className="text-orange-500 hover:text-orange-700"
+                    title="Test Problem"
+                  >
+                    <BeakerIcon className="w-5 h-5" />
+                  </Link>
                   {/* 新增：数据管理按钮 */}
                   <Link
                     href={`/admin/problems/${problem.id}/data`}

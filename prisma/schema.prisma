@@ -61,6 +61,7 @@ model GlobalUser {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  submissions Submission[]
 
   @@map("global_users")
 }
@@ -182,11 +183,15 @@ model Submission {
 
   displayId Int // 比赛内的 Run ID (由 Redis 生成)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
 
-  contestId Int
-  contest   Contest @relation(fields: [contestId], references: [id])
+  // 【新增】关联全局管理员
+  globalUserId String?
+  globalUser   GlobalUser? @relation(fields: [globalUserId], references: [id])
+
+  contestId Int?
+  contest   Contest? @relation(fields: [contestId], references: [id])
 
   problemId Int
   problem   Problem @relation(fields: [problemId], references: [id])

@@ -15,6 +15,7 @@ const MENU_ITEMS = [
   { name: "Contest Management", href: "/admin/contests", icon: TrophyIcon },
   { name: "Problem Bank", href: "/admin/problems", icon: ArchiveBoxIcon },
   { name: "Admin Accounts", href: "/admin/accounts", icon: UserGroupIcon },
+  { name: "Submissions", href: "/admin/submissions", icon: ArchiveBoxIcon}
 ];
 
 export default function AdminLayout({

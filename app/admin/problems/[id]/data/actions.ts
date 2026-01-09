@@ -31,7 +31,9 @@ async function autoDetectCases(dir: string, currentYamlContent: string) {
       detectedCases.push({ input: input, output: output });
     }
   }
-  let parsed: any = {};
+  let parsed: {
+    cases?: { input: string; output: string }[];
+  } = {};
   try {
     parsed = yaml.load(currentYamlContent) || {};
   } catch (e) {
@@ -84,7 +86,11 @@ export async function saveYamlConfig(problemId: number, content: string) {
     const parsed = yaml.load(content);
     await prisma.problem.update({
       where: { id: problemId },
-      data: { judgeConfig: parsed as any },
+      data: {
+        judgeConfig: parsed as {
+          cases?: { input: string; output: string }[];
+        },
+      },
     });
   } catch (e) {
     console.log(e);

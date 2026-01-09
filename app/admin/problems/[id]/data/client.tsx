@@ -60,7 +60,6 @@ export default function DataManagementClient({
     name: string;
     content: string;
   } | null>(null);
-  const [isLoadingFile, setIsLoadingFile] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -69,7 +68,6 @@ export default function DataManagementClient({
 
   // 【新增】打开文件处理
   const handleOpenFile = async (fileName: string) => {
-    setIsLoadingFile(true); // 可以加个简单的全局Loading或者按钮Loading
     try {
       const content = await getFileContent(problemId, fileName);
       setActiveFile({ name: fileName, content });
@@ -77,8 +75,6 @@ export default function DataManagementClient({
     } catch (e) {
       console.log(e);
       alert("Failed to load file content.");
-    } finally {
-      setIsLoadingFile(false);
     }
   };
 

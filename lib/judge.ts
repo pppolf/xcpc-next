@@ -79,6 +79,8 @@ const LANGUAGES: Record<string, LanguageConfig> = {
   },
 };
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // 调用 go-judge 的 /run 接口
 async function callGoJudge(payload: any) {
   const res = await fetch(`${GO_JUDGE_URL}/run`, {
@@ -88,6 +90,14 @@ async function callGoJudge(payload: any) {
   });
   if (!res.ok) throw new Error(`Judge Server Error: ${res.statusText}`);
   return res.json();
+}
+
+async function deleteTmpFile(id: string) {
+  const res = await fetch(`${GO_JUDGE_URL}/file/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Judge Server Error: ${res.statusText}`);
+  return res;
 }
 
 // 清理文本 (去除末尾空白) 用于比对
@@ -155,9 +165,18 @@ export async function judgeSubmission(submissionId: string) {
       }
     }
 
+    // 先更新总测试点数量到数据库
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        verdict: Verdict.JUDGING,
+        totalTests: testCases.length,
+        passedTests: 0,
+      },
+    });
+
     // C. 编译阶段 (如果需要)
     let executableFileId = "";
-
     if (langConfig.compileCmd) {
       const compileRes = await callGoJudge({
         cmd: [
@@ -215,7 +234,6 @@ export async function judgeSubmission(submissionId: string) {
 
     // D. 运行阶段 (并发跑所有测试点)
     // 构造 go-judge 的请求数组
-
     const time_limit_rate: Record<string, number> = {
       c: judgeConfig.time_limit_rate?.c || 1,
       cpp: judgeConfig.time_limit_rate?.cpp || 1,
@@ -229,8 +247,12 @@ export async function judgeSubmission(submissionId: string) {
       java: judgeConfig.memory_limit_rate?.java || 1,
       pypy3: judgeConfig.memory_limit_rate?.pypy3 || 1,
     };
-
-    const runCmds = testCases.map((testCase) => {
+    let finalVerdict: Verdict = Verdict.ACCEPTED;
+    let maxTime = 0;
+    let maxMemory = 0;
+    let error = "";
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
       const cmdObj: any = {
         args: langConfig.runCmd,
         env: ["PATH=/usr/bin:/bin"],
@@ -239,7 +261,8 @@ export async function judgeSubmission(submissionId: string) {
           { name: "stdout", max: 10240 }, // stdout
           { name: "stderr", max: 10240 }, // stderr
         ],
-        cpuLimit: problem.defaultTimeLimit * 100000 * time_limit_rate[language], // ns (1ms = 1,000,000ns)
+        cpuLimit:
+          problem.defaultTimeLimit * 1000000 * time_limit_rate[language], // ns (1ms = 1,000,000ns)
         memoryLimit:
           problem.defaultMemoryLimit *
           1024 *
@@ -248,7 +271,6 @@ export async function judgeSubmission(submissionId: string) {
         procLimit: 50,
       };
 
-      // 如果有编译产物，使用 copyInCached 挂载进来
       if (executableFileId) {
         cmdObj.copyIn = {
           [langConfig.exeName]: { fileId: executableFileId },
@@ -259,27 +281,16 @@ export async function judgeSubmission(submissionId: string) {
           [langConfig.srcName]: { content: code },
         };
       }
-      return cmdObj;
-    });
 
-    const runResults = await callGoJudge({ cmd: runCmds });
-
-    // E. 结果判定
-    let finalVerdict: Verdict = Verdict.ACCEPTED;
-    let maxTime = 0;
-    let maxMemory = 0;
-
-    for (let i = 0; i < runResults.length; i++) {
-      const res = runResults[i];
-      const expectedOut = testCases[i].out;
+      const runResults = await callGoJudge({ cmd: [cmdObj] });
+      const res = runResults[0]; // 拿到结果
 
       // 统计时间和内存 (转为 ms 和 KB)
       const timeMs = Math.floor(res.time / 1000000);
       const memoryKB = Math.floor(res.memory / 1024);
-      if (timeMs > maxTime) maxTime = timeMs;
-      if (memoryKB > maxMemory) maxMemory = memoryKB;
-
-      // 1. 系统/运行状态检查
+      maxTime = Math.max(maxTime, timeMs);
+      maxMemory = Math.max(maxMemory, memoryKB);
+      // 系统/运行状态检查
       if (res.status !== "Accepted") {
         if (res.status === "Time Limit Exceeded") {
           finalVerdict = Verdict.TIME_LIMIT_EXCEEDED;
@@ -288,18 +299,30 @@ export async function judgeSubmission(submissionId: string) {
         } else {
           finalVerdict = Verdict.RUNTIME_ERROR;
         }
+        error = res.files?.stderr || "";
+
         break;
       }
 
-      // 2. 答案比对 (默认去除尾部空白)
+      // 答案比对
       // TODO: 如果是 SPJ，这里需要修改逻辑调用 checker
       const userOutput = cleanOutput(res.files?.stdout || "");
-      const stdOutput = cleanOutput(expectedOut);
-
+      const stdOutput = cleanOutput(testCase.out);
       if (userOutput !== stdOutput) {
         finalVerdict = Verdict.WRONG_ANSWER;
         break;
       }
+
+      await prisma.submission.update({
+        where: { id: submissionId },
+        data: {
+          passedTests: i + 1,
+          timeUsed: maxTime,
+          memoryUsed: maxMemory,
+        },
+      });
+
+      // await delay(10000);
     }
 
     // F. 更新数据库
@@ -309,8 +332,14 @@ export async function judgeSubmission(submissionId: string) {
         verdict: finalVerdict,
         timeUsed: maxTime,
         memoryUsed: maxMemory,
+        errorMessage: error,
       },
     });
+
+    // 删除编译文件
+    if (executableFileId) {
+      deleteTmpFile(executableFileId);
+    }
   } catch (error) {
     console.error("Judge Error:", error);
     await prisma.submission.update({

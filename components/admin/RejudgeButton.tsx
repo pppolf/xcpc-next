@@ -3,21 +3,25 @@
 import { useTransition } from "react";
 import { rejudgeSubmission } from "@/app/admin/submissions/actions";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 export default function RejudgeButton({
   submissionId,
 }: {
   submissionId: string;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const handleRejudge = () => {
+  const handleRejudge = async () => {
     if (!confirm("Are you sure you want to rejudge this submission?")) return;
-
     startTransition(async () => {
       try {
+        // 调用 Server Action
         await rejudgeSubmission(submissionId);
-        // 成功后通常页面会自动刷新 (因为有 revalidatePath)
+
+        // 强制刷新当前路由
+        router.refresh();
       } catch (error) {
         alert("Failed to rejudge");
         console.error(error);

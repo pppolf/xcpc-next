@@ -39,7 +39,7 @@ export async function adminSubmit(
 
   // TODO: 这里应该调用判题机 (RabbitMQ / HTTP)
   try {
-    await judgeSubmission(submission.id);
+    judgeSubmission(submission.id);
   } catch (e) {
     console.log(e);
   }

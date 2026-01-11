@@ -56,11 +56,11 @@ enum ClariCategory {
 
 // 全局管理员
 model GlobalUser {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String       @id @default(uuid())
+  username    String       @unique
+  password    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   submissions Submission[]
 
   @@map("global_users")
@@ -204,6 +204,9 @@ model Submission {
   timeUsed     Int? // ms
   memoryUsed   Int? // KB
   errorMessage String? @db.Text
+
+  passedTests Int @default(0)
+  totalTests  Int @default(0)
 
   submittedAt DateTime @default(now())
 

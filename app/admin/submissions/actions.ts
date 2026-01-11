@@ -5,6 +5,7 @@ import { judgeSubmission } from "@/lib/judge";
 import { revalidatePath } from "next/cache";
 import { verifyAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { Verdict } from "@/lib/generated/prisma/enums";
 
 export async function getGlobalSubmissions(page = 1, pageSize = 20) {
   const skip = (page - 1) * pageSize;
@@ -31,7 +32,7 @@ export async function rejudgeSubmission(submissionId: string) {
   // 1. 权限验证
   const token = (await cookies()).get("auth_token")?.value;
   if (!token) throw new Error("Unauthorized");
-  
+
   const payload = await verifyAuth(token);
   if (!payload.isGlobalAdmin) throw new Error("Permission denied");
 
@@ -39,10 +40,12 @@ export async function rejudgeSubmission(submissionId: string) {
   await prisma.submission.update({
     where: { id: submissionId },
     data: {
-      verdict: "PENDING",
+      verdict: Verdict.PENDING,
       timeUsed: 0,
       memoryUsed: 0,
       errorMessage: null,
+      passedTests: 0,
+      totalTests: 0,
     },
   });
 

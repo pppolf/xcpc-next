@@ -10,6 +10,7 @@ import { adminSubmit } from "./actions";
 import { PlayIcon, CheckCircleIcon } from "@heroicons/react/24/solid";
 import CodeBlock from "@/components/CodeBlock";
 import CodeEditor from "@/components/CodeEditor";
+import { useRouter } from "next/navigation";
 
 // 提取公共样式：标题样式 (蓝色竖线)
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -43,7 +44,7 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
   const [language, setLanguage] = useState("cpp");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastId, setLastId] = useState<string | null>(null);
-
+  const router = useRouter();
   const handleSubmit = async () => {
     if (!code.trim()) return alert("Code cannot be empty");
     setIsSubmitting(true);
@@ -51,7 +52,8 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
       const res = await adminSubmit(problem.id, code, language);
       if (res.success) {
         setLastId(res.submissionId);
-        alert("Submitted successfully! ID: " + res.submissionId);
+        // alert("Submitted successfully! ID: " + res.submissionId);
+        router.push("/admin/submissions");
       }
     } catch (e) {
       alert("Submission failed: " + e);

@@ -1,3 +1,4 @@
+import { Verdict } from "@/lib/generated/prisma/enums";
 import {
   ArrowPathIcon,
   CheckCircleIcon,
@@ -13,46 +14,46 @@ const VERDICT_CONFIG: Record<
   { text: string; color: string; icon?: any }
 > = {
   // --- 等待/评测中 (带动画) ---
-  PENDING: { text: "Pending", color: "text-gray-500" },
-  JUDGING: { text: "Judging", color: "text-blue-600" },
+  [Verdict.PENDING]: { text: "Pending", color: "text-gray-500" },
+  [Verdict.JUDGING]: { text: "Judging", color: "text-blue-600" },
 
   // --- 最终状态 ---
-  ACCEPTED: {
+  [Verdict.ACCEPTED]: {
     text: "Accepted",
     color: "text-green-600 font-bold",
     icon: CheckCircleIcon,
   },
-  WRONG_ANSWER: {
+  [Verdict.WRONG_ANSWER]: {
     text: "Wrong Answer",
     color: "text-red-600 font-bold",
     icon: XCircleIcon,
   },
-  TIME_LIMIT_EXCEEDED: {
+  [Verdict.TIME_LIMIT_EXCEEDED]: {
     text: "Time Limit Exceeded",
     color: "text-orange-600 font-bold",
     icon: ClockIcon,
   },
-  MEMORY_LIMIT_EXCEEDED: {
+  [Verdict.MEMORY_LIMIT_EXCEEDED]: {
     text: "Memory Limit Exceeded",
     color: "text-orange-600 font-bold",
     icon: ExclamationCircleIcon,
   },
-  RUNTIME_ERROR: {
+  [Verdict.RUNTIME_ERROR]: {
     text: "Runtime Error",
     color: "text-purple-600 font-bold",
     icon: ExclamationCircleIcon,
   },
-  COMPILE_ERROR: {
+  [Verdict.COMPILE_ERROR]: {
     text: "Compile Error",
     color: "text-yellow-600 font-bold",
     icon: ExclamationCircleIcon,
   },
-  PRESENTATION_ERROR: {
+  [Verdict.PRESENTATION_ERROR]: {
     text: "Presentation Error",
     color: "text-orange-500 font-bold",
     icon: ExclamationCircleIcon,
   },
-  SYSTEM_ERROR: {
+  [Verdict.SYSTEM_ERROR]: {
     text: "System Error",
     color: "text-gray-900 font-bold",
     icon: ExclamationCircleIcon,

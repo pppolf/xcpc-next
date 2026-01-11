@@ -1,8 +1,8 @@
-import VerdictBadge from "@/components/VerdictBadge";
 import { getGlobalSubmissions } from "./actions";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
 import RejudgeButton from "@/components/admin/RejudgeButton";
+import LiveVerdict from "@/components/LiveVerdict";
 
 export default async function GlobalSubmissionsPage({
   searchParams,
@@ -73,7 +73,13 @@ export default async function GlobalSubmissionsPage({
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <VerdictBadge status={sub.verdict} />
+                      <LiveVerdict
+                        key={`${sub.id}-${sub.verdict}`}
+                        submissionId={sub.id}
+                        initialStatus={sub.verdict}
+                        initialPassed={sub.passedTests}
+                        initialTotal={sub.totalTests}
+                      />
                     </td>
                     <td className="px-6 py-4">
                       {sub.timeUsed !== null ? `${sub.timeUsed}ms` : "-"} /{" "}

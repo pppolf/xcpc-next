@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prisma": "npx prisma generate"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

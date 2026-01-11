@@ -163,10 +163,10 @@ export async function deleteFile(problemId: number, fileName: string) {
 export async function getFileContent(problemId: number, fileName: string) {
   const filePath = path.join(getDataDir(problemId), fileName);
   try {
-    // 限制读取文件大小，防止读取过大的数据文件导致崩盘 (例如限制 1MB)
+    // 限制读取文件大小，防止读取过大的数据文件导致崩盘 (例如限制 20MB)
     const stat = await fs.stat(filePath);
-    if (stat.size > 1024 * 1024) {
-      return "Error: File is too large to preview (limit 1MB).";
+    if (stat.size > 1024 * 1024 * 20) {
+      return "Error: File is too large to preview (limit 20MB).";
     }
     const content = await fs.readFile(filePath, "utf-8");
     return content;

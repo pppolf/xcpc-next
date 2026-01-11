@@ -2,6 +2,7 @@ import VerdictBadge from "@/components/VerdictBadge";
 import { getGlobalSubmissions } from "./actions";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
+import RejudgeButton from "@/components/admin/RejudgeButton";
 
 export default async function GlobalSubmissionsPage({
   searchParams,
@@ -36,6 +37,7 @@ export default async function GlobalSubmissionsPage({
                 <th className="px-6 py-3">Time/Mem</th>
                 <th className="px-6 py-3">Lang</th>
                 <th className="px-6 py-3">Source</th>
+                <th className="px-6 py-3">Setting</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -80,6 +82,9 @@ export default async function GlobalSubmissionsPage({
                     <td className="px-6 py-4">{sub.language}</td>
                     <td className="px-6 py-4">
                       {sub.contest ? "Contest Source" : "Admin Test"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <RejudgeButton submissionId={sub.id} />
                     </td>
                   </tr>
                 );

@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { verifyAuth } from "@/lib/auth"; // 使用你之前封装的 auth 验证
 import { revalidatePath } from "next/cache";
+import { judgeSubmission } from "@/lib/judge";
+import { Verdict } from "@/lib/generated/prisma/enums";
 
 export async function adminSubmit(
   problemId: number,
@@ -31,12 +33,16 @@ export async function adminSubmit(
       language: language,
       code: code,
       codeLength: code.length,
-      verdict: "PENDING", // 待评测
+      verdict: Verdict.PENDING, // 待评测
     },
   });
 
   // TODO: 这里应该调用判题机 (RabbitMQ / HTTP)
-  // await sendToJudge(submission.id);
+  try {
+    await judgeSubmission(submission.id);
+  } catch (e) {
+    console.log(e);
+  }
 
   revalidatePath(`/admin/submissions`);
   return { success: true, submissionId: submission.id };

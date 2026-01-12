@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import path from "path";
 import { promises as fs } from "fs";
 import { Verdict } from "@/lib/generated/prisma/enums";
@@ -31,6 +32,14 @@ interface JudgeConfig {
   interactor?: string;
   time_limit_rate?: LanguageJudgeConfig;
   memory_limit_rate?: LanguageJudgeConfig;
+}
+
+// 定义 Redis 中缓存的数据结构
+interface JudgeProgress {
+  verdict: string;
+  passedTests: number;
+  totalTests: number;
+  finished: boolean;
 }
 
 const LANGUAGES: Record<string, LanguageConfig> = {
@@ -89,7 +98,6 @@ const LANGUAGES: Record<string, LanguageConfig> = {
   },
 };
 
-
 // 调用 go-judge 的 /run 接口
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function callGoJudge(payload: any) {
@@ -114,6 +122,13 @@ async function deleteTmpFile(id: string) {
 function cleanOutput(str: string) {
   if (!str) return "";
   return str.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+// 辅助：更新进度到 Redis
+async function updateProgress(submissionId: string, data: JudgeProgress) {
+  const key = `submission:${submissionId}:progress`;
+  // 存入 Redis，设置过期时间 (例如 1 小时后自动过期)
+  await redis.set(key, JSON.stringify(data), "EX", 3600);
 }
 
 // --- 3. 核心判题逻辑 ---
@@ -175,15 +190,23 @@ export async function judgeSubmission(submissionId: string) {
       }
     }
 
-    // 先更新总测试点数量到数据库
-    await prisma.submission.update({
-      where: { id: submissionId },
-      data: {
-        verdict: Verdict.JUDGING,
-        totalTests: testCases.length,
-        passedTests: 0,
-      },
+    // 【修改点 1】初始化 Redis 状态
+    await updateProgress(submissionId, {
+      verdict: Verdict.JUDGING,
+      passedTests: 0,
+      totalTests: testCases.length,
+      finished: false,
     });
+
+    // 先更新总测试点数量到数据库
+    // await prisma.submission.update({
+    //   where: { id: submissionId },
+    //   data: {
+    //     verdict: Verdict.JUDGING,
+    //     totalTests: testCases.length,
+    //     passedTests: 0,
+    //   },
+    // });
 
     // C. 编译阶段 (如果需要)
     let executableFileId = "";
@@ -321,7 +344,6 @@ export async function judgeSubmission(submissionId: string) {
           finalVerdict = Verdict.RUNTIME_ERROR;
         }
         error = res.files?.stderr || "";
-        console.log(res);
         break;
       }
 
@@ -334,14 +356,21 @@ export async function judgeSubmission(submissionId: string) {
         break;
       }
 
-      await prisma.submission.update({
-        where: { id: submissionId },
-        data: {
-          passedTests: i + 1,
-          timeUsed: maxTime,
-          memoryUsed: maxMemory,
-        },
+      await updateProgress(submissionId, {
+        verdict: Verdict.JUDGING,
+        passedTests: i + 1,
+        totalTests: testCases.length,
+        finished: false,
       });
+
+      // await prisma.submission.update({
+      //   where: { id: submissionId },
+      //   data: {
+      //     passedTests: i + 1,
+      //     timeUsed: maxTime,
+      //     memoryUsed: maxMemory,
+      //   },
+      // });
 
       // await delay(10000);
     }
@@ -354,7 +383,16 @@ export async function judgeSubmission(submissionId: string) {
         timeUsed: maxTime,
         memoryUsed: maxMemory,
         errorMessage: error,
+        passedTests: testCases.length,
+        totalTests: testCases.length,
       },
+    });
+
+    await updateProgress(submissionId, {
+      verdict: finalVerdict,
+      passedTests: testCases.length,
+      totalTests: testCases.length,
+      finished: true,
     });
 
     // 删除编译文件
@@ -370,5 +408,6 @@ export async function judgeSubmission(submissionId: string) {
         errorMessage: error || "Unknown System Error",
       },
     });
+    await redis.del(`submission:${submissionId}:progress`);
   }
 }

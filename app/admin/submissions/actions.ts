@@ -1,11 +1,12 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { judgeSubmission } from "@/lib/judge";
+// import { judgeSubmission } from "@/lib/judge";
 import { revalidatePath } from "next/cache";
 import { verifyAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { Verdict } from "@/lib/generated/prisma/enums";
+import { judgeQueue } from "@/lib/queue";
 
 export async function getGlobalSubmissions(page = 1, pageSize = 20) {
   const skip = (page - 1) * pageSize;
@@ -50,7 +51,10 @@ export async function rejudgeSubmission(submissionId: string) {
   });
 
   // 3. 异步触发判题 (不 await，避免阻塞前端响应)
-  judgeSubmission(submissionId).catch(console.error);
+  // judgeSubmission(submissionId).catch(console.error);
+  await judgeQueue.add("judge", {
+    submissionId: submissionId,
+  });
 
   // 4. 刷新页面
   revalidatePath("/admin/submissions");

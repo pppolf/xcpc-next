@@ -2,10 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import { verifyAuth } from "@/lib/auth"; // 使用你之前封装的 auth 验证
+import { verifyAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { judgeSubmission } from "@/lib/judge";
+// import { judgeSubmission } from "@/lib/judge";
 import { Verdict } from "@/lib/generated/prisma/enums";
+import { judgeQueue } from "@/lib/queue";
 
 export async function adminSubmit(
   problemId: number,
@@ -38,11 +39,14 @@ export async function adminSubmit(
   });
 
   // TODO: 这里应该调用判题机 (RabbitMQ / HTTP)
-  try {
-    judgeSubmission(submission.id);
-  } catch (e) {
-    console.log(e);
-  }
+  // try {
+  //   judgeSubmission(submission.id);
+  // } catch (e) {
+  //   console.log(e);
+  // }
+  await judgeQueue.add('judge', { 
+    submissionId: submission.id 
+  });
 
   revalidatePath(`/admin/submissions`);
   return { success: true, submissionId: submission.id };

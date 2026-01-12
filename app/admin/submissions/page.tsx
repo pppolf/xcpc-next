@@ -85,7 +85,7 @@ export default async function GlobalSubmissionsPage({
                       {sub.timeUsed !== null ? `${sub.timeUsed}ms` : "-"} /{" "}
                       {sub.memoryUsed !== null ? `${sub.memoryUsed}KB` : "-"}
                     </td>
-                    <td className="px-6 py-4">{sub.language}</td>
+                    <td className="px-6 py-4 uppercase">{sub.language}</td>
                     <td className="px-6 py-4">
                       {sub.contest ? "Contest Source" : "Admin Test"}
                     </td>

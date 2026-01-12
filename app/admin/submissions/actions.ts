@@ -41,8 +41,8 @@ export async function rejudgeSubmission(submissionId: string) {
     where: { id: submissionId },
     data: {
       verdict: Verdict.PENDING,
-      timeUsed: 0,
-      memoryUsed: 0,
+      timeUsed: null,
+      memoryUsed: null,
       errorMessage: null,
       passedTests: 0,
       totalTests: 0,

@@ -69,8 +69,18 @@ const LANGUAGES: Record<string, LanguageConfig> = {
   java: {
     srcName: "Main.java",
     exeName: "Main.jar",
-    compileCmd: ["/usr/bin/javac", "Main.java", "-encoding", "UTF-8"], // 简单起见，实际可能需要打包 jar
-    runCmd: ["/usr/bin/java", "Main"], // 这里的运行环境需要仔细配置 classpath
+    compileCmd: [
+      "/usr/bin/bash",
+      "-c",
+      "export PATH=$PATH:/usr/lib/jvm/java-21-openjdk-amd64/bin && /usr/lib/jvm/java-21-openjdk-amd64/bin/javac -d . -encoding utf8 ./Main.java && jar cvf Main.jar *.class >/dev/null",
+    ],
+    runCmd: [
+      "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+      "-Dfile.encoding='UTF-8'",
+      "-cp",
+      "Main.jar",
+      "Main",
+    ],
   },
   pypy3: {
     srcName: "main.py",
@@ -79,9 +89,9 @@ const LANGUAGES: Record<string, LanguageConfig> = {
   },
 };
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // 调用 go-judge 的 /run 接口
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function callGoJudge(payload: any) {
   const res = await fetch(`${GO_JUDGE_URL}/run`, {
     method: "POST",
@@ -182,7 +192,12 @@ export async function judgeSubmission(submissionId: string) {
         cmd: [
           {
             args: langConfig.compileCmd,
-            env: ["PATH=/usr/bin:/bin"],
+            env: [
+              "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin", // 把 Java bin 路径加进去
+              "LANG=en_US.UTF-8",
+              "LC_ALL=en_US.UTF-8",
+              "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64", // 显式设置 JAVA_HOME
+            ],
             files: [
               {
                 content: "",
@@ -197,7 +212,7 @@ export async function judgeSubmission(submissionId: string) {
               },
             ],
             cpuLimit: 10000000000, // 10s 编译时间
-            memoryLimit: 512 * 1024 * 1024, // 512MB 编译内存
+            memoryLimit: 1024 * 1024 * 1024, // 1G 编译内存
             procLimit: 50,
             copyIn: {
               [langConfig.srcName]: {
@@ -213,6 +228,7 @@ export async function judgeSubmission(submissionId: string) {
       // 检查编译结果
       const result = compileRes[0];
       if (result.status !== "Accepted") {
+        console.log(result);
         // 编译错误
         await prisma.submission.update({
           where: { id: submissionId },
@@ -237,14 +253,14 @@ export async function judgeSubmission(submissionId: string) {
     const time_limit_rate: Record<string, number> = {
       c: judgeConfig.time_limit_rate?.c || 1,
       cpp: judgeConfig.time_limit_rate?.cpp || 1,
-      java: judgeConfig.time_limit_rate?.java || 1,
+      java: judgeConfig.time_limit_rate?.java || 2,
       pypy3: judgeConfig.time_limit_rate?.pypy3 || 1,
     };
 
     const memory_limit_rate: Record<string, number> = {
       c: judgeConfig.memory_limit_rate?.c || 1,
       cpp: judgeConfig.memory_limit_rate?.cpp || 1,
-      java: judgeConfig.memory_limit_rate?.java || 1,
+      java: judgeConfig.memory_limit_rate?.java || 2,
       pypy3: judgeConfig.memory_limit_rate?.pypy3 || 1,
     };
     let finalVerdict: Verdict = Verdict.ACCEPTED;
@@ -253,9 +269,14 @@ export async function judgeSubmission(submissionId: string) {
     let error = "";
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cmdObj: any = {
         args: langConfig.runCmd,
-        env: ["PATH=/usr/bin:/bin"],
+        env: [
+          "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin",
+          "LANG=en_US.UTF-8",
+          "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64",
+        ],
         files: [
           { content: testCase.in }, // stdin
           { name: "stdout", max: 10240 }, // stdout
@@ -300,7 +321,7 @@ export async function judgeSubmission(submissionId: string) {
           finalVerdict = Verdict.RUNTIME_ERROR;
         }
         error = res.files?.stderr || "";
-
+        console.log(res);
         break;
       }
 

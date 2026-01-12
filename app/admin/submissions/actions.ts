@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-// import { judgeSubmission } from "@/lib/judge";
 import { revalidatePath } from "next/cache";
 import { verifyAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -50,8 +49,8 @@ export async function rejudgeSubmission(submissionId: string) {
     },
   });
 
-  // 3. 异步触发判题 (不 await，避免阻塞前端响应)
   // judgeSubmission(submissionId).catch(console.error);
+
   await judgeQueue.add("judge", {
     submissionId: submissionId,
   });

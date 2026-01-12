@@ -2,7 +2,7 @@ import { getGlobalSubmissions } from "./actions";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
 import RejudgeButton from "@/components/admin/RejudgeButton";
-import LiveVerdict from "@/components/LiveVerdict";
+import VerdictCell from "@/components/VerdictCell";
 
 export default async function GlobalSubmissionsPage({
   searchParams,
@@ -73,19 +73,20 @@ export default async function GlobalSubmissionsPage({
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <LiveVerdict
-                        key={`${sub.id}-${sub.verdict}`}
-                        submissionId={sub.id}
-                        initialStatus={sub.verdict}
-                        initialPassed={sub.passedTests}
-                        initialTotal={sub.totalTests}
-                      />
+                      <VerdictCell submission={sub} />
                     </td>
                     <td className="px-6 py-4">
                       {sub.timeUsed !== null ? `${sub.timeUsed}ms` : "-"} /{" "}
                       {sub.memoryUsed !== null ? `${sub.memoryUsed}KB` : "-"}
                     </td>
-                    <td className="px-6 py-4 uppercase">{sub.language}</td>
+                    <td className="px-6 py-4 uppercase">
+                      <Link
+                        href={`/admin/submissions/${sub.id}`}
+                        className="text-blue-600 hover:text-blue-800 hover:underline font-bold"
+                      >
+                        {sub.language}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4">
                       {sub.contest ? "Contest Source" : "Admin Test"}
                     </td>

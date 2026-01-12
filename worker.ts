@@ -1,12 +1,14 @@
+import "dotenv/config";
 import { Worker } from "bullmq";
 import { judgeSubmission } from "./lib/judge";
 import { redis } from "./lib/redis";
-import * as dotenv from "dotenv";
+// import * as dotenv from "dotenv";
 
 // 加载环境变量
-dotenv.config();
+// dotenv.config();
 
 console.log("🚀 Judge Worker Started...");
+console.log("DB URL Check:", process.env.DATABASE_URL ? "Loaded" : "Missing"); // 调试用
 
 const worker = new Worker(
   "judge-queue",

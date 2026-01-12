@@ -43,8 +43,8 @@ async function autoDetectCases(dir: string, currentYamlContent: string) {
   const files = await fs.readdir(dir);
   const inputs = files.filter((f) => f.endsWith(".in")).sort(naturalSort);
   const detectedCases = [];
-  const checker = files.find((f) => f === "chk.cc");
-  const interactor = files.find((f) => f === "interactor.cc");
+  const checker = files.find((f) => f === "checker.cpp");
+  const interactor = files.find((f) => f === "interactor.cpp");
   for (const input of inputs) {
     const basename = path.basename(input, ".in");
     const output = `${basename}.out`;

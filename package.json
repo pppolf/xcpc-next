@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "prisma": "npx prisma generate"
+    "prisma": "npx prisma generate",
+    "worker": "tsx -r dotenv/config worker.ts",
+    "worker:dev": "tsx watch -r dotenv/config worker.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -49,6 +51,7 @@
     "eslint-config-next": "16.1.1",
     "prisma": "^7.2.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

@@ -131,7 +131,63 @@ async function updateProgress(submissionId: string, data: JudgeProgress) {
   await redis.set(key, JSON.stringify(data), "EX", 3600);
 }
 
-// --- 3. 核心判题逻辑 ---
+// 编译 SPJ Checker
+async function compileChecker(dataDir: string, checkerName: string) {
+  const checkerPath = path.join(dataDir, checkerName);
+  let checkerCode = "";
+  try {
+    checkerCode = await fs.readFile(checkerPath, "utf-8");
+  } catch (e) {
+    console.log(e);
+    throw new Error(`Checker file not found: ${checkerName}`);
+  }
+
+  const testlibPath = path.join(process.cwd(), "lib", "judge", "testlib.h");
+  let testlibCode = "";
+  try {
+    testlibCode = await fs.readFile(testlibPath, "utf-8");
+  } catch (e) {
+    console.error("Missing testlib.h", e);
+    throw new Error("System Error: testlib.h not found on server.");
+  }
+
+  // 使用 g++ 编译
+  const compileRes = await callGoJudge({
+    cmd: [
+      {
+        args: [
+          "/usr/bin/g++",
+          "checker.cpp",
+          "-o",
+          "checker",
+          "-O2",
+          "-std=c++23", // testlib 通常需要较新标准
+        ],
+        env: ["PATH=/usr/bin:/bin"],
+        files: [
+          { content: "", name: "stdout", max: 1000000 },
+          { content: "", name: "stderr", max: 1000000 },
+        ],
+        cpuLimit: 10000000000,
+        memoryLimit: 512 * 1024 * 1024,
+        procLimit: 50,
+        copyIn: {
+          "checker.cpp": { content: checkerCode },
+          "testlib.h": { content: testlibCode },
+        },
+        copyOutCached: ["checker"], // 缓存编译好的 checker
+      },
+    ],
+  });
+
+  if (compileRes[0].status !== "Accepted") {
+    throw new Error(`Checker Compile Failed: ${compileRes}`);
+  }
+
+  return compileRes[0].fileIds["checker"];
+}
+
+// --- 核心判题逻辑 ---
 export async function judgeSubmission(submissionId: string) {
   // A. 获取提交记录和题目信息
   const submission = await prisma.submission.findUnique({
@@ -171,7 +227,6 @@ export async function judgeSubmission(submissionId: string) {
     for (const caseItem of judgeConfig.cases) {
       const inputPath = path.join(dataDir, caseItem.input);
       const outputPath = path.join(dataDir, caseItem.output);
-
       // 检查文件是否存在并读取
       try {
         const inputContent = await fs.readFile(inputPath, "utf-8");
@@ -198,18 +253,9 @@ export async function judgeSubmission(submissionId: string) {
       finished: false,
     });
 
-    // 先更新总测试点数量到数据库
-    // await prisma.submission.update({
-    //   where: { id: submissionId },
-    //   data: {
-    //     verdict: Verdict.JUDGING,
-    //     totalTests: testCases.length,
-    //     passedTests: 0,
-    //   },
-    // });
-
     // C. 编译阶段 (如果需要)
     let executableFileId = "";
+    let checkerFileId = "";
     if (langConfig.compileCmd) {
       const compileRes = await callGoJudge({
         cmd: [
@@ -227,11 +273,11 @@ export async function judgeSubmission(submissionId: string) {
               },
               {
                 name: "stdout",
-                max: 10240,
+                max: 1000000,
               },
               {
                 name: "stderr",
-                max: 10240,
+                max: 1000000,
               },
             ],
             cpuLimit: 10000000000, // 10s 编译时间
@@ -251,7 +297,6 @@ export async function judgeSubmission(submissionId: string) {
       // 检查编译结果
       const result = compileRes[0];
       if (result.status !== "Accepted") {
-        console.log(result);
         // 编译错误
         await prisma.submission.update({
           where: { id: submissionId },
@@ -268,6 +313,21 @@ export async function judgeSubmission(submissionId: string) {
       } else {
         // C++/C 编译后通常是生成文件，如果没有 fileIds 说明编译可能没生成目标文件
         // 这里是一个简化的处理，实际可能需要更严谨的检查
+      }
+    }
+    const isSpj = problem.type === "spj";
+
+    if (isSpj && judgeConfig.checker) {
+      try {
+        checkerFileId = await compileChecker(dataDir, judgeConfig.checker);
+      } catch (e) {
+        const err = e as Error;
+        await prisma.submission.update({
+          where: { id: submissionId },
+          data: { verdict: Verdict.SYSTEM_ERROR, errorMessage: err.message },
+        });
+        await redis.del(`submission:${submissionId}:progress`);
+        return;
       }
     }
 
@@ -290,7 +350,9 @@ export async function judgeSubmission(submissionId: string) {
     let maxTime = 0;
     let maxMemory = 0;
     let error = "";
+    let idx = 0;
     for (let i = 0; i < testCases.length; i++) {
+      idx += 1;
       const testCase = testCases[i];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cmdObj: any = {
@@ -302,8 +364,8 @@ export async function judgeSubmission(submissionId: string) {
         ],
         files: [
           { content: testCase.in }, // stdin
-          { name: "stdout", max: 10240 }, // stdout
-          { name: "stderr", max: 10240 }, // stderr
+          { name: "stdout", max: 1000000 }, // stdout
+          { name: "stderr", max: 1000000 }, // stderr
         ],
         cpuLimit:
           problem.defaultTimeLimit * 1000000 * time_limit_rate[language], // ns (1ms = 1,000,000ns)
@@ -320,7 +382,6 @@ export async function judgeSubmission(submissionId: string) {
           [langConfig.exeName]: { fileId: executableFileId },
         };
       } else {
-        // 解释型语言 (Python) 直接把源码放进去
         cmdObj.copyIn = {
           [langConfig.srcName]: { content: code },
         };
@@ -343,17 +404,52 @@ export async function judgeSubmission(submissionId: string) {
         } else {
           finalVerdict = Verdict.RUNTIME_ERROR;
         }
-        error = res.files?.stderr || "";
+        error = res.files?.stderr || "Unkown Error";
         break;
       }
 
       // 答案比对
-      // TODO: 如果是 SPJ，这里需要修改逻辑调用 checker
       const userOutput = cleanOutput(res.files?.stdout || "");
-      const stdOutput = cleanOutput(testCase.out);
-      if (userOutput !== stdOutput) {
-        finalVerdict = Verdict.WRONG_ANSWER;
-        break;
+
+      // SPJ
+      if (isSpj) {
+        const checkerRes = await callGoJudge({
+          cmd: [
+            {
+              args: ["./checker", "input.in", "user.out", "answer.out"],
+              env: ["PATH=/usr/bin:/bin"],
+              files: [
+                { content: "", name: "stdout", max: 1000000 }, // Checker 的输出通常是 xml 或 text
+                { content: "", name: "stderr", max: 1000000 }, // Checker 的错误信息
+              ],
+              cpuLimit: 10000 * 1000000, // 给 Checker 充足时间 (e.g. 10s)
+              memoryLimit: 512 * 1024 * 1024,
+              procLimit: 50,
+              copyIn: {
+                checker: { fileId: checkerFileId }, // 挂载编译好的 checker
+                "input.in": { content: testCase.in },
+                "user.out": { content: userOutput },
+                "answer.out": { content: testCase.out },
+              },
+            },
+          ],
+        });
+        const chkResult = checkerRes[0];
+        if (chkResult.exitStatus === 0) {
+          // AC
+        } else {
+          // 非 0 为 WA (Testlib: 1=WA, 2=PE, 3=Fail)
+          finalVerdict = Verdict.WRONG_ANSWER;
+          // 可选：读取 checker 的 stderr 作为错误信息展示给用户或管理员
+          error = chkResult.files?.stderr || "SPJ check failed";
+          break;
+        }
+      } else {
+        const stdOutput = cleanOutput(testCase.out);
+        if (userOutput !== stdOutput) {
+          finalVerdict = Verdict.WRONG_ANSWER;
+          break;
+        }
       }
 
       await updateProgress(submissionId, {
@@ -374,7 +470,12 @@ export async function judgeSubmission(submissionId: string) {
 
       // await delay(10000);
     }
-
+    await updateProgress(submissionId, {
+      verdict: finalVerdict,
+      passedTests: idx - 1,
+      totalTests: testCases.length,
+      finished: true,
+    });
     // F. 更新数据库
     await prisma.submission.update({
       where: { id: submissionId },
@@ -383,21 +484,17 @@ export async function judgeSubmission(submissionId: string) {
         timeUsed: maxTime,
         memoryUsed: maxMemory,
         errorMessage: error,
-        passedTests: testCases.length,
+        passedTests: idx - 1,
         totalTests: testCases.length,
       },
-    });
-
-    await updateProgress(submissionId, {
-      verdict: finalVerdict,
-      passedTests: testCases.length,
-      totalTests: testCases.length,
-      finished: true,
     });
 
     // 删除编译文件
     if (executableFileId) {
       deleteTmpFile(executableFileId);
+    }
+    if (checkerFileId) {
+      deleteTmpFile(checkerFileId);
     }
   } catch (error) {
     console.error("Judge Error:", error);

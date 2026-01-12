@@ -6,8 +6,9 @@ import { useRef, useState } from "react";
 interface CodeEditorProps {
   value: string;
   language: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   height?: string;
+  readOnly?: boolean;
 }
 
 // 语言映射：将你的系统语言代码映射为 Monaco 支持的语言 ID
@@ -23,6 +24,7 @@ export default function CodeEditor({
   language,
   onChange,
   height = "500px",
+  readOnly = false
 }: CodeEditorProps) {
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const [, setMounted] = useState(false);
@@ -47,9 +49,11 @@ export default function CodeEditor({
         height="100%"
         language={monacoLanguage}
         value={value}
-        onChange={(val) => onChange(val || "")}
+        onChange={(val) => onChange && onChange(val || "")}
         theme="vs-light" // 浅色主题，契合你的系统风格 (vs-dark 为深色)
         options={{
+          readOnly: readOnly,
+          domReadOnly: readOnly,
           minimap: { enabled: false }, // 关闭右侧代码缩略图，节省空间
           fontSize: 14,
           scrollBeyondLastLine: false, // 滚动条不滚过最后一行

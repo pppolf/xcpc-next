@@ -38,6 +38,7 @@ export type UserMinAggregateOutputType = {
   id: string | null
   username: string | null
   password: string | null
+  plainPassword: string | null
   contestId: number | null
   displayName: string | null
   members: string | null
@@ -54,6 +55,7 @@ export type UserMaxAggregateOutputType = {
   id: string | null
   username: string | null
   password: string | null
+  plainPassword: string | null
   contestId: number | null
   displayName: string | null
   members: string | null
@@ -70,6 +72,7 @@ export type UserCountAggregateOutputType = {
   id: number
   username: number
   password: number
+  plainPassword: number
   contestId: number
   displayName: number
   members: number
@@ -96,6 +99,7 @@ export type UserMinAggregateInputType = {
   id?: true
   username?: true
   password?: true
+  plainPassword?: true
   contestId?: true
   displayName?: true
   members?: true
@@ -112,6 +116,7 @@ export type UserMaxAggregateInputType = {
   id?: true
   username?: true
   password?: true
+  plainPassword?: true
   contestId?: true
   displayName?: true
   members?: true
@@ -128,6 +133,7 @@ export type UserCountAggregateInputType = {
   id?: true
   username?: true
   password?: true
+  plainPassword?: true
   contestId?: true
   displayName?: true
   members?: true
@@ -231,6 +237,7 @@ export type UserGroupByOutputType = {
   id: string
   username: string
   password: string
+  plainPassword: string | null
   contestId: number
   displayName: string | null
   members: string | null
@@ -270,6 +277,7 @@ export type UserWhereInput = {
   id?: Prisma.StringFilter<"User"> | string
   username?: Prisma.StringFilter<"User"> | string
   password?: Prisma.StringFilter<"User"> | string
+  plainPassword?: Prisma.StringNullableFilter<"User"> | string | null
   contestId?: Prisma.IntFilter<"User"> | number
   displayName?: Prisma.StringNullableFilter<"User"> | string | null
   members?: Prisma.StringNullableFilter<"User"> | string | null
@@ -290,6 +298,7 @@ export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   username?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  plainPassword?: Prisma.SortOrderInput | Prisma.SortOrder
   contestId?: Prisma.SortOrder
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
   members?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -314,6 +323,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   username?: Prisma.StringFilter<"User"> | string
   password?: Prisma.StringFilter<"User"> | string
+  plainPassword?: Prisma.StringNullableFilter<"User"> | string | null
   contestId?: Prisma.IntFilter<"User"> | number
   displayName?: Prisma.StringNullableFilter<"User"> | string | null
   members?: Prisma.StringNullableFilter<"User"> | string | null
@@ -334,6 +344,7 @@ export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   username?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  plainPassword?: Prisma.SortOrderInput | Prisma.SortOrder
   contestId?: Prisma.SortOrder
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
   members?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -358,6 +369,7 @@ export type UserScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"User"> | string
   username?: Prisma.StringWithAggregatesFilter<"User"> | string
   password?: Prisma.StringWithAggregatesFilter<"User"> | string
+  plainPassword?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   contestId?: Prisma.IntWithAggregatesFilter<"User"> | number
   displayName?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   members?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
@@ -374,6 +386,7 @@ export type UserCreateInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -393,6 +406,7 @@ export type UserUncheckedCreateInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   contestId: number
   displayName?: string | null
   members?: string | null
@@ -412,6 +426,7 @@ export type UserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -431,6 +446,7 @@ export type UserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -450,6 +466,7 @@ export type UserCreateManyInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   contestId: number
   displayName?: string | null
   members?: string | null
@@ -466,6 +483,7 @@ export type UserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -481,6 +499,7 @@ export type UserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -502,6 +521,7 @@ export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   username?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  plainPassword?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   members?: Prisma.SortOrder
@@ -522,6 +542,7 @@ export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   username?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  plainPassword?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   members?: Prisma.SortOrder
@@ -538,6 +559,7 @@ export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   username?: Prisma.SortOrder
   password?: Prisma.SortOrder
+  plainPassword?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
   members?: Prisma.SortOrder
@@ -682,6 +704,7 @@ export type UserCreateWithoutContestInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -700,6 +723,7 @@ export type UserUncheckedCreateWithoutContestInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -747,6 +771,7 @@ export type UserScalarWhereInput = {
   id?: Prisma.StringFilter<"User"> | string
   username?: Prisma.StringFilter<"User"> | string
   password?: Prisma.StringFilter<"User"> | string
+  plainPassword?: Prisma.StringNullableFilter<"User"> | string | null
   contestId?: Prisma.IntFilter<"User"> | number
   displayName?: Prisma.StringNullableFilter<"User"> | string | null
   members?: Prisma.StringNullableFilter<"User"> | string | null
@@ -763,6 +788,7 @@ export type UserCreateWithoutSubmissionsInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -781,6 +807,7 @@ export type UserUncheckedCreateWithoutSubmissionsInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   contestId: number
   displayName?: string | null
   members?: string | null
@@ -815,6 +842,7 @@ export type UserUpdateWithoutSubmissionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -833,6 +861,7 @@ export type UserUncheckedUpdateWithoutSubmissionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -851,6 +880,7 @@ export type UserCreateWithoutClarificationsInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -869,6 +899,7 @@ export type UserUncheckedCreateWithoutClarificationsInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   contestId: number
   displayName?: string | null
   members?: string | null
@@ -903,6 +934,7 @@ export type UserUpdateWithoutClarificationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -921,6 +953,7 @@ export type UserUncheckedUpdateWithoutClarificationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -939,6 +972,7 @@ export type UserCreateWithoutRepliesInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -957,6 +991,7 @@ export type UserUncheckedCreateWithoutRepliesInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   contestId: number
   displayName?: string | null
   members?: string | null
@@ -991,6 +1026,7 @@ export type UserUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1009,6 +1045,7 @@ export type UserUncheckedUpdateWithoutRepliesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1027,6 +1064,7 @@ export type UserCreateManyContestInput = {
   id?: string
   username: string
   password: string
+  plainPassword?: string | null
   displayName?: string | null
   members?: string | null
   school?: string | null
@@ -1042,6 +1080,7 @@ export type UserUpdateWithoutContestInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1060,6 +1099,7 @@ export type UserUncheckedUpdateWithoutContestInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1078,6 +1118,7 @@ export type UserUncheckedUpdateManyWithoutContestInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   username?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
+  plainPassword?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   members?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   school?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1142,6 +1183,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   id?: boolean
   username?: boolean
   password?: boolean
+  plainPassword?: boolean
   contestId?: boolean
   displayName?: boolean
   members?: boolean
@@ -1163,6 +1205,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   username?: boolean
   password?: boolean
+  plainPassword?: boolean
   contestId?: boolean
   displayName?: boolean
   members?: boolean
@@ -1180,6 +1223,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   id?: boolean
   username?: boolean
   password?: boolean
+  plainPassword?: boolean
   contestId?: boolean
   displayName?: boolean
   members?: boolean
@@ -1197,6 +1241,7 @@ export type UserSelectScalar = {
   id?: boolean
   username?: boolean
   password?: boolean
+  plainPassword?: boolean
   contestId?: boolean
   displayName?: boolean
   members?: boolean
@@ -1209,7 +1254,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "password" | "contestId" | "displayName" | "members" | "school" | "seat" | "coach" | "category" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "username" | "password" | "plainPassword" | "contestId" | "displayName" | "members" | "school" | "seat" | "coach" | "category" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
   submissions?: boolean | Prisma.User$submissionsArgs<ExtArgs>
@@ -1236,6 +1281,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     id: string
     username: string
     password: string
+    plainPassword: string | null
     contestId: number
     displayName: string | null
     members: string | null
@@ -1676,6 +1722,7 @@ export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'String'>
   readonly username: Prisma.FieldRef<"User", 'String'>
   readonly password: Prisma.FieldRef<"User", 'String'>
+  readonly plainPassword: Prisma.FieldRef<"User", 'String'>
   readonly contestId: Prisma.FieldRef<"User", 'Int'>
   readonly displayName: Prisma.FieldRef<"User", 'String'>
   readonly members: Prisma.FieldRef<"User", 'String'>

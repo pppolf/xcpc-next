@@ -1,75 +1,178 @@
-'use client'; // 因为有文件交互，建议使用 client component
-import * as React from 'react'
-import { useState } from 'react';
+import {
+  getContestProblems,
+  addContestProblem,
+  removeContestProblem,
+} from "./actions";
+import {
+  TrashIcon,
+  PlusIcon,
+  ArrowLeftIcon,
+} from "@heroicons/react/24/outline";
+import Link from "next/link";
 
-export default function ProblemUpload({ params }: { params: { id: string } }) {
-  const [activeTab, setActiveTab] = useState('manual'); // manual 或 file
+export default async function ContestProblemsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const contestId = Number(id);
 
-  const { id } = React.use(params)
+  // 获取已添加的题目
+  const contestProblems = await getContestProblems(contestId);
+
+  // 计算下一个推荐的 Display ID (如果已有 A, B，推荐 C)
+  const nextDisplayId = String.fromCharCode(65 + contestProblems.length); // 65 is 'A'
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Manage Problems</h1>
-        <p className="text-gray-500">Contest ID: {id}</p>
+    <div className="max-w-6xl mx-auto pb-10">
+      <div className="mb-8 flex items-center gap-4">
+        <Link
+          href="/admin/contests"
+          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+        >
+          <ArrowLeftIcon className="w-6 h-6" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Contest Problems Configuration
+          </h1>
+          <p className="text-gray-500">
+            Manage problems for Contest #{contestId}
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
-        {/* Tab 切换 */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <button 
-            onClick={() => setActiveTab('manual')}
-            className={`pb-3 px-4 text-sm font-medium ${activeTab === 'manual' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Manual Entry
-          </button>
-          <button 
-            onClick={() => setActiveTab('file')}
-            className={`pb-3 px-4 text-sm font-medium ${activeTab === 'file' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Batch Upload (XML/ZIP)
-          </button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* === 左侧：已添加题目列表 (2/3) === */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 font-bold text-gray-700">
+              Problem List
+            </div>
+
+            {contestProblems.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 italic">
+                No problems added yet. Use the form to add one.
+              </div>
+            ) : (
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-600 font-medium border-b">
+                  <tr>
+                    <th className="px-6 py-3 w-20">ID</th>
+                    <th className="px-6 py-3 w-20">Color</th>
+                    <th className="px-6 py-3">Original Title (ID)</th>
+                    <th className="px-6 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {contestProblems.map((cp) => (
+                    <tr key={cp.id} className="hover:bg-gray-50 group">
+                      <td className="px-6 py-4 font-bold text-lg font-mono text-gray-800">
+                        {cp.displayId}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div
+                          className="w-6 h-6 rounded-full border shadow-sm"
+                          style={{ backgroundColor: cp.color || "#ffffff" }}
+                          title={cp.color || "No color"}
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-gray-900">
+                          {cp.problem.title}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Original ID: {cp.problemId}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <form
+                          action={async () => {
+                            "use server";
+                            await removeContestProblem(cp.id, contestId);
+                          }}
+                        >
+                          <button
+                            className="text-red-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition-colors"
+                            title="Remove from contest"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
-        {activeTab === 'manual' ? (
-          <form className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Problem Title</label>
-                <input type="text" className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. A + B Problem" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Time Limit (ms)</label>
-                <input type="number" className="w-full border border-gray-300 rounded p-2" defaultValue="1000" />
-              </div>
-            </div>
+        {/* === 右侧：添加题目表单 (1/3) === */}
+        <div className="space-y-6">
+          <div className="bg-white shadow rounded-lg border border-gray-200 p-6 sticky top-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <PlusIcon className="w-5 h-5" />
+              Add Problem
+            </h2>
 
-            <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">Description (Markdown)</label>
-               <textarea className="w-full h-40 border border-gray-300 rounded p-2 font-mono text-sm" placeholder="# Problem Description..."></textarea>
-            </div>
+            <form action={addContestProblem} className="space-y-4">
+              <input type="hidden" name="contestId" value={contestId} />
 
-            <div className="grid grid-cols-2 gap-6">
               <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Test Input (.in)</label>
-                 <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Original Problem ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="problemId"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g. 1001"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  ID from the global Problem Bank.
+                </p>
               </div>
-              <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Test Output (.out)</label>
-                 <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-              </div>
-            </div>
 
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium">Add Problem</button>
-          </form>
-        ) : (
-          <div className="text-center py-10 border-2 border-dashed border-gray-300 rounded-lg">
-            <div className="text-4xl mb-4">📦</div>
-            <h3 className="text-lg font-medium text-gray-900">Upload FPS (XML) or ZIP</h3>
-            <p className="text-gray-500 text-sm mt-1 mb-6">Support Hydro / HUSTOJ format packages</p>
-            <input type="file" className="mx-auto block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    Display ID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="displayId"
+                    required
+                    defaultValue={nextDisplayId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">
+                    Balloon Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      name="color"
+                      defaultValue="#000000"
+                      className="h-10 w-full cursor-pointer rounded border border-gray-300"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 transition-colors shadow-sm mt-2"
+              >
+                Add to Contest
+              </button>
+            </form>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -71,6 +71,7 @@ model User {
   id       String @id @default(uuid())
   username String
   password String
+  plainPassword String?
 
   contestId Int
   contest   Contest @relation(fields: [contestId], references: [id])

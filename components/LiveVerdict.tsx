@@ -144,6 +144,8 @@ export default function LiveVerdict({
     displayText = `${VERDICT_CONFIG[Verdict.MEMORY_LIMIT_EXCEEDED].text} on test ${passed + 1}`;
   } else if (status === Verdict.PRESENTATION_ERROR) {
     displayText = `${VERDICT_CONFIG[Verdict.PRESENTATION_ERROR].text} on test ${passed + 1}`
+  } else if (status === Verdict.RUNTIME_ERROR) {
+    displayText = `${VERDICT_CONFIG[Verdict.RUNTIME_ERROR].text} on test ${passed + 1}`
   }
 
   return (

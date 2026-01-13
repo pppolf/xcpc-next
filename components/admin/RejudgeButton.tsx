@@ -33,7 +33,7 @@ export default function RejudgeButton({
     <button
       onClick={handleRejudge}
       disabled={isPending}
-      className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded hover:bg-blue-50 transition-colors"
+      className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
       title="ReJudge"
     >
       <ArrowPathIcon className={`w-5 h-5 ${isPending ? "animate-spin" : ""}`} />

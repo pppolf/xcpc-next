@@ -6,12 +6,12 @@ import { Verdict } from "@/lib/generated/prisma/enums";
 
 const GO_JUDGE_URL = process.env.GO_JUDGE_API || "http://localhost:5050";
 
-// 语言配置
+// --- 类型定义 ---
 interface LanguageConfig {
   srcName: string;
   exeName: string;
-  compileCmd?: string[]; // 编译命令 (Python/JS 不需要)
-  runCmd: string[]; // 运行命令
+  compileCmd?: string[];
+  runCmd: string[];
 }
 
 interface LanguageJudgeConfig {
@@ -22,8 +22,8 @@ interface LanguageJudgeConfig {
 }
 
 interface TestCaseConfig {
-  input: string; // e.g. "1.in"
-  output: string; // e.g. "1.out"
+  input: string;
+  output: string;
 }
 
 interface JudgeConfig {
@@ -34,7 +34,6 @@ interface JudgeConfig {
   memory_limit_rate?: LanguageJudgeConfig;
 }
 
-// 定义 Redis 中缓存的数据结构
 interface JudgeProgress {
   verdict: string;
   passedTests: number;
@@ -42,6 +41,7 @@ interface JudgeProgress {
   finished: boolean;
 }
 
+// --- 语言配置 ---
 const LANGUAGES: Record<string, LanguageConfig> = {
   c: {
     srcName: "main.c",
@@ -98,6 +98,8 @@ const LANGUAGES: Record<string, LanguageConfig> = {
   },
 };
 
+// --- 辅助函数 ---
+
 // 调用 go-judge 的 /run 接口
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function callGoJudge(payload: any) {
@@ -111,11 +113,15 @@ async function callGoJudge(payload: any) {
 }
 
 async function deleteTmpFile(id: string) {
-  const res = await fetch(`${GO_JUDGE_URL}/file/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error(`Judge Server Error: ${res.statusText}`);
-  return res;
+  try {
+    const res = await fetch(`${GO_JUDGE_URL}/file/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) console.warn(`Failed to delete file ${id}: ${res.statusText}`);
+    return res;
+  } catch (e) {
+    console.warn(`Failed to delete file ${id}`, e);
+  }
 }
 
 // 清理文本 (去除末尾空白) 用于比对
@@ -127,7 +133,6 @@ function cleanOutput(str: string) {
 // 辅助：更新进度到 Redis
 async function updateProgress(submissionId: string, data: JudgeProgress) {
   const key = `submission:${submissionId}:progress`;
-  // 存入 Redis，设置过期时间 (例如 1 小时后自动过期)
   await redis.set(key, JSON.stringify(data), "EX", 3600);
 }
 
@@ -151,7 +156,6 @@ async function compileChecker(dataDir: string, checkerName: string) {
     throw new Error("System Error: testlib.h not found on server.");
   }
 
-  // 使用 g++ 编译
   const compileRes = await callGoJudge({
     cmd: [
       {
@@ -161,7 +165,7 @@ async function compileChecker(dataDir: string, checkerName: string) {
           "-o",
           "checker",
           "-O2",
-          "-std=c++23", // testlib 通常需要较新标准
+          "-std=c++23",
         ],
         env: ["PATH=/usr/bin:/bin"],
         files: [
@@ -169,22 +173,79 @@ async function compileChecker(dataDir: string, checkerName: string) {
           { content: "", name: "stderr", max: 1000000 },
         ],
         cpuLimit: 10000000000,
-        memoryLimit: 512 * 1024 * 1024,
+        memoryLimit: 1024 * 1024 * 1024, // 1GB
         procLimit: 50,
         copyIn: {
           "checker.cpp": { content: checkerCode },
           "testlib.h": { content: testlibCode },
         },
-        copyOutCached: ["checker"], // 缓存编译好的 checker
+        copyOutCached: ["checker"],
       },
     ],
   });
 
   if (compileRes[0].status !== "Accepted") {
-    throw new Error(`Checker Compile Failed: ${compileRes}`);
+    throw new Error(`Checker Compile Failed: ${compileRes[0].files?.stderr}`);
   }
 
   return compileRes[0].fileIds["checker"];
+}
+
+// 编译 Interactor 交互文件
+async function compileInteractor(dataDir: string, interactorName: string) {
+  const interactorPath = path.join(dataDir, interactorName);
+
+  let interactorCode = "";
+  try {
+    interactorCode = await fs.readFile(interactorPath, "utf-8");
+  } catch (e) {
+    console.log(e);
+    throw new Error(`Interactor file not found: ${interactorName}`);
+  }
+
+  const testlibPath = path.join(process.cwd(), "lib", "judge", "testlib.h");
+  let testlibCode = "";
+  try {
+    testlibCode = await fs.readFile(testlibPath, "utf-8");
+  } catch (e) {
+    console.log(e);
+    throw new Error("System Error: testlib.h not found on server.");
+  }
+
+  const compileRes = await callGoJudge({
+    cmd: [
+      {
+        args: [
+          "/usr/bin/g++",
+          "interactor.cpp",
+          "-o",
+          "interactor",
+          "-O2",
+          "-std=c++23",
+        ],
+        env: ["PATH=/usr/bin:/bin"],
+        files: [
+          { content: "", name: "stdout", max: 1000000 },
+          { content: "", name: "stderr", max: 1000000 },
+        ],
+        cpuLimit: 10000000000,
+        memoryLimit: 1024 * 1024 * 1024,
+        procLimit: 50,
+        copyIn: {
+          "interactor.cpp": { content: interactorCode },
+          "testlib.h": { content: testlibCode },
+        },
+        copyOutCached: ["interactor"],
+      },
+    ],
+  });
+  if (compileRes[0].status !== "Accepted") {
+    throw new Error(
+      `Interactor Compile Failed: ${compileRes[0].files?.stderr}`
+    );
+  }
+
+  return compileRes[0].fileIds["interactor"];
 }
 
 // --- 核心判题逻辑 ---
@@ -225,12 +286,25 @@ export async function judgeSubmission(submissionId: string) {
     // 配对输入输出
     const testCases: { in: string; out: string }[] = [];
     for (const caseItem of judgeConfig.cases) {
-      const inputPath = path.join(dataDir, caseItem.input);
-      const outputPath = path.join(dataDir, caseItem.output);
       // 检查文件是否存在并读取
       try {
-        const inputContent = await fs.readFile(inputPath, "utf-8");
-        const outputContent = await fs.readFile(outputPath, "utf-8");
+        let inputContent = "";
+        // 1. 如果输入配置为 /dev/null，内容置空，不读文件
+        if (caseItem.input === "/dev/null") {
+          inputContent = "";
+        } else {
+          const inputPath = path.join(dataDir, caseItem.input);
+          inputContent = await fs.readFile(inputPath, "utf-8");
+        }
+
+        let outputContent = "";
+        // 2. 如果输出配置为 /dev/null，内容置空，不读文件
+        if (caseItem.output === "/dev/null") {
+          outputContent = "";
+        } else {
+          const outputPath = path.join(dataDir, caseItem.output);
+          outputContent = await fs.readFile(outputPath, "utf-8");
+        }
 
         testCases.push({
           in: inputContent,
@@ -241,11 +315,14 @@ export async function judgeSubmission(submissionId: string) {
           `Error reading test case files: ${caseItem.input} / ${caseItem.output}`,
           err
         );
-        throw new Error(`Missing data files for case: ${caseItem.input}`);
+        // 提供更友好的错误提示
+        throw new Error(
+          `Missing data files: ${caseItem.input} or ${caseItem.output}. Make sure they exist or use /dev/null.`
+        );
       }
     }
 
-    // 【修改点 1】初始化 Redis 状态
+    // 初始化 Redis 状态
     await updateProgress(submissionId, {
       verdict: Verdict.JUDGING,
       passedTests: 0,
@@ -253,51 +330,39 @@ export async function judgeSubmission(submissionId: string) {
       finished: false,
     });
 
-    // C. 编译阶段 (如果需要)
+    // 编译用户代码 (如果需要)
     let executableFileId = "";
-    let checkerFileId = "";
+
     if (langConfig.compileCmd) {
       const compileRes = await callGoJudge({
         cmd: [
           {
             args: langConfig.compileCmd,
             env: [
-              "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin", // 把 Java bin 路径加进去
+              "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin",
               "LANG=en_US.UTF-8",
               "LC_ALL=en_US.UTF-8",
-              "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64", // 显式设置 JAVA_HOME
+              "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64",
             ],
             files: [
-              {
-                content: "",
-              },
-              {
-                name: "stdout",
-                max: 1000000,
-              },
-              {
-                name: "stderr",
-                max: 1000000,
-              },
+              { content: "" },
+              { name: "stdout", max: 1000000 },
+              { name: "stderr", max: 1000000 },
             ],
-            cpuLimit: 10000000000, // 10s 编译时间
-            memoryLimit: 1024 * 1024 * 1024, // 1G 编译内存
+            cpuLimit: 10000000000,
+            memoryLimit: 1024 * 1024 * 1024,
             procLimit: 50,
             copyIn: {
-              [langConfig.srcName]: {
-                content: code,
-              },
+              [langConfig.srcName]: { content: code },
             },
             copyOut: ["stdout", "stderr"],
-            copyOutCached: [langConfig.exeName], // 缓存编译产物
+            copyOutCached: [langConfig.exeName],
           },
         ],
       });
 
-      // 检查编译结果
       const result = compileRes[0];
       if (result.status !== "Accepted") {
-        // 编译错误
         await prisma.submission.update({
           where: { id: submissionId },
           data: {
@@ -305,17 +370,24 @@ export async function judgeSubmission(submissionId: string) {
             errorMessage: result.files?.stderr || "Compilation Failed",
           },
         });
+        await updateProgress(submissionId, {
+          verdict: Verdict.COMPILE_ERROR,
+          passedTests: 0,
+          totalTests: testCases.length,
+          finished: true,
+        });
         return;
       }
-      // 获取缓存的可执行文件 ID
       if (result.fileIds && result.fileIds[langConfig.exeName]) {
         executableFileId = result.fileIds[langConfig.exeName];
-      } else {
-        // C++/C 编译后通常是生成文件，如果没有 fileIds 说明编译可能没生成目标文件
-        // 这里是一个简化的处理，实际可能需要更严谨的检查
       }
     }
+
+    // 编译辅助程序 (Checker / Interactor)
+    let checkerFileId = "";
+    let interactorFileId = "";
     const isSpj = problem.type === "spj";
+    const isInteractive = problem.type === "interactive";
 
     if (isSpj && judgeConfig.checker) {
       try {
@@ -329,154 +401,243 @@ export async function judgeSubmission(submissionId: string) {
         await redis.del(`submission:${submissionId}:progress`);
         return;
       }
+    } else if (isInteractive && judgeConfig.interactor) {
+      try {
+        interactorFileId = await compileInteractor(
+          dataDir,
+          judgeConfig.interactor
+        );
+      } catch (e) {
+        const err = e as Error;
+        await prisma.submission.update({
+          where: { id: submissionId },
+          data: { verdict: Verdict.SYSTEM_ERROR, errorMessage: err.message },
+        });
+        await redis.del(`submission:${submissionId}:progress`);
+        return;
+      }
     }
 
-    // D. 运行阶段 (并发跑所有测试点)
-    // 构造 go-judge 的请求数组
-    const time_limit_rate: Record<string, number> = {
-      c: judgeConfig.time_limit_rate?.c || 1,
-      cpp: judgeConfig.time_limit_rate?.cpp || 1,
-      java: judgeConfig.time_limit_rate?.java || 2,
-      pypy3: judgeConfig.time_limit_rate?.pypy3 || 1,
-    };
+    // D. 运行阶段
+    const time_limit_rate =
+      judgeConfig.time_limit_rate?.[language as keyof LanguageJudgeConfig] || 1;
+    const memory_limit_rate =
+      judgeConfig.memory_limit_rate?.[language as keyof LanguageJudgeConfig] ||
+      1;
 
-    const memory_limit_rate: Record<string, number> = {
-      c: judgeConfig.memory_limit_rate?.c || 1,
-      cpp: judgeConfig.memory_limit_rate?.cpp || 1,
-      java: judgeConfig.memory_limit_rate?.java || 2,
-      pypy3: judgeConfig.memory_limit_rate?.pypy3 || 1,
-    };
     let finalVerdict: Verdict = Verdict.ACCEPTED;
     let maxTime = 0;
     let maxMemory = 0;
     let error = "";
-    let idx = 0;
+    let passedCount = 0;
+
     for (let i = 0; i < testCases.length; i++) {
-      idx += 1;
       const testCase = testCases[i];
+      const timeLimit = problem.defaultTimeLimit * 1000000 * time_limit_rate;
+      const memoryLimit =
+        problem.defaultMemoryLimit * 1024 * 1024 * memory_limit_rate;
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cmdObj: any = {
-        args: langConfig.runCmd,
-        env: [
-          "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin",
-          "LANG=en_US.UTF-8",
-          "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64",
-        ],
-        files: [
-          { content: testCase.in }, // stdin
-          { name: "stdout", max: 1000000 }, // stdout
-          { name: "stderr", max: 1000000 }, // stderr
-        ],
-        cpuLimit:
-          problem.defaultTimeLimit * 1000000 * time_limit_rate[language], // ns (1ms = 1,000,000ns)
-        memoryLimit:
-          problem.defaultMemoryLimit *
-          1024 *
-          1024 *
-          memory_limit_rate[language], // byte
-        procLimit: 50,
-      };
+      let res: any;
 
-      if (executableFileId) {
-        cmdObj.copyIn = {
-          [langConfig.exeName]: { fileId: executableFileId },
-        };
+      if (isInteractive) {
+        // --- 交互题模式 ---
+        const runResults = await callGoJudge({
+          cmd: [
+            // Cmd 0: 用户程序
+            {
+              args: langConfig.runCmd,
+              env: [
+                "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin",
+                "LANG=en_US.UTF-8",
+                "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64",
+              ],
+              files: [null, null, { name: "stderr", max: 10485760 }],
+              cpuLimit: timeLimit,
+              memoryLimit: memoryLimit,
+              procLimit: 50,
+              copyIn: executableFileId
+                ? { [langConfig.exeName]: { fileId: executableFileId } }
+                : { [langConfig.srcName]: { content: code } },
+            },
+            // Cmd 1: 交互器
+            {
+              args: ["./interactor", "input.in", "output.xml"],
+              env: ["PATH=/usr/bin:/bin"],
+              files: [
+                null,
+                null,
+                { name: "stderr", max: 10485760 }, // stderr (交互结果)
+              ],
+              cpuLimit: 10000 * 1000000, // 10s
+              memoryLimit: 512 * 1024 * 1024,
+              procLimit: 50,
+              copyIn: {
+                interactor: { fileId: interactorFileId },
+                "input.in": { content: testCase.in },
+              },
+            },
+          ],
+          pipeMapping: [
+            // 用户(0) stdout -> 交互器(1) stdin
+            { in: { index: 0, fd: 1 }, out: { index: 1, fd: 0 } },
+            // 交互器(1) stdout -> 用户(0) stdin
+            { in: { index: 1, fd: 1 }, out: { index: 0, fd: 0 } },
+          ],
+        });
+
+        const userRes = runResults[0];
+        const interactorRes = runResults[1];
+        res = userRes; // 统计数据取用户的
+
+        // 判定逻辑
+        // 1. 优先检查硬性资源限制 (TLE / MLE)
+        // 这些是绝对的错误，优先级最高
+        if (userRes.status === "Time Limit Exceeded") {
+          if (res.time > timeLimit) {
+            finalVerdict = Verdict.TIME_LIMIT_EXCEEDED;
+          } else {
+            finalVerdict = Verdict.RUNTIME_ERROR;
+          }
+        } else if (userRes.status === "Memory Limit Exceeded") {
+          if (res.memory > memoryLimit) {
+            finalVerdict = Verdict.MEMORY_LIMIT_EXCEEDED;
+          } else {
+            finalVerdict = Verdict.RUNTIME_ERROR;
+          }
+        }
+        // 2. 其次检查交互器判定 (WA)
+        // 只要交互器认为不对 (ExitCode != 0)，哪怕用户程序后面 SIGPIPE 崩了，也算是 WA
+        else if (interactorRes.exitStatus !== 0) {
+          finalVerdict = Verdict.WRONG_ANSWER;
+          // 使用交互器的 stderr 作为错误信息，它通常包含 "Wrong answer..."
+          error = interactorRes.files?.stderr || "Interactive check failed";
+        }
+        // 3. 最后检查用户程序是否崩溃 (RE)
+        // 如果交互器都说 AC 了 (Exit 0)，但用户程序还是崩了 (非 SIGPIPE 的其他 RE)，那才是真 RE
+        else if (userRes.status !== "Accepted") {
+          finalVerdict = Verdict.RUNTIME_ERROR;
+          error = userRes.files?.stderr || "Runtime Error";
+        }
       } else {
-        cmdObj.copyIn = {
-          [langConfig.srcName]: { content: code },
+        // --- 普通/SPJ 模式 ---
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cmdObj: any = {
+          args: langConfig.runCmd,
+          env: [
+            "PATH=/usr/bin:/bin:/usr/lib/jvm/java-21-openjdk-amd64/bin",
+            "LANG=en_US.UTF-8",
+            "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64",
+          ],
+          files: [
+            { content: testCase.in },
+            { name: "stdout", max: 10485760 }, // 10MB
+            { name: "stderr", max: 10485760 },
+          ],
+          cpuLimit: timeLimit,
+          memoryLimit: memoryLimit,
+          procLimit: 50,
         };
+
+        if (executableFileId) {
+          cmdObj.copyIn = {
+            [langConfig.exeName]: { fileId: executableFileId },
+          };
+        } else {
+          cmdObj.copyIn = {
+            [langConfig.srcName]: { content: code },
+          };
+        }
+
+        const runResults = await callGoJudge({ cmd: [cmdObj] });
+        res = runResults[0];
+
+        // 判定逻辑
+        if (res.status !== "Accepted") {
+          if (res.status === "Time Limit Exceeded")
+            finalVerdict = Verdict.TIME_LIMIT_EXCEEDED;
+          else if (res.status === "Memory Limit Exceeded")
+            finalVerdict = Verdict.MEMORY_LIMIT_EXCEEDED;
+          else finalVerdict = Verdict.RUNTIME_ERROR;
+          error = res.files?.stderr || "";
+        } else {
+          // 运行成功，检查答案
+          const userOutput = res.files?.stdout || "";
+
+          if (isSpj) {
+            // SPJ 检查
+            const checkerRes = await callGoJudge({
+              cmd: [
+                {
+                  args: ["./checker", "input.in", "user.out", "answer.out"],
+                  env: ["PATH=/usr/bin:/bin"],
+                  files: [
+                    { content: "", name: "stdout", max: 10485760 },
+                    { content: "", name: "stderr", max: 10485760 },
+                  ],
+                  cpuLimit: 10000 * 1000000,
+                  memoryLimit: 512 * 1024 * 1024,
+                  procLimit: 50,
+                  copyIn: {
+                    checker: { fileId: checkerFileId },
+                    "input.in": { content: testCase.in },
+                    "user.out": { content: userOutput },
+                    "answer.out": { content: testCase.out },
+                  },
+                },
+              ],
+            });
+            const chkResult = checkerRes[0];
+            if (chkResult.exitStatus !== 0) {
+              finalVerdict = Verdict.WRONG_ANSWER;
+              // error = chkResult.files?.stderr || "SPJ Failed";
+            }
+          } else {
+            // 普通比对
+            const stdOutput = cleanOutput(testCase.out);
+            const myOutput = cleanOutput(userOutput);
+            if (myOutput !== stdOutput) {
+              finalVerdict = Verdict.WRONG_ANSWER;
+            }
+          }
+        }
       }
-
-      const runResults = await callGoJudge({ cmd: [cmdObj] });
-      const res = runResults[0]; // 拿到结果
-
-      // 统计时间和内存 (转为 ms 和 KB)
+      // 统计资源
       const timeMs = Math.floor(res.time / 1000000);
       const memoryKB = Math.floor(res.memory / 1024);
       maxTime = Math.max(maxTime, timeMs);
       maxMemory = Math.max(maxMemory, memoryKB);
-      // 系统/运行状态检查
-      if (res.status !== "Accepted") {
-        if (res.status === "Time Limit Exceeded") {
-          finalVerdict = Verdict.TIME_LIMIT_EXCEEDED;
-        } else if (res.status === "Memory Limit Exceeded") {
-          finalVerdict = Verdict.MEMORY_LIMIT_EXCEEDED;
-        } else {
-          finalVerdict = Verdict.RUNTIME_ERROR;
-        }
-        error = res.files?.stderr || "Unkown Error";
+
+      // 如果出错了，跳出循环
+      if (finalVerdict !== Verdict.ACCEPTED) {
+        // 更新这一点的状态（失败）
+        await updateProgress(submissionId, {
+          verdict: finalVerdict,
+          passedTests: i,
+          totalTests: testCases.length,
+          finished: false,
+        });
         break;
       }
 
-      // 答案比对
-      const userOutput = cleanOutput(res.files?.stdout || "");
-
-      // SPJ
-      if (isSpj) {
-        const checkerRes = await callGoJudge({
-          cmd: [
-            {
-              args: ["./checker", "input.in", "user.out", "answer.out"],
-              env: ["PATH=/usr/bin:/bin"],
-              files: [
-                { content: "", name: "stdout", max: 1000000 }, // Checker 的输出通常是 xml 或 text
-                { content: "", name: "stderr", max: 1000000 }, // Checker 的错误信息
-              ],
-              cpuLimit: 10000 * 1000000, // 给 Checker 充足时间 (e.g. 10s)
-              memoryLimit: 512 * 1024 * 1024,
-              procLimit: 50,
-              copyIn: {
-                checker: { fileId: checkerFileId }, // 挂载编译好的 checker
-                "input.in": { content: testCase.in },
-                "user.out": { content: userOutput },
-                "answer.out": { content: testCase.out },
-              },
-            },
-          ],
-        });
-        const chkResult = checkerRes[0];
-        if (chkResult.exitStatus === 0) {
-          // AC
-        } else {
-          // 非 0 为 WA (Testlib: 1=WA, 2=PE, 3=Fail)
-          finalVerdict = Verdict.WRONG_ANSWER;
-          // 可选：读取 checker 的 stderr 作为错误信息展示给用户或管理员
-          error = chkResult.files?.stderr || "SPJ check failed";
-          break;
-        }
-      } else {
-        const stdOutput = cleanOutput(testCase.out);
-        if (userOutput !== stdOutput) {
-          finalVerdict = Verdict.WRONG_ANSWER;
-          break;
-        }
-      }
-
+      passedCount++;
+      // 更新成功进度
       await updateProgress(submissionId, {
         verdict: Verdict.JUDGING,
         passedTests: i + 1,
         totalTests: testCases.length,
         finished: false,
       });
-
-      // await prisma.submission.update({
-      //   where: { id: submissionId },
-      //   data: {
-      //     passedTests: i + 1,
-      //     timeUsed: maxTime,
-      //     memoryUsed: maxMemory,
-      //   },
-      // });
-
-      // await delay(10000);
     }
+
+    // 最终更新
     await updateProgress(submissionId, {
       verdict: finalVerdict,
-      passedTests: idx - 1,
+      passedTests: passedCount,
       totalTests: testCases.length,
       finished: true,
     });
-    // F. 更新数据库
+
     await prisma.submission.update({
       where: { id: submissionId },
       data: {
@@ -484,25 +645,23 @@ export async function judgeSubmission(submissionId: string) {
         timeUsed: maxTime,
         memoryUsed: maxMemory,
         errorMessage: error,
-        passedTests: idx - 1,
+        passedTests: passedCount,
         totalTests: testCases.length,
       },
     });
 
-    // 删除编译文件
-    if (executableFileId) {
-      deleteTmpFile(executableFileId);
-    }
-    if (checkerFileId) {
-      deleteTmpFile(checkerFileId);
-    }
+    // 清理文件
+    if (executableFileId) deleteTmpFile(executableFileId);
+    if (checkerFileId) deleteTmpFile(checkerFileId);
+    if (interactorFileId) deleteTmpFile(interactorFileId);
   } catch (error) {
     console.error("Judge Error:", error);
+    const err = error as Error;
     await prisma.submission.update({
       where: { id: submissionId },
       data: {
         verdict: Verdict.SYSTEM_ERROR,
-        errorMessage: error || "Unknown System Error",
+        errorMessage: err.message || "Unknown System Error",
       },
     });
     await redis.del(`submission:${submissionId}:progress`);

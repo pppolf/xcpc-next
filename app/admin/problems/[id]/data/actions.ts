@@ -50,6 +50,8 @@ async function autoDetectCases(dir: string, currentYamlContent: string) {
     const output = `${basename}.out`;
     if (files.includes(output)) {
       detectedCases.push({ input: input, output: output });
+    } else {
+      detectedCases.push({ input: input, output: "/dev/null" });
     }
   }
 

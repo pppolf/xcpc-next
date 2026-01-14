@@ -68,9 +68,9 @@ model GlobalUser {
 
 // 比赛用户 (User)
 model User {
-  id       String @id @default(uuid())
-  username String
-  password String
+  id            String  @id @default(uuid())
+  username      String
+  password      String
   plainPassword String?
 
   contestId Int
@@ -182,7 +182,7 @@ model ContestProblem {
 model Submission {
   id String @id @default(uuid())
 
-  displayId Int // 比赛内的 Run ID (由 Redis 生成)
+  displayId Int @default(0) // 比赛内的 Run ID (由 Redis 生成)
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id])

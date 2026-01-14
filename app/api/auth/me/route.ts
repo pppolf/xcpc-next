@@ -4,16 +4,26 @@ import jwt from "jsonwebtoken";
 
 export async function GET() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("auth_token");
+  const auth_token = cookieStore.get("auth_token");
+  const user_token = cookieStore.get("user_token");
 
-  if (!token) {
+  if (!auth_token && !user_token) {
     return NextResponse.json({ user: null });
-  }
-
-  try {
-    const decoded = jwt.verify(token.value, process.env.JWT_SECRET!);
-    return NextResponse.json({ user: decoded });
-  } catch (e) {
-    return NextResponse.json({ user: null, message: e });
+  } else {
+    if (auth_token) {
+      try {
+        const decoded = jwt.verify(auth_token.value, process.env.JWT_SECRET!);
+        return NextResponse.json({ user: decoded });
+      } catch (e) {
+        return NextResponse.json({ user: null, message: e });
+      }
+    } else if (user_token) {
+      try {
+        const decoded = jwt.verify(user_token.value, process.env.JWT_SECRET!);
+        return NextResponse.json({ user: decoded });
+      } catch (e) {
+        return NextResponse.json({ user: null, message: e });
+      }
+    }
   }
 }

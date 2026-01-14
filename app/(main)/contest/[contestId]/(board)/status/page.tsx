@@ -1,107 +1,239 @@
-import { getContestData } from "@/lib/data";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
-import VerdictBadge from "@/components/VerdictBadge";
+import {
+  ContestRole,
+  ContestStatus,
+  Verdict,
+} from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/lib/generated/prisma/client";
+import VerdictCell from "@/components/VerdictCell";
+import StatusControls from "./StatusControls";
+import SearchAndFilter from "./SearchAndFilter";
+import { verifyAuth } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 interface Props {
-  searchParams: {
-    page?: number;
-  };
-  params: {
+  searchParams: Promise<{
+    page?: string;
+    userId?: string;
+    problem?: string;
+    language?: string;
+    verdict?: Verdict;
+    userSearch?: string;
+    viewAll?: string;
+  }>;
+  params: Promise<{
     contestId: string;
-  };
+  }>;
 }
-
-// const renderStatus = (status: string) => {
-//   if (status === "Compilation Error")
-//     return (
-//       <a href="#" className="text-blue-500 hover:underline ">
-//         Compilation Error
-//       </a>
-//     );
-//   if (status === "Accepted")
-//     return <span className="text-green-500 ">Accepted</span>;
-//   return <span className="text-red-500">{status}</span>;
-// };
-
-const submissions = Array.from({ length: 500 }).map((_, i) => ({
-  id: 1 + i,
-  time: "2025-03-14 15:01:17",
-  pid: String.fromCharCode(65 + (i % 10)),
-  execTime: 281 + i,
-  execMemory: 3492 + i,
-  language: "C++",
-  status: i % 3 === 0 ? "ACCEPTED" : "WRONG_ANSWER",
-}));
 
 export default async function Status({ params, searchParams }: Props) {
   const { contestId } = await params;
-  const { page } = await searchParams;
+  const {
+    page = "1",
+    userId,
+    problem,
+    language,
+    verdict,
+    userSearch,
+    viewAll = "false",
+  } = await searchParams;
 
-  const contestInfo = await getContestData(contestId);
+  const currentPage = parseInt(page as string) || 1;
+  const pageSize = 15;
+  const cid = parseInt(contestId);
 
-  const currentPage = page || 1;
-  const pageSize = 15; // Status 通常一页显示多一点
+  // 1. 获取比赛信息
+  const contestInfo = await prisma.contest.findUnique({
+    where: { id: cid },
+    select: {
+      status: true,
+    },
+  });
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const submission = submissions.slice(startIndex, startIndex + pageSize);
+  if (!contestInfo) {
+    return (
+      <div className="text-center py-10 text-gray-500">Contest not found.</div>
+    );
+  }
 
-  // const submission = [
-  //   {
-  //     id: 1,
-  //     time: "2025-03-14 15:01:17",
-  //     pid: "A",
-  //     execTime: 281,
-  //     execMemory: 3492,
-  //     language: "C++",
-  //     status: "Wrong Answer",
-  //   },
-  //   {
-  //     id: 2,
-  //     time: "2025-03-14 15:02:17",
-  //     pid: "E",
-  //     execTime: 281,
-  //     execMemory: 3492,
-  //     language: "C++",
-  //     status: "Accepted",
-  //   },
-  //   {
-  //     id: 3,
-  //     time: "2025-03-14 15:11:17",
-  //     pid: "B",
-  //     execTime: 281,
-  //     execMemory: 3492,
-  //     language: "C",
-  //     status: "Compilation Error",
-  //   },
-  //   {
-  //     id: 4,
-  //     time: "2025-03-14 15:31:17",
-  //     pid: "D",
-  //     execTime: 281,
-  //     execMemory: 3492,
-  //     language: "PyPy3",
-  //     status: "Time Limit Exceeded",
-  //   },
-  //   {
-  //     id: 5,
-  //     time: "2025-03-14 15:41:17",
-  //     pid: "C",
-  //     execTime: 281,
-  //     execMemory: 3492,
-  //     language: "Java",
-  //     status: "Accepted",
-  //   },
-  // ];
+  // 2. 获取当前用户信息
+  const cookieStore = await cookies();
+  const token = cookieStore.get("user_token")?.value;
+  const payload = token ? await verifyAuth(token) : null;
+
+  // 3. 获取当前用户在比赛中的角色
+  let currentUser = null;
+  if (payload?.userId) {
+    currentUser = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        role: true,
+        contestId: true,
+      },
+    });
+  }
+
+  // 4. 权限校验逻辑
+  const isAdmin =
+    currentUser &&
+    currentUser.contestId === cid &&
+    (currentUser.role === ContestRole.ADMIN ||
+      currentUser.role === ContestRole.JUDGE);
+
+  const isContestEnded = contestInfo.status === ContestStatus.ENDED;
+  const canViewAll = isContestEnded || isAdmin || false;
+  const canSearch = isContestEnded || isAdmin || false;
+
+  // 用户选择查看所有提交且有权限
+  const userWantsViewAll = viewAll === "true";
+  const shouldViewAll = userWantsViewAll && canViewAll;
+
+  const finalUserId = shouldViewAll ? userId : currentUser?.id;
+
+  // 构建查询条件
+  const where: Prisma.SubmissionWhereInput = {
+    contestId: cid,
+  };
+
+  if (finalUserId) {
+    where.userId = finalUserId;
+  }
+
+  // 问题筛选
+  if (problem) {
+    const contestProblem = await prisma.contestProblem.findFirst({
+      where: {
+        contestId: cid,
+        displayId: problem,
+      },
+    });
+    if (contestProblem) {
+      where.problemId = contestProblem.problemId;
+    }
+  }
+
+  // 语言筛选
+  if (language) {
+    where.language = language;
+  }
+
+  // 判题结果筛选
+  if (verdict) {
+    where.verdict = verdict;
+  }
+
+  // 用户搜索（模糊匹配用户名或displayName）
+  if (userSearch && canSearch) {
+    where.user = {
+      OR: [
+        {
+          username: {
+            contains: userSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          displayName: {
+            contains: userSearch,
+            mode: "insensitive",
+          },
+        },
+      ],
+    };
+  }
+
+  const [totalCount, submissions, allProblems, allLanguages, allVerdicts] =
+    await Promise.all([
+      prisma.submission.count({ where }),
+      prisma.submission.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+            },
+          },
+          problem: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+        orderBy: {
+          submittedAt: "desc",
+        },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+      }),
+      // 获取所有问题用于筛选
+      prisma.contestProblem.findMany({
+        where: { contestId: cid },
+        select: {
+          displayId: true,
+          problemId: true,
+        },
+      }),
+      // 获取所有语言
+      prisma.submission
+        .findMany({
+          where: { contestId: cid },
+          select: { language: true },
+          distinct: ["language"],
+        })
+        .then((results) => results.map((r) => r.language)),
+      // 获取所有判题结果
+      prisma.submission
+        .findMany({
+          where: { contestId: cid },
+          select: { verdict: true },
+          distinct: ["verdict"],
+        })
+        .then((results) => results.map((r) => r.verdict)),
+    ]);
+
+  const problemIdMap = new Map(
+    allProblems.map((cp) => [cp.problemId, cp.displayId])
+  );
+
+  const statusLabel =
+    !shouldViewAll && currentUser
+      ? "(Your Submissions)"
+      : isContestEnded
+      ? "(Contest Ended - All Submissions Visible)"
+      : "";
 
   return (
-    <div className="bg-white min-w-6xl shadow-sm border border-gray-100 rounded-sm p-6">
-      <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6 pl-2">
-        Status
-      </h2>
-      {contestInfo.status === "Pending" ? (
+    <div className="bg-white min-w-7xl max-w-7xl shadow-sm border border-gray-100 rounded-sm p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-serif font-bold text-gray-800">
+          Status <span className="text-sm text-gray-500">{statusLabel}</span>
+        </h2>
+        <div className="flex items-center gap-4">
+          <SearchAndFilter
+            canSearch={canSearch}
+            problems={allProblems}
+            languages={allLanguages}
+            verdicts={allVerdicts}
+          />
+          {currentUser && <StatusControls canViewAll={canViewAll} />}
+        </div>
+      </div>
+
+      {contestInfo.status === ContestStatus.PENDING ? (
         <div className="text-center py-10 text-gray-500">
           The contest has not started yet.
+        </div>
+      ) : submissions.length === 0 ? (
+        <div className="text-center py-10 text-gray-500">
+          {shouldViewAll
+            ? "No submissions yet."
+            : "You have no submissions yet."}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -115,7 +247,10 @@ export default async function Status({ params, searchParams }: Props) {
                   Submit Time
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Problem ID
+                  User
+                </th>
+                <th scope="col" className="px-6 py-2">
+                  Problem
                 </th>
                 <th scope="col" className="px-6 py-2">
                   Time
@@ -132,43 +267,65 @@ export default async function Status({ params, searchParams }: Props) {
               </tr>
             </thead>
             <tbody>
-              {submission.map((prob) => (
-                <tr
-                  key={prob.id}
-                  className="odd:bg-white even:bg-[#e7f3ff] border-b border-gray-100 hover:bg-blue-50 transition-colors h-10 text-[18px] text-center font-[Menlo] text-gray-700"
-                >
-                  <td className="px-6 py-2">{prob.id}</td>
-                  <td className="px-6 py-2">{prob.time}</td>
-                  <td className="px-6 py-2 text-gray-900">
-                    <Link
-                      href={`/contest/${contestId}/problems/${prob.pid}`}
-                      className="text-blue-500 hover:underline hover:text-blue-800"
-                    >
-                      {prob.pid}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-2">{prob.execTime} MS</td>
-                  <td className="px-6 py-2">{prob.execMemory} K</td>
-                  <td className="px-6 py-2">
-                    <a
-                      href="#"
-                      className="text-blue-500 hover:underline hover:text-blue-800"
-                    >
-                      {prob.language}
-                    </a>
-                  </td>
-                  <td className="px-6 py-2">
-                    <VerdictBadge status={prob.status} />
-                  </td>
-                </tr>
-              ))}
+              {submissions.map((submission) => {
+                const problemDisplayId =
+                  problemIdMap.get(submission.problemId) || "?";
+                const submitTime = new Date(
+                  submission.submittedAt
+                ).toLocaleString("zh-CN");
+
+                return (
+                  <tr
+                    key={submission.id}
+                    className="odd:bg-white even:bg-[#e7f3ff] border-b border-gray-100 hover:bg-blue-50 transition-colors h-10 text-[18px] text-center font-[Menlo] text-gray-700"
+                  >
+                    <td className="px-6 py-2">{submission.displayId}</td>
+                    <td className="px-6 py-2 text-sm">{submitTime}</td>
+                    <td className="px-6 py-2 text-gray-900">
+                      {submission.user?.displayName ||
+                        submission.user?.username ||
+                        "Unknown"}
+                    </td>
+                    <td className="px-6 py-2 text-gray-900">
+                      <Link
+                        href={`/contest/${contestId}/problems/${problemDisplayId}`}
+                        className="text-blue-500 hover:underline hover:text-blue-800"
+                      >
+                        {problemDisplayId}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-2">
+                      {submission.timeUsed !== null
+                        ? `${submission.timeUsed} ms`
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-2">
+                      {submission.memoryUsed !== null
+                        ? `${submission.memoryUsed} KB`
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-2">
+                      <Link
+                        href={`/contest/${contestId}/status/${submission.displayId}`}
+                        className="text-blue-500 hover:underline hover:text-blue-800"
+                      >
+                        {submission.language}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-2">
+                      <VerdictCell submission={submission} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
-      {/* 分页组件放在左下角 */}
+
+      {/* 分页组件 */}
       <div className="mt-6">
-        <Pagination totalItems={submissions.length} pageSize={pageSize} />
+        <Pagination totalItems={totalCount} pageSize={pageSize} />
       </div>
     </div>
   );

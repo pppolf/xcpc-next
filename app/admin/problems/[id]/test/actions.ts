@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { verifyAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-// import { judgeSubmission } from "@/lib/judge";
 import { Verdict } from "@/lib/generated/prisma/enums";
 import { judgeQueue } from "@/lib/queue";
 
@@ -37,13 +36,6 @@ export async function adminSubmit(
       verdict: Verdict.PENDING, // 待评测
     },
   });
-
-  // TODO: 这里应该调用判题机 (RabbitMQ / HTTP)
-  // try {
-  //   judgeSubmission(submission.id);
-  // } catch (e) {
-  //   console.log(e);
-  // }
   await judgeQueue.add('judge', { 
     submissionId: submission.id 
   });

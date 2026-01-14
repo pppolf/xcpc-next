@@ -1,7 +1,8 @@
-import { jwtVerify } from "jose";
+import { jwtVerify, SignJWT } from "jose";
+import { cookies } from "next/headers";
 
 // 定义 Token 中包含的数据类型，与你在登录接口生成的保持一致
-interface UserJwtPayload {
+export interface UserJwtPayload {
   userId: string;
   username: string;
   role: string;
@@ -20,6 +21,16 @@ export const getJwtSecretKey = () => {
   return new TextEncoder().encode(secret);
 };
 
+export async function signAuth(payload: Omit<UserJwtPayload, "iat" | "exp">) {
+  const secret = getJwtSecretKey();
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("24h") // Token 有效期
+    .sign(secret);
+  return token;
+}
+
 export async function verifyAuth(token: string): Promise<UserJwtPayload> {
   try {
     const verified = await jwtVerify(token, getJwtSecretKey());
@@ -27,5 +38,35 @@ export async function verifyAuth(token: string): Promise<UserJwtPayload> {
   } catch (error) {
     console.log(error);
     throw new Error("Your token has expired or is invalid.");
+  }
+}
+
+export async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("user_token")?.value;
+
+  if (!token) return null;
+
+  try {
+    const payload = await verifyAuth(token);
+    return payload;
+  } catch (error) {
+    console.log(error);
+    return new Error("Your token has expired or is invalid.");
+  }
+}
+
+export async function getCurrentSuper() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth_token")?.value;
+
+  if (!token) return null;
+
+  try {
+    const payload = await verifyAuth(token);
+    return payload;
+  } catch (error) {
+    console.log(error);
+    return new Error("Your token has expired or is invalid.");
   }
 }

@@ -10,5 +10,17 @@ export async function POST() {
     path: "/",
   });
 
-  return NextResponse.json({ success: true }, { headers: { "Set-Cookie": serializedCookie } });
+  const serializedCookieUser = serialize("user_token", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: -1, // 立即过期
+    path: "/",
+  });
+
+  const response = NextResponse.json({ success: true });
+  response.headers.append("Set-Cookie", serializedCookie);
+  response.headers.append("Set-Cookie", serializedCookieUser);
+  
+  return response;
 }

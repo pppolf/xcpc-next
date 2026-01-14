@@ -80,7 +80,7 @@ export default async function Rank({ params, searchParams }: Props) {
   };
 
   return (
-    <div className="bg-white min-w-6xl shadow-sm border border-gray-100 rounded-sm p-6">
+    <div className="bg-white min-w-7xl max-w-7xl shadow-sm border border-gray-100 rounded-sm p-6">
       <div className="flex justify-between items-center border-b mb-2 pb-4">
         <h2 className="text-2xl font-serif font-bold text-gray-800 pl-2 ">
           Rank

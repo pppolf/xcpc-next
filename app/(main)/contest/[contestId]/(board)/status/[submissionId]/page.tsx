@@ -1,0 +1,190 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { verifyAuth } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { ContestRole, ContestStatus } from "@/lib/generated/prisma/client";
+import VerdictBadge from "@/components/VerdictBadge";
+import Link from "next/link";
+import CodeViewer from "./CodeViewer";
+
+interface Props {
+  params: Promise<{
+    contestId: string;
+    submissionId: string;
+  }>;
+}
+
+export default async function SubmissionDetail({ params }: Props) {
+  const { contestId, submissionId } = await params;
+  const cid = parseInt(contestId);
+
+  // 1. 获取比赛和提交信息
+  const [contestInfo, submission] = await Promise.all([
+    prisma.contest.findUnique({
+      where: { id: cid },
+      select: { status: true },
+    }),
+    prisma.submission.findFirst({
+      where: {
+        contestId: cid,
+        displayId: parseInt(submissionId),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+          },
+        },
+        problem: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  if (!contestInfo || !submission) return notFound();
+
+  // 2. 获取当前用户信息
+  const cookieStore = await cookies();
+  const token = cookieStore.get("user_token")?.value;
+  const payload = token ? await verifyAuth(token) : null;
+
+  // 3. 权限校验逻辑
+  const isContestEnded = contestInfo.status === ContestStatus.ENDED;
+
+  if (payload?.userId) {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        role: true,
+        contestId: true,
+      },
+    });
+
+    // 检查是否为当前比赛的用户
+    if (!currentUser || currentUser.contestId !== cid) {
+      return notFound();
+    }
+
+    // 检查权限逻辑：
+    // 1. 提交者总能看自己的
+    // 2. 管理员/评委总能看所有的
+    // 3. 普通用户只能在比赛结束后看其他人的
+    const isOwner = submission?.user?.id === currentUser.id;
+    const isAdmin =
+      currentUser.role === ContestRole.ADMIN ||
+      currentUser.role === ContestRole.JUDGE;
+
+    const hasPermission = isOwner || isAdmin || (isContestEnded && !isOwner);
+
+    if (!hasPermission) {
+      return notFound();
+    }
+  } else {
+    // 未登录用户：只能在比赛结束后查看
+    if (!isContestEnded) {
+      return notFound();
+    }
+  }
+
+  const contestProblem = await prisma.contestProblem.findFirst({
+    where: {
+      contestId: cid,
+      problemId: submission.problemId,
+    },
+    select: {
+      displayId: true,
+    },
+  });
+
+  const submitTime = new Date(submission.submittedAt).toLocaleString("zh-CN");
+
+  return (
+    <div className="bg-white min-w-7xl max-w-7xl shadow-sm border border-gray-100 rounded-sm p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-serif font-bold text-gray-800">
+          Submission #{submission.displayId}
+        </h2>
+        <Link
+          href={`/contest/${contestId}/status`}
+          className="text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          ← Back to Status
+        </Link>
+      </div>
+
+      {/* 提交信息卡片 */}
+      <div className="bg-gray-50 border border-gray-200 rounded-sm p-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="font-bold text-gray-600">User:</span>
+            <p className="text-gray-900">
+              {submission.user?.displayName || submission.user?.username}
+            </p>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Problem:</span>
+            <p className="text-gray-900">
+              <Link
+                href={`/contest/${contestId}/problems/${contestProblem?.displayId}`}
+                className="text-blue-600 hover:underline"
+              >
+                {contestProblem?.displayId} - {submission.problem.title}
+              </Link>
+            </p>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Language:</span>
+            <p className="text-gray-900">{submission.language}</p>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Submit Time:</span>
+            <p className="text-gray-900">{submitTime}</p>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Verdict:</span>
+            <div className="mt-1">
+              <VerdictBadge status={submission.verdict} />
+            </div>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Time:</span>
+            <p className="text-gray-900">
+              {submission.timeUsed !== null ? `${submission.timeUsed} ms` : "-"}
+            </p>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Memory:</span>
+            <p className="text-gray-900">
+              {submission.memoryUsed !== null
+                ? `${submission.memoryUsed} KB`
+                : "-"}
+            </p>
+          </div>
+          <div>
+            <span className="font-bold text-gray-600">Code Length:</span>
+            <p className="text-gray-900">{submission.codeLength} bytes</p>
+          </div>
+        </div>
+
+        {submission.errorMessage && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-sm">
+            <span className="font-bold text-red-600">Error Message:</span>
+            <pre className="mt-2 text-sm text-red-700 whitespace-pre-wrap">
+              {submission.errorMessage}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      {/* 代码展示 */}
+      <CodeViewer code={submission.code} language={submission.language} />
+    </div>
+  );
+}

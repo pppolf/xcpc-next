@@ -42,11 +42,11 @@ export default function VerdictCell({ submission }: VerdictCellProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="group relative flex items-center gap-1 text-yellow-600 hover:text-yellow-800 transition-colors cursor-pointer"
+        className="inline-flex group relative items-center gap-1.5 text-yellow-600 hover:text-yellow-800 transition-colors cursor-pointer"
         title="Click to view error details"
       >
         <ExclamationTriangleIcon className="w-4 h-4" />
-        <span className="font-bold border-b border-dashed border-yellow-600 group-hover:border-yellow-800">
+        <span className="text-sm whitespace-nowrap font-bold border-b border-dashed border-yellow-600 group-hover:border-yellow-800 text-center">
           Compile Error
         </span>
       </button>
@@ -62,7 +62,7 @@ export default function VerdictCell({ submission }: VerdictCellProps) {
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 cursor-pointer hover:text-gray-600"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -73,7 +73,7 @@ export default function VerdictCell({ submission }: VerdictCellProps) {
             <div className="px-6 py-3 border-t bg-gray-50 rounded-b-lg flex justify-end">
               <button
                 onClick={() => setIsOpen(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium text-sm"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded cursor-pointer hover:bg-gray-300 font-medium text-sm"
               >
                 Close
               </button>

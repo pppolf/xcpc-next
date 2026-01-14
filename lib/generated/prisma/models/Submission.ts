@@ -435,7 +435,7 @@ export type SubmissionScalarWhereWithAggregatesInput = {
 
 export type SubmissionCreateInput = {
   id?: string
-  displayId: number
+  displayId?: number
   language: string
   code: string
   codeLength: number
@@ -454,7 +454,7 @@ export type SubmissionCreateInput = {
 
 export type SubmissionUncheckedCreateInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   globalUserId?: string | null
   contestId?: number | null
@@ -511,7 +511,7 @@ export type SubmissionUncheckedUpdateInput = {
 
 export type SubmissionCreateManyInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   globalUserId?: string | null
   contestId?: number | null
@@ -825,7 +825,7 @@ export type EnumVerdictFieldUpdateOperationsInput = {
 
 export type SubmissionCreateWithoutGlobalUserInput = {
   id?: string
-  displayId: number
+  displayId?: number
   language: string
   code: string
   codeLength: number
@@ -843,7 +843,7 @@ export type SubmissionCreateWithoutGlobalUserInput = {
 
 export type SubmissionUncheckedCreateWithoutGlobalUserInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   contestId?: number | null
   problemId: number
@@ -909,7 +909,7 @@ export type SubmissionScalarWhereInput = {
 
 export type SubmissionCreateWithoutUserInput = {
   id?: string
-  displayId: number
+  displayId?: number
   language: string
   code: string
   codeLength: number
@@ -927,7 +927,7 @@ export type SubmissionCreateWithoutUserInput = {
 
 export type SubmissionUncheckedCreateWithoutUserInput = {
   id?: string
-  displayId: number
+  displayId?: number
   globalUserId?: string | null
   contestId?: number | null
   problemId: number
@@ -971,7 +971,7 @@ export type SubmissionUpdateManyWithWhereWithoutUserInput = {
 
 export type SubmissionCreateWithoutContestInput = {
   id?: string
-  displayId: number
+  displayId?: number
   language: string
   code: string
   codeLength: number
@@ -989,7 +989,7 @@ export type SubmissionCreateWithoutContestInput = {
 
 export type SubmissionUncheckedCreateWithoutContestInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   globalUserId?: string | null
   problemId: number
@@ -1033,7 +1033,7 @@ export type SubmissionUpdateManyWithWhereWithoutContestInput = {
 
 export type SubmissionCreateWithoutProblemInput = {
   id?: string
-  displayId: number
+  displayId?: number
   language: string
   code: string
   codeLength: number
@@ -1051,7 +1051,7 @@ export type SubmissionCreateWithoutProblemInput = {
 
 export type SubmissionUncheckedCreateWithoutProblemInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   globalUserId?: string | null
   contestId?: number | null
@@ -1095,7 +1095,7 @@ export type SubmissionUpdateManyWithWhereWithoutProblemInput = {
 
 export type SubmissionCreateManyGlobalUserInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   contestId?: number | null
   problemId: number
@@ -1167,7 +1167,7 @@ export type SubmissionUncheckedUpdateManyWithoutGlobalUserInput = {
 
 export type SubmissionCreateManyUserInput = {
   id?: string
-  displayId: number
+  displayId?: number
   globalUserId?: string | null
   contestId?: number | null
   problemId: number
@@ -1239,7 +1239,7 @@ export type SubmissionUncheckedUpdateManyWithoutUserInput = {
 
 export type SubmissionCreateManyContestInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   globalUserId?: string | null
   problemId: number
@@ -1311,7 +1311,7 @@ export type SubmissionUncheckedUpdateManyWithoutContestInput = {
 
 export type SubmissionCreateManyProblemInput = {
   id?: string
-  displayId: number
+  displayId?: number
   userId?: string | null
   globalUserId?: string | null
   contestId?: number | null

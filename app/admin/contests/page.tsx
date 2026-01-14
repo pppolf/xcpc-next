@@ -6,6 +6,7 @@ import {
   UserGroupIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import { ContestStatus, ContestType } from "@/lib/generated/prisma/enums";
 
 export default async function AdminContestsPage({
   searchParams,
@@ -56,9 +57,9 @@ export default async function AdminContestsPage({
 
                 // 计算状态颜色
                 let statusColor = "bg-gray-100 text-gray-800";
-                if (contest.status === "RUNNING")
+                if (contest.status === ContestStatus.RUNNING)
                   statusColor = "bg-green-100 text-green-800";
-                if (contest.status === "ENDED")
+                if (contest.status === ContestStatus.ENDED)
                   statusColor = "bg-red-100 text-red-800";
 
                 return (
@@ -79,7 +80,7 @@ export default async function AdminContestsPage({
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-0.5 rounded text-xs border ${
-                          contest.type === "PUBLIC"
+                          contest.type === ContestType.PUBLIC
                             ? "border-blue-200 bg-blue-50 text-blue-700"
                             : "border-yellow-200 bg-yellow-50 text-yellow-700"
                         }`}

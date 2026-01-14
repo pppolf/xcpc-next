@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
 
 interface User {
@@ -19,6 +20,7 @@ interface AuthContextType {
   user: User | null;
   login: (userData: User) => void;
   logout: () => void;
+  revalidate: () => Promise<void>;
   loading: boolean;
 }
 
@@ -28,26 +30,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 获取当前用户信息
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+      setUser(null);
+    }
+  }, []);
+
   // 初始化时检查 Cookie (调用 /api/auth/me)
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) setUser(data.user);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    let isMounted = true;
+
+    (async () => {
+      await fetchUser();
+      if (isMounted) {
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchUser]); // 只在组件挂载时运行一次
 
   const login = (userData: User) => setUser(userData);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
-    window.location.href = "/"; // 登出后强制刷新或跳转
+    window.location.href = "/";
   };
 
+  // 重新验证用户信息
+  const revalidate = useCallback(async () => {
+    await fetchUser();
+  }, [fetchUser]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, revalidate, loading }}>
       {children}
     </AuthContext.Provider>
   );

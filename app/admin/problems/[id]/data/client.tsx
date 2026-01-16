@@ -213,7 +213,7 @@ export default function DataManagementClient({
                 <thead className="text-xs text-gray-500 bg-gray-50 sticky top-0">
                   <tr>
                     <th className="px-6 py-3">Filename</th>
-                    <th className="px-6 py-3 w-24">Size</th>
+                    <th className="px-6 py-3 w-48">Size</th>
                     <th className="px-6 py-3 w-24 text-center">Action</th>
                   </tr>
                 </thead>

@@ -1,10 +1,10 @@
 "use server";
 
-import { prisma } from "@/lib/prisma"; // 确保你导出了全局 prisma 实例
+import { Verdict } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
+import { judgeQueue } from "@/lib/queue";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { writeFile, mkdir, rm } from "fs/promises";
-import path from "path";
 
 // 定义题目数据的类型接口
 export interface ProblemFormData {
@@ -62,44 +62,17 @@ export async function saveProblem(formData: FormData) {
     hint: formData.get("hint") as string,
   };
 
-  let problem;
-
   if (id) {
     // 更新
-    problem = await prisma.problem.update({
+    await prisma.problem.update({
       where: { id },
       data,
     });
   } else {
     // 创建
-    problem = await prisma.problem.create({
+    await prisma.problem.create({
       data,
     });
-  }
-
-  // 2. 处理测试数据文件上传 (如果有)
-  const file = formData.get("testData") as File | null;
-  if (file && file.size > 0) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const uploadDir = path.join(
-      process.cwd(),
-      "uploads",
-      "problems",
-      problem.id.toString(),
-      "data"
-    );
-
-    // 清空并重新创建目录
-    await rm(uploadDir, { recursive: true, force: true });
-    await mkdir(uploadDir, { recursive: true });
-
-    // 保存 zip 文件
-    const zipPath = path.join(uploadDir, "data.zip");
-    await writeFile(zipPath, buffer);
-
-    // TODO: 这里可以调用解压函数、读取 YAML、更新 judgeConfig
-    // 为了演示简洁，这里暂时只保存文件，实际开发需接入 unzip 逻辑
-    console.log(`Saved test data to ${zipPath}`);
   }
 
   revalidatePath("/admin/problems");
@@ -109,5 +82,49 @@ export async function saveProblem(formData: FormData) {
 // 删除题目
 export async function deleteProblem(id: number) {
   await prisma.problem.delete({ where: { id } });
+  revalidatePath("/admin/problems");
+}
+
+// 重测整题
+export async function rejudgeProblem(problemId: number) {
+  // 1. 获取该题目下所有非 PENDING/JUDGING 的提交
+  const submissions = await prisma.submission.findMany({
+    where: {
+      problemId: problemId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const submissionIds = submissions.map((s) => s.id);
+
+  if (submissionIds.length === 0) {
+    return;
+  }
+
+  // 2. 批量将状态重置为 PENDING
+  await prisma.submission.updateMany({
+    where: {
+      id: { in: submissionIds },
+    },
+    data: {
+      verdict: Verdict.PENDING,
+      timeUsed: null,
+      memoryUsed: null,
+      errorMessage: null,
+      passedTests: 0,
+      totalTests: 0,
+    },
+  });
+
+  // 3. 将所有 ID 推入判题队列
+  for (const id of submissionIds) {
+    await judgeQueue.add("judge", {
+      submissionId: id,
+    });
+  }
+
+  // 4. 刷新页面
   revalidatePath("/admin/problems");
 }

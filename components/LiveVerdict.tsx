@@ -79,51 +79,101 @@ export default function LiveVerdict({
   const [, setTotal] = useState(initialTotal);
   const router = useRouter();
 
-  useEffect(() => {
-    // 只有在 PENDING 或 JUDGING 状态下才轮询
-    if (status !== Verdict.PENDING && status !== Verdict.JUDGING) return;
-    let isMounted = true;
-    // eslint-disable-next-line prefer-const
-    let interval: NodeJS.Timeout;
-    // --- 核心逻辑：定义轮询函数 ---
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/submission/${submissionId}`);
-        if (!res.ok) return;
+  // useEffect(() => {
+  //   // 只有在 PENDING 或 JUDGING 状态下才轮询
+  //   if (status !== Verdict.PENDING && status !== Verdict.JUDGING) return;
+  //   let isMounted = true;
+  //   // eslint-disable-next-line prefer-const
+  //   let interval: NodeJS.Timeout;
+  //   // --- 核心逻辑：定义轮询函数 ---
+  //   const fetchData = async () => {
+  //     try {
+  //       const res = await fetch(`/api/submission/${submissionId}`);
+  //       if (!res.ok) return;
 
-        const data = await res.json();
+  //       const data = await res.json();
 
-        if (isMounted) {
-          setStatus(data.verdict);
-          setPassed(data.passedTests);
-          setTotal(data.totalTests);
+  //       if (isMounted) {
+  //         setStatus(data.verdict);
+  //         setPassed(data.passedTests);
+  //         setTotal(data.totalTests);
 
-          // 如果判题结束，停止轮询
-          if (
-            data.verdict !== Verdict.PENDING &&
-            data.verdict !== Verdict.JUDGING
-          ) {
-            clearInterval(interval);
-            router.refresh();
-          }
-        }
-      } catch (e) {
-        console.error("Polling error", e);
-      }
-    };
-    // 1. 挂载后立即执行一次！不要等 setInterval 的第一秒
-    fetchData();
+  //         // 如果判题结束，停止轮询
+  //         if (
+  //           data.verdict !== Verdict.PENDING &&
+  //           data.verdict !== Verdict.JUDGING
+  //         ) {
+  //           clearInterval(interval);
+  //           router.refresh();
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.error("Polling error", e);
+  //     }
+  //   };
+  //   // 1. 挂载后立即执行一次！不要等 setInterval 的第一秒
+  //   fetchData();
 
-    // 2. 然后再开启定时器
-    interval = setInterval(fetchData, 1000);
+  //   // 2. 然后再开启定时器
+  //   interval = setInterval(fetchData, 1000);
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [router, status, submissionId]);
+  //   return () => {
+  //     isMounted = false;
+  //     clearInterval(interval);
+  //   };
+  // }, [router, status, submissionId]);
 
   // --- 渲染逻辑 ---
+
+  useEffect(() => {
+    // 如果初始状态已经是终态，则无需建立连接
+    if (
+      initialStatus !== Verdict.PENDING &&
+      initialStatus !== Verdict.JUDGING
+    ) {
+      return;
+    }
+
+    // 建立 SSE 连接
+    const eventSource = new EventSource(
+      `/api/submission/${submissionId}/stream`
+    );
+
+    eventSource.onopen = () => {
+      console.log("SSE Connected");
+    };
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        setStatus(data.verdict);
+        setPassed(data.passedTests);
+        setTotal(data.totalTests);
+
+        // 检测终态
+        if (
+          data.verdict !== Verdict.PENDING &&
+          data.verdict !== Verdict.JUDGING
+        ) {
+          eventSource.close(); // 关闭连接
+          router.refresh(); // 刷新页面数据
+        }
+      } catch (err) {
+        console.error("SSE parse error", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error", err);
+      eventSource.close();
+    };
+
+    // 组件卸载时关闭连接
+    return () => {
+      eventSource.close();
+    };
+  }, [router, submissionId, initialStatus]); // 依赖项调整
 
   const config = VERDICT_CONFIG[status] || {
     text: status,
@@ -137,15 +187,25 @@ export default function LiveVerdict({
   if (status === Verdict.JUDGING) {
     displayText = `Running on test ${passed + 1} ...`;
   } else if (status === Verdict.WRONG_ANSWER) {
-    displayText = `${VERDICT_CONFIG[Verdict.WRONG_ANSWER].text} on test ${passed + 1}`;
+    displayText = `${VERDICT_CONFIG[Verdict.WRONG_ANSWER].text} on test ${
+      passed + 1
+    }`;
   } else if (status === Verdict.TIME_LIMIT_EXCEEDED) {
-    displayText = `${VERDICT_CONFIG[Verdict.TIME_LIMIT_EXCEEDED].text} on test ${passed + 1}`;
+    displayText = `${
+      VERDICT_CONFIG[Verdict.TIME_LIMIT_EXCEEDED].text
+    } on test ${passed + 1}`;
   } else if (status === Verdict.MEMORY_LIMIT_EXCEEDED) {
-    displayText = `${VERDICT_CONFIG[Verdict.MEMORY_LIMIT_EXCEEDED].text} on test ${passed + 1}`;
+    displayText = `${
+      VERDICT_CONFIG[Verdict.MEMORY_LIMIT_EXCEEDED].text
+    } on test ${passed + 1}`;
   } else if (status === Verdict.PRESENTATION_ERROR) {
-    displayText = `${VERDICT_CONFIG[Verdict.PRESENTATION_ERROR].text} on test ${passed + 1}`
+    displayText = `${VERDICT_CONFIG[Verdict.PRESENTATION_ERROR].text} on test ${
+      passed + 1
+    }`;
   } else if (status === Verdict.RUNTIME_ERROR) {
-    displayText = `${VERDICT_CONFIG[Verdict.RUNTIME_ERROR].text} on test ${passed + 1}`
+    displayText = `${VERDICT_CONFIG[Verdict.RUNTIME_ERROR].text} on test ${
+      passed + 1
+    }`;
   }
 
   return (

@@ -55,9 +55,6 @@ export default function ProblemEditor({
     initialData?.samples || [{ input: "", output: "" }]
   );
 
-  // 文件
-  const [file, setFile] = useState<File | null>(null);
-
   // 辅助函数：处理数组变更
   const updateSection = (
     idx: number,
@@ -97,10 +94,6 @@ export default function ProblemEditor({
     // 序列化 JSON 字段
     formData.append("sections", JSON.stringify(sections));
     formData.append("samples", JSON.stringify(samples));
-
-    if (file) {
-      formData.append("testData", file);
-    }
 
     // 动态导入 Server Action 以避免客户端打包问题
     const { saveProblem } = await import("@/app/admin/problems/actions");
@@ -295,25 +288,6 @@ export default function ProblemEditor({
               </button>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* 4. 测试数据上传 */}
-      <div className="bg-white p-6 rounded shadow-sm border border-gray-200">
-        <h2 className="text-lg font-bold mb-4 text-gray-700">
-          Test Data (ZIP)
-        </h2>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
-          <input
-            type="file"
-            accept=".zip"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            Upload a .zip file containing test cases (.in/.out) and optional
-            problem.yml. Existing data will be overwritten.
-          </p>
         </div>
       </div>
     </form>

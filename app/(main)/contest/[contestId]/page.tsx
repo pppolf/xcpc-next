@@ -9,6 +9,13 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { loginContestUser } from "./actions";
+import {
+  CalendarDaysIcon,
+  GlobeAltIcon,
+  LockClosedIcon,
+  TrophyIcon,
+} from "@heroicons/react/24/outline";
+import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 
 interface Props {
   params: Promise<{
@@ -52,48 +59,105 @@ export default async function ContestLogin({ params }: Props) {
   return (
     <div className="flex flex-col md:flex-row gap-12 mt-10">
       {/* 左侧：显示当前 Contest ID 对应的比赛信息 */}
-      <div className="flex-1 space-y-8 min-w-3xl">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 leading-tight mb-6">
-            {contest?.title}
-          </h1>
-          <div className="w-16 h-1 bg-blue-300 mb-8"></div>
-
-          {/* <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm mb-6">
-            <strong>Note:</strong> {contest?.description}
-          </div> */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-600">
-            <div>
-              <p className="font-bold text-gray-500 mb-1">Contest Time</p>
-              <p className="text-gray-900">
-                {contest?.startTime.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="font-bold text-gray-500 mb-1">Contest Type</p>
-              <p className="text-gray-900 font-medium">{contest?.type}</p>
-            </div>
-            <div>
-              <p className="font-bold text-gray-500 mb-1">Contest Status</p>
-              <p className="text-gray-900 font-bold">{contest?.status}</p>
-            </div>
-            <div>
-              <p className="font-bold text-gray-500 mb-1">Current Contest ID</p>
-              <p className="text-gray-900 font-mono text-lg">{contest?.id}</p>
+      <div className="flex-1 min-w-3xl">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Header */}
+          <div className="p-6 md:p-8 border-b border-gray-100 bg-linear-to-b from-gray-50 to-white">
+            <div className="flex gap-5">
+              <div className="p-3.5 bg-blue-600 rounded-xl shadow-md text-white h-fit shrink-0">
+                <TrophyIcon className="w-8 h-8" />
+              </div>
+              <div className="flex-1 py-1">
+                <div className="flex flex-wrap items-center gap-3 mb-2.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200 font-mono">
+                    #{contest.id}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                      contest.status === ContestStatus.RUNNING
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : contest.status === ContestStatus.ENDED
+                        ? "bg-gray-100 text-gray-600 border-gray-200"
+                        : "bg-blue-50 text-blue-700 border-blue-200"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        contest.status === ContestStatus.RUNNING
+                          ? "bg-green-500 animate-pulse"
+                          : contest.status === ContestStatus.ENDED
+                          ? "bg-gray-400"
+                          : "bg-blue-500"
+                      }`}
+                    />
+                    {contest.status}
+                  </span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-snug">
+                  {contest.title}
+                </h1>
+              </div>
             </div>
           </div>
 
-          <div className="w-full h-0.5 bg-sky-200 my-8"></div>
+          {/* Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 border-b border-gray-100 divide-y md:divide-y-0 md:divide-x divide-gray-100 bg-gray-50/30">
+            <div className="p-5 md:p-6 flex items-start gap-4 hover:bg-white transition-colors">
+              <CalendarDaysIcon className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Start Time
+                </p>
+                <p className="text-sm font-medium text-gray-900 font-mono">
+                  {contest.startTime.toLocaleString("zh-CN", {
+                    hour12: false,
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
 
-          <article className="prose prose-sm md:prose-base max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-pre:bg-gray-100 prose-pre:text-gray-800">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
-              {contest.description}
-            </ReactMarkdown>
-          </article>
+            <div className="p-5 md:p-6 flex items-start gap-4 hover:bg-white transition-colors">
+              {contest.type === ContestType.PRIVATE ? (
+                <LockClosedIcon className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
+              ) : (
+                <GlobeAltIcon className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Access Type
+                </p>
+                <p className="text-sm font-medium text-gray-900">
+                  {contest.type === ContestType.PRIVATE
+                    ? "Private Contest"
+                    : "Public Contest"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          {contest.description && (
+            <div className="p-6 md:p-8">
+              <h3 className="text-sm font-bold text-gray-900 mb-5 flex items-center gap-2 uppercase tracking-wide">
+                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
+                Information
+              </h3>
+              <article className="prose prose-sm md:prose-base max-w-none text-gray-600 prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:text-gray-800">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {contest.description}
+                </ReactMarkdown>
+              </article>
+            </div>
+          )}
         </div>
       </div>
 

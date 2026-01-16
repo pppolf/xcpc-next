@@ -90,6 +90,8 @@ export async function getProblemData(problemId: number) {
     })
   );
 
+  fileStats.sort((a, b) => naturalSort(a.name, b.name));
+
   const yamlPath = path.join(dir, "problem.yml");
   let yamlContent = "";
   try {
@@ -131,23 +133,43 @@ export async function uploadFiles(problemId: number, formData: FormData) {
   // 【检查】确保 problemId 存在
   if (!problemId) throw new Error("Missing Problem ID");
 
-  const dir = getDataDir(problemId);
-  const files = formData.getAll("files") as File[];
+  // 确保目录存在
 
-  for (const file of files) {
-    if (file.size > 0) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await fs.writeFile(path.join(dir, file.name), buffer);
+  const dir = getDataDir(problemId);
+  try {
+    await fs.access(dir);
+  } catch {
+    await fs.mkdir(dir, { recursive: true });
+  }
+
+  // 1. 读取旧的配置内容（为了保留 Time Limit, Memory Limit 等非文件及其的配置）
+  let currentYamlContent = "";
+  try {
+    currentYamlContent = await fs.readFile(
+      path.join(dir, "problem.yml"),
+      "utf-8"
+    );
+  } catch {}
+
+  const existingFiles = await fs.readdir(dir);
+  await Promise.all(
+    existingFiles.map(async (file) => {
+      await fs.unlink(path.join(dir, file));
+    })
+  );
+
+  // 3. 写入新上传的文件
+  const entries = Array.from(formData.entries());
+  for (const value of entries.values()) {
+    if (value instanceof File) {
+      const arrayBuffer = await value.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const fileName = path.basename(value.name);
+      await fs.writeFile(path.join(dir, fileName), buffer);
     }
   }
 
-  const yamlPath = path.join(dir, "problem.yml");
-  let currentYaml = "";
-  try {
-    currentYaml = await fs.readFile(yamlPath, "utf-8");
-  } catch {}
-
-  const newYaml = await autoDetectCases(dir, currentYaml);
+  const newYaml = await autoDetectCases(dir, currentYamlContent);
   await saveYamlConfig(problemId, newYaml);
   return newYaml;
 }

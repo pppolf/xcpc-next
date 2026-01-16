@@ -1,17 +1,18 @@
 import Link from "next/link";
-import { getProblems, deleteProblem } from "./actions";
+import { getProblems } from "./actions";
 import {
   PencilSquareIcon,
-  TrashIcon,
   ServerStackIcon,
   BeakerIcon,
 } from "@heroicons/react/24/outline";
 import Pagination from "@/components/Pagination";
+import RejudgeButton from "./RejudgeProblemButton";
+import DeleteProblemButton from "./DeleteProblemButton";
 
 export default async function ProblemsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
   const page = Number((await searchParams).page) || 1;
   const { problems, total } = await getProblems(page);
@@ -34,7 +35,7 @@ export default async function ProblemsPage({
             <tr>
               <th className="px-6 py-3 w-20">ID</th>
               <th className="px-6 py-3">Title</th>
-              <th className="px-6 py-3 w-32">Type</th>
+              <th className="px-6 py-3 w-48">Type</th>
               <th className="px-6 py-3 w-48">Updated At</th>
               <th className="px-6 py-3 w-32 text-center">Actions</th>
             </tr>
@@ -64,9 +65,9 @@ export default async function ProblemsPage({
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  {new Date(problem.updatedAt).toLocaleDateString()}
+                  {new Date(problem.updatedAt).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 flex justify-center gap-3">
+                <td className="px-6 py-4 flex justify-center items-center gap-3">
                   <Link
                     href={`/admin/problems/${problem.id}/test`}
                     className="text-orange-500 hover:text-orange-700"
@@ -74,7 +75,6 @@ export default async function ProblemsPage({
                   >
                     <BeakerIcon className="w-5 h-5" />
                   </Link>
-                  {/* 新增：数据管理按钮 */}
                   <Link
                     href={`/admin/problems/${problem.id}/data`}
                     className="text-purple-600 hover:text-purple-800"
@@ -88,11 +88,8 @@ export default async function ProblemsPage({
                   >
                     <PencilSquareIcon className="w-5 h-5" />
                   </Link>
-                  <form action={deleteProblem.bind(null, problem.id)}>
-                    <button className="text-red-400 hover:text-red-600">
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
-                  </form>
+                  <RejudgeButton problemId={problem.id} />
+                  <DeleteProblemButton problemId={problem.id} />
                 </td>
               </tr>
             ))}
@@ -100,26 +97,6 @@ export default async function ProblemsPage({
         </table>
       </div>
 
-      {/* 简单的分页逻辑，如果需要复杂分页可复用 Pagination 组件 */}
-      {/* <div className="mt-4 flex justify-end gap-2">
-        {page > 1 && (
-          <Link
-            href={`?page=${page - 1}`}
-            className="px-3 py-1 border rounded bg-white"
-          >
-            Prev
-          </Link>
-        )}
-        <span className="px-3 py-1 text-gray-500">Page {page}</span>
-        {problems.length === 20 && (
-          <Link
-            href={`?page=${page + 1}`}
-            className="px-3 py-1 border rounded bg-white"
-          >
-            Next
-          </Link>
-        )}
-      </div> */}
       <div className="mt-6">
         <Pagination totalItems={total} />
       </div>

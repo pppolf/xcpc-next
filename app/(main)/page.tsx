@@ -2,8 +2,15 @@ import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { JsonValue } from "@prisma/client/runtime/client";
 import Link from "next/link";
-import { getCurrentUser, UserJwtPayload } from "@/lib/auth";
+import { getCurrentSuper, UserJwtPayload } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import {
+  LockClosedIcon,
+  GlobeAltIcon,
+  ClockIcon,
+  CalendarDaysIcon,
+  TrophyIcon,
+} from "@heroicons/react/24/outline";
 
 export type ContestConfig = {
   medal: {
@@ -30,11 +37,29 @@ export interface Contest {
   updatedAt: Date;
 }
 
-export default async function ContestList() {
-  // 权限校验：检查当前用户是否为全局管理员
-  const currentUser = await getCurrentUser();
+// 辅助函数：格式化持续时间
+function formatDuration(start: Date, end: Date) {
+  const diffMs = end.getTime() - start.getTime();
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
 
-  // 如果用户未登录或不是全局管理员，重定向到用户所在的比赛
+// 辅助函数：格式化日期
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+export default async function ContestList() {
+  const currentUser = await getCurrentSuper();
+
   if (
     currentUser &&
     typeof currentUser !== "string" &&
@@ -45,97 +70,145 @@ export default async function ContestList() {
     }
   }
 
-  const contests: Contest[] = await prisma.contest.findMany({
+  const contests = await prisma.contest.findMany({
     orderBy: { id: "desc" },
   });
 
   return (
-    <div className="bg-white shadow-sm border border-gray-100 rounded-sm p-6 mt-6">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <h2 className="text-2xl font-serif font-bold text-gray-800">
-          Contest List
-        </h2>
+    <div className="min-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* 头部区域 */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 bg-blue-600 rounded-lg shadow-md text-white">
+          <TrophyIcon className="w-8 h-8" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-gray-900 tracking-tight">
+            Contests
+          </h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            View and manage all programming contests
+          </p>
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-600">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 w-24 text-center">比赛ID</th>
-              <th className="px-6 py-3">标题</th>
-              <th className="px-6 py-3 w-32">比赛状态</th>
-              <th className="px-6 py-3 w-32">比赛类型</th>
-              <th className="px-6 py-3 w-48">开始时间</th>
-              <th className="px-6 py-3 w-48">结束时间</th>
-              <th className="px-6 py-3 w-48">封榜时间</th>
-              <th className="px-6 py-3 w-30">比赛持续时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contests.map((contest) => (
-              <tr
-                key={contest.id}
-                className="bg-white border-b hover:bg-blue-50 transition-colors"
-              >
-                <td className="px-6 py-4 font-bold text-gray-900 text-center">
-                  {contest.id}
-                </td>
-                <td className="px-6 py-4">
-                  {/* 点击标题跳转到具体比赛的登录页 */}
-                  <Link
-                    href={`/contest/${contest.id}`}
-                    className="text-blue-600 hover:underline font-medium text-base"
-                  >
-                    {contest.title}
-                  </Link>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2.5 py-0.5 rounded text-xs font-medium 
-                    ${
-                      contest.status === ContestStatus.RUNNING
-                        ? "bg-green-100 text-green-800"
-                        : contest.status === ContestStatus.ENDED
-                        ? "bg-red-100 text-red-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {contest.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  {contest.type === ContestType.PRIVATE ? (
-                    <span className="text-red-600 font-bold flex items-center gap-1">
-                      🔒 Private
-                    </span>
-                  ) : (
-                    <span className="text-green-600">Public</span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  {contest.startTime.toLocaleString()}
-                </td>
-                <td className="px-6 py-4">
-                  {contest.endTime.toLocaleString()}
-                </td>
-                <td className="px-6 py-4">
-                  {(contest.config as ContestConfig)?.frozenDuration
-                    ? `结束前 ${
-                        (contest.config as ContestConfig)?.frozenDuration
-                      } 分钟`
-                    : "未封榜"}
-                </td>
-                <td className="px-6 py-4">
-                  {(
-                    (contest.endTime.getTime() - contest.startTime.getTime()) /
-                    1000 /
-                    3600
-                  ).toFixed(1)}
-                </td>
+      {/* 卡片表格区域 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                <th className="px-6 py-4 w-20 text-center">ID</th>
+                <th className="px-6 py-4 w-1/3">Title</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Type</th>
+                <th className="px-6 py-4">Timeline</th>
+                <th className="px-6 py-4 text-center">Duration</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {contests.map((contest) => {
+                const config = contest.config as ContestConfig;
+                const frozenText = config?.frozenDuration
+                  ? `Last ${config.frozenDuration}m frozen`
+                  : null;
+
+                return (
+                  <tr
+                    key={contest.id}
+                    className="group hover:bg-slate-50 transition-colors duration-200"
+                  >
+                    <td className="px-6 py-5 text-gray-400 font-mono text-center text-sm group-hover:text-gray-600">
+                      #{contest.id}
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <Link href={`/contest/${contest.id}`} className="block">
+                        <span className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors font-serif">
+                          {contest.title}
+                        </span>
+                        {frozenText && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">
+                              ❄️ {frozenText}
+                            </span>
+                          </div>
+                        )}
+                      </Link>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <div className="flex items-center">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                            contest.status === ContestStatus.RUNNING
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : contest.status === ContestStatus.ENDED
+                              ? "bg-gray-100 text-gray-600 border-gray-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              contest.status === ContestStatus.RUNNING
+                                ? "bg-green-500 animate-pulse"
+                                : contest.status === ContestStatus.ENDED
+                                ? "bg-gray-400"
+                                : "bg-blue-500"
+                            }`}
+                          />
+                          {contest.status}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      {contest.type === ContestType.PRIVATE ? (
+                        <div className="flex items-center gap-1.5 text-gray-600 text-sm font-medium">
+                          <LockClosedIcon className="w-4 h-4 text-orange-500" />
+                          <span>Private</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-gray-600 text-sm font-medium">
+                          <GlobeAltIcon className="w-4 h-4 text-blue-500" />
+                          <span>Public</span>
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
+                          <span className="font-medium text-gray-900">
+                            {formatDate(contest.startTime)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 pl-6 text-xs text-gray-500">
+                          to {formatDate(contest.endTime)}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-5 text-center">
+                      <div className="inline-flex items-center gap-1.5 text-sm text-gray-600 bg-gray-100/80 px-2 py-1 rounded-md">
+                        <ClockIcon className="w-4 h-4 text-gray-500" />
+                        <span className="font-mono font-medium">
+                          {formatDuration(contest.startTime, contest.endTime)}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {contests.length === 0 && (
+          <div className="text-center py-16 text-gray-500">
+            <TrophyIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p className="text-lg font-medium">No contests found</p>
+          </div>
+        )}
       </div>
     </div>
   );

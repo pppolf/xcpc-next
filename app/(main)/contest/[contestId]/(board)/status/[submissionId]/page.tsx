@@ -134,6 +134,13 @@ export default async function SubmissionDetail({ params }: Props) {
 
   const submitTime = new Date(submission.submittedAt).toLocaleString("zh-CN");
 
+  const languageRecord: Record<string, string> = {
+    cpp: "C++",
+    pypy3: "PyPy3",
+    java: "Java",
+    c: "C",
+  };
+
   return (
     <div className="bg-white w-full shadow-sm border border-gray-100 rounded-sm p-6">
       <div className="flex justify-between items-center mb-6">
@@ -170,7 +177,9 @@ export default async function SubmissionDetail({ params }: Props) {
           </div>
           <div>
             <span className="font-bold text-gray-600">Language:</span>
-            <p className="text-gray-900">{submission.language}</p>
+            <p className="text-gray-900">
+              {languageRecord[submission.language] || submission.language}
+            </p>
           </div>
           <div>
             <span className="font-bold text-gray-600">Submit Time:</span>

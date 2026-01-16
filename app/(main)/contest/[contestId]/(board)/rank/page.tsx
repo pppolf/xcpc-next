@@ -159,6 +159,32 @@ export default async function Rank({ params, searchParams }: Props) {
     },
   });
 
+  // === 预先计算所有题目的一血 (全局最早AC) ===
+  // 避免在循环中查询数据库 (N+1问题)
+  const allAcSubmissions = await prisma.submission.findMany({
+    where: {
+      contestId: cid,
+      verdict: Verdict.ACCEPTED,
+    },
+    select: {
+      problemId: true,
+      displayId: true,
+      submittedAt: true,
+    },
+    orderBy: {
+      submittedAt: "asc",
+    },
+  });
+
+  // Map<ProblemId, SubmissionId>
+  const firstBloodMap = new Map<number, number>();
+  for (const sub of allAcSubmissions) {
+    // 因为是按时间正序排列的，第一次遇到某个 problemId，就是该题的一血
+    if (!firstBloodMap.has(sub.problemId)) {
+      firstBloodMap.set(sub.problemId, sub.displayId);
+    }
+  }
+
   // 6. 计算排名
   const startTimeMs = contestInfo.startTime.getTime();
   const end = contestInfo.endTime.getTime();
@@ -319,30 +345,20 @@ export default async function Rank({ params, searchParams }: Props) {
             ? isAcceptedBeforeFreeze
             : isAccepted;
 
-          if (showAsAccepted) {
-            const fbSub = await prisma.submission.findFirst({
-              where: {
-                contestId: cid,
-                problemId: cp.problemId,
-                verdict: Verdict.ACCEPTED,
-              },
-              orderBy: { submittedAt: "asc" },
-            });
-            // 如果展示的是封榜前AC，那么这个一血必须也是封榜前的（且是当前用户）
-            if (fbSub) {
-              const fbId = fbSub.id;
-              // 显示为AC的那个提交ID
-              const myDisplayACId = shouldShowFrozenState
-                ? submissions.find(
-                    (s) =>
-                      s.verdict === Verdict.ACCEPTED &&
-                      new Date(s.submittedAt).getTime() < freezeTimeMs
-                  )?.id
-                : acceptedSubId;
+          const globalFirstBloodId = firstBloodMap.get(cp.problemId);
 
-              if (myDisplayACId === fbId) {
-                firstBlood = true;
-              }
+          if (showAsAccepted && globalFirstBloodId) {
+            const myDisplayACId = shouldShowFrozenState
+              ? submissions.find(
+                  (s) =>
+                    s.verdict === Verdict.ACCEPTED &&
+                    new Date(s.submittedAt).getTime() < freezeTimeMs
+                )?.displayId
+              : acceptedSubId;
+
+            // 如果当前展示的提交 ID 等于全局一血 ID，那就是一血
+            if (myDisplayACId === globalFirstBloodId) {
+              firstBlood = true;
             }
           }
 

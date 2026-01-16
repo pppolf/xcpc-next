@@ -1,4 +1,3 @@
-import { CheckIcon } from "@heroicons/react/24/solid"; // 需要安装: npm install @heroicons/react
 import Link from "next/link";
 import { ContestStatus, Verdict } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -115,9 +114,23 @@ export default async function Problems({ params }: Props) {
                     key={prob.id}
                     className="odd:bg-white even:bg-[#f4f7fa] border-b border-gray-300 hover:bg-blue-50 transition-colors h-10 text-base"
                   >
-                    <td className="px-6 py-2">
+                    <td className="px-6 py-2 flex justify-center">
                       {(statsMap.get(prob.problemId) || 0) !== 0 && (
-                        <CheckIcon className="h-5 w-5 text-green-600" />
+                        <svg
+                          className="icon"
+                          viewBox="0 0 1024 1024"
+                          version="1.1"
+                          xmlns="http://www.w3.org/2000/svg"
+                          p-id="13161"
+                          width="22"
+                          height="22"
+                        >
+                          <path
+                            d="M86.528 491.666286a45.787429 45.787429 0 0 1 64.731429 0l247.954285 247.954285 506.88-506.806857a45.787429 45.787429 0 0 1 64.731429 64.731429L431.616 836.754286a45.787429 45.787429 0 0 1-64.658286 0L86.528 556.324571a45.787429 45.787429 0 0 1 0-64.658285z"
+                            fill="#2CA641"
+                            p-id="13162"
+                          ></path>
+                        </svg>
                       )}
                     </td>
                     <td className="px-6 py-2 text-gray-900">
@@ -134,7 +147,7 @@ export default async function Problems({ params }: Props) {
                       </Link>
                     </td>
                     <td className="px-6 py-2 text-left">
-                      {rate.toFixed(2)}% ({acceptedCount}/{totalCount})
+                      {rate.toFixed(2)}% ({acceptedCount} / {totalCount})
                     </td>
                     <td className="px-6 py-2">
                       <div className="flex items-center justify-center">

@@ -116,7 +116,7 @@ export default async function SubmissionDetail({ params }: Props) {
       return notFound();
     }
   } else {
-    // 未登录用户：只能在比赛结束后查看
+    // 未登录用户：只能在比赛结束后 并且 未封榜 查看
     if (!isContestEnded || isFrozen) {
       return notFound();
     }

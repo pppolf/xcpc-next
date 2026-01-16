@@ -84,7 +84,7 @@ export default function VerdictCell({
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 overflow-auto bg-gray-50 font-mono text-sm whitespace-pre-wrap text-gray-800">
+            <div className="p-6 overflow-auto bg-gray-50 font-mono text-sm whitespace-pre-wrap text-left text-gray-800">
               {submission.errorMessage}
             </div>
             <div className="px-6 py-3 border-t bg-gray-50 rounded-b-lg flex justify-end">

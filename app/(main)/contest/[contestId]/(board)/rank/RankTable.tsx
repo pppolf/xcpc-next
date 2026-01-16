@@ -179,8 +179,8 @@ export default function RankTable({
                             viewBox="0 0 1024 1024"
                             version="1.1"
                             xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
+                            width="18"
+                            height="18"
                           >
                             <path
                               d="M414.165333 652.501333L273.664 512l140.501333-140.501333a42.666667 42.666667 0 1 0-60.330666-60.330667l-170.666667 170.666667a42.666667 42.666667 0 0 0 0 60.330666l170.666667 170.666667a42.666667 42.666667 0 1 0 60.330666-60.330667zM609.834667 371.498667L750.336 512l-140.501333 140.501333a42.666667 42.666667 0 1 0 60.330666 60.330667l170.666667-170.666667c7.936-7.936 12.501333-18.944 12.501333-30.165333s-4.565333-22.186667-12.501333-30.165333l-170.666667-170.666667a42.666667 42.666667 0 1 0-60.330666 60.330667z"
@@ -198,15 +198,27 @@ export default function RankTable({
                           <>
                             <span>{prob.time}</span>
                             {prob.tries > 0 && (
-                              <span className="text-[10px] font-normal opacity-80">
+                              <span className="text-[12px] font-normal opacity-80">
                                 (-{prob.tries})
                               </span>
                             )}
                           </>
                         ) : prob.upsolved ? (
                           // === Upsolved 展示逻辑 ===
-                          <span className="text-lg font-bold">+</span>
-                        ) : prob.frozenTries > 0 ? (
+                          <>
+                            {prob.tries > 0 ? (
+                              // Upsolved前有WA (- tries)
+                              <div className="flex flex-col justify-center items-center">
+                                <span className="text-lg font-bold">+</span>
+                                <span>(-{prob.tries})</span>
+                              </div>
+                            ) : (
+                              // Upsolved前有WA +
+                              <span className="text-lg font-bold">+</span>
+                            )}
+                          </>
+                        ) : // <span className="text-lg font-bold">+</span>
+                        prob.frozenTries > 0 ? (
                           // 2. 封榜提交 (蓝色)
                           <>
                             {prob.unfrozenTries > 0 ? (

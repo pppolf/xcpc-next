@@ -7,6 +7,26 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/outline";
 
+// 自定义雪花图标
+function SnowflakeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+      className={className}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 2.25V21.75M2.25 12H21.75M5.25 5.25L18.75 18.75M18.75 5.25L5.25 18.75M12 6L10 4M12 6L14 4M12 18L10 20M12 18L14 20M6 12L4 10M6 12L4 14M18 12L20 10M18 12L20 14"
+      />
+    </svg>
+  );
+}
+
 // 映射表：将数据库的枚举值映射为前端显示的文字和样式
 const VERDICT_CONFIG: Record<
   string,
@@ -16,6 +36,19 @@ const VERDICT_CONFIG: Record<
   // --- 等待/评测中 (带动画) ---
   [Verdict.PENDING]: { text: "Pending", color: "text-gray-500" },
   [Verdict.JUDGING]: { text: "Judging", color: "text-blue-600" },
+
+  // 封榜
+  ["FROZEN"]: {
+    text: "Frozen",
+    color: "text-sky-500 font-bold", // 冰雪配色
+    icon: SnowflakeIcon,
+  },
+
+  ["REJECTED"]: {
+    text: "Rejected",
+    color: "text-red-600 font-bold",
+    icon: XCircleIcon,
+  },
 
   // --- 最终状态 ---
   [Verdict.ACCEPTED]: {

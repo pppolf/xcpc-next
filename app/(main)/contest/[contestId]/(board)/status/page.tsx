@@ -12,6 +12,7 @@ import StatusControls from "./StatusControls";
 import SearchAndFilter from "./SearchAndFilter";
 import { verifyAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { ContestConfig } from "@/app/(main)/page";
 
 interface Props {
   searchParams: Promise<{
@@ -49,6 +50,8 @@ export default async function Status({ params, searchParams }: Props) {
     where: { id: cid },
     select: {
       status: true,
+      config: true,
+      endTime: true,
     },
   });
 
@@ -96,10 +99,19 @@ export default async function Status({ params, searchParams }: Props) {
       currentUser.contestId === cid &&
       (currentUser.role === ContestRole.ADMIN ||
         currentUser.role === ContestRole.JUDGE));
-
+  const isGuest = !currentUser && !isAdmin;
+  const config = contestInfo.config as ContestConfig;
+  const freezeTime = config?.frozenDuration
+    ? contestInfo.endTime.getTime() - config?.frozenDuration * 60 * 1000
+    : null;
+  const isFrozen =
+    config?.frozenDuration !== 0 &&
+    (freezeTime ? new Date().getTime() >= freezeTime : false);
   const isContestEnded = contestInfo.status === ContestStatus.ENDED;
-  const canViewAll = isContestEnded || isAdmin || false;
-  const canSearch = isContestEnded || isAdmin || false;
+  const canViewAll =
+    (isContestEnded && !isFrozen) || isAdmin || isGuest || false;
+  const canSearch =
+    (isContestEnded && !isFrozen) || isAdmin || isGuest || false;
 
   // 用户选择查看所有提交且有权限
   const userWantsViewAll = viewAll === "true";
@@ -211,9 +223,34 @@ export default async function Status({ params, searchParams }: Props) {
         .then((results) => results.map((r) => r.verdict)),
     ]);
 
+  const displaySubmissions = submissions.map((submission) => {
+    if (
+      isGuest &&
+      isFrozen &&
+      freezeTime &&
+      submission.submittedAt.getTime() >= freezeTime
+    ) {
+      return {
+        ...submission,
+        timeUsed: null,
+        memoryUsed: null,
+        language: "-",
+        verdict: "FROZEN",
+      };
+    }
+    return submission;
+  });
+
   const problemIdMap = new Map(
     allProblems.map((cp) => [cp.problemId, cp.displayId])
   );
+
+  const languageRecord: Record<string, string> = {
+    cpp: "C++",
+    pypy3: "PyPy3",
+    java: "Java",
+    c: "C",
+  };
 
   const statusLabel =
     !shouldViewAll && currentUser
@@ -243,7 +280,7 @@ export default async function Status({ params, searchParams }: Props) {
         <div className="text-center py-10 text-gray-500">
           The contest has not started yet.
         </div>
-      ) : submissions.length === 0 ? (
+      ) : displaySubmissions.length === 0 ? (
         <div className="text-center py-10 text-gray-500">
           {shouldViewAll
             ? "No submissions yet."
@@ -281,7 +318,7 @@ export default async function Status({ params, searchParams }: Props) {
               </tr>
             </thead>
             <tbody>
-              {submissions.map((submission) => {
+              {displaySubmissions.map((submission) => {
                 const problemDisplayId =
                   problemIdMap.get(submission.problemId) || "?";
                 const submitTime = new Date(
@@ -309,25 +346,37 @@ export default async function Status({ params, searchParams }: Props) {
                       </Link>
                     </td>
                     <td className="px-6 py-2">
-                      {submission.timeUsed !== null
+                      {isGuest && !isContestEnded
+                        ? "-"
+                        : submission.timeUsed !== null
                         ? `${submission.timeUsed} ms`
                         : "-"}
                     </td>
                     <td className="px-6 py-2">
-                      {submission.memoryUsed !== null
+                      {isGuest && !isContestEnded
+                        ? "-"
+                        : submission.memoryUsed !== null
                         ? `${submission.memoryUsed} KB`
                         : "-"}
                     </td>
                     <td className="px-6 py-2">
-                      <Link
-                        href={`/contest/${contestId}/status/${submission.displayId}`}
-                        className="text-blue-500 hover:underline hover:text-blue-800"
-                      >
-                        {submission.language}
-                      </Link>
+                      {isGuest && !isContestEnded ? (
+                        "-"
+                      ) : (
+                        <Link
+                          href={`/contest/${contestId}/status/${submission.displayId}`}
+                          className="text-blue-500 hover:underline hover:text-blue-800"
+                        >
+                          {languageRecord[submission.language]}
+                        </Link>
+                      )}
                     </td>
                     <td className="px-6 py-2">
-                      <VerdictCell submission={submission} />
+                      {isGuest && !isContestEnded ? (
+                        <VerdictCell submission={submission} isGuest={true} />
+                      ) : (
+                        <VerdictCell submission={submission} />
+                      )}
                     </td>
                   </tr>
                 );

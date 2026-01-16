@@ -6,6 +6,7 @@ import { ContestRole, ContestStatus } from "@/lib/generated/prisma/client";
 import VerdictBadge from "@/components/VerdictBadge";
 import Link from "next/link";
 import CodeViewer from "./CodeViewer";
+import { ContestConfig } from "@/app/(main)/page";
 
 interface Props {
   params: Promise<{
@@ -22,7 +23,7 @@ export default async function SubmissionDetail({ params }: Props) {
   const [contestInfo, submission] = await Promise.all([
     prisma.contest.findUnique({
       where: { id: cid },
-      select: { status: true },
+      select: { status: true, config: true, endTime: true },
     }),
     prisma.submission.findFirst({
       where: {
@@ -71,6 +72,13 @@ export default async function SubmissionDetail({ params }: Props) {
     }
   }
 
+  const config = contestInfo.config as ContestConfig;
+  const freezeTime =
+    contestInfo.endTime.getTime() - config.frozenDuration! * 60 * 1000;
+  const isFrozen =
+    config.frozenDuration !== 0 &&
+    (freezeTime ? new Date().getTime() >= freezeTime : false);
+
   if (payload?.userId || superAdmin !== null) {
     let currentUser = null;
     if (payload?.userId) {
@@ -96,18 +104,20 @@ export default async function SubmissionDetail({ params }: Props) {
     // 3. 普通用户只能在比赛结束后看其他人的
 
     const isOwner = submission?.user?.id === currentUser?.id;
+
     const isAdmin =
       superAdmin !== null ||
       currentUser?.role === ContestRole.ADMIN ||
       currentUser?.role === ContestRole.JUDGE;
-    const hasPermission = isOwner || isAdmin || (isContestEnded && !isOwner);
+    const hasPermission =
+      isOwner || isAdmin || (isContestEnded && !isFrozen && !isOwner);
 
     if (!hasPermission) {
       return notFound();
     }
   } else {
     // 未登录用户：只能在比赛结束后查看
-    if (!isContestEnded) {
+    if (!isContestEnded || isFrozen) {
       return notFound();
     }
   }

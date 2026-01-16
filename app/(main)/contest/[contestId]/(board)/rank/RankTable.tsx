@@ -39,6 +39,7 @@ interface RankTableProps {
   isMyTeam: boolean;
   isContestEnded: boolean;
   contestProblems: ContestProblem[];
+  isFrozen: boolean;
 }
 
 export default function RankTable({
@@ -47,6 +48,7 @@ export default function RankTable({
   isMyTeam,
   isContestEnded,
   contestProblems,
+  isFrozen,
 }: RankTableProps) {
   // 获取单元格背景色
   const getCellColor = (prob: Team["problems"][0]) => {
@@ -59,7 +61,7 @@ export default function RankTable({
     }
 
     if (prob.upsolved) {
-      return "bg-blue-600 text-white";
+      return "bg-blue-400 text-white";
     }
 
     // 2. 判断是否有封榜后的提交 (Blue)
@@ -119,7 +121,7 @@ export default function RankTable({
               className={`h-16 font-[Menlo] ${
                 isMyTeam
                   ? "bg-linear-to-r from-blue-100 via-blue-50 to-blue-100 hover:from-blue-200 hover:via-blue-100 hover:to-blue-200"
-                  : "even:bg-[#eef5fc] odd:bg-white hover:bg-blue-50"
+                  : "even:bg-[#eff5fa] odd:bg-white hover:bg-blue-100"
               }`}
             >
               <td className="text-gray-900 text-base font-serif font-bold">
@@ -165,23 +167,25 @@ export default function RankTable({
                     {/* 代码查看按钮 - 固定在右上角(仅限已AC且比赛结束) */}
                     {(prob?.accepted || prob?.upsolved) &&
                       isContestEnded &&
+                      !isFrozen &&
                       prob.firstAcceptedSubmissionId && (
                         <Link
                           href={`/contest/${contestId}/status/${prob.firstAcceptedSubmissionId}`}
-                          className="absolute top-0.5 right-0.5 opacity-50 group-hover:opacity-100 transition-opacity bg-white text-gray-800 rounded-sm p-0.5 hover:bg-gray-100 z-10"
+                          className="absolute top-0 right-0  cursor-pointer rounded-sm p-0.5 z-10"
                           title="View first AC submission"
                         >
                           <svg
                             className="icon"
                             viewBox="0 0 1024 1024"
+                            version="1.1"
                             xmlns="http://www.w3.org/2000/svg"
-                            width="12"
-                            height="12"
+                            width="16"
+                            height="16"
                           >
                             <path
-                              d="M787.32 492.57L924.98 492.57 672.58 309.02l0 114.72L121.96 423.74l0 68.83 550.62 0L787.32 492.57zM236.68 676.12L99.02 676.12l252.40 183.55 0 -114.72 550.62 0l0 -68.83L351.42 676.12 236.68 676.12z"
-                              fill="#000"
-                            />
+                              d="M414.165333 652.501333L273.664 512l140.501333-140.501333a42.666667 42.666667 0 1 0-60.330666-60.330667l-170.666667 170.666667a42.666667 42.666667 0 0 0 0 60.330666l170.666667 170.666667a42.666667 42.666667 0 1 0 60.330666-60.330667zM609.834667 371.498667L750.336 512l-140.501333 140.501333a42.666667 42.666667 0 1 0 60.330666 60.330667l170.666667-170.666667c7.936-7.936 12.501333-18.944 12.501333-30.165333s-4.565333-22.186667-12.501333-30.165333l-170.666667-170.666667a42.666667 42.666667 0 1 0-60.330666 60.330667z"
+                              fill="#ffffff"
+                            ></path>
                           </svg>
                         </Link>
                       )}
@@ -200,7 +204,7 @@ export default function RankTable({
                             )}
                           </>
                         ) : prob.upsolved ? (
-                          // === 新增：Upsolved 展示逻辑 ===
+                          // === Upsolved 展示逻辑 ===
                           <span className="text-lg font-bold">+</span>
                         ) : prob.frozenTries > 0 ? (
                           // 2. 封榜提交 (蓝色)

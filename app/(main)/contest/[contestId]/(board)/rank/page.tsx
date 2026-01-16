@@ -59,7 +59,7 @@ export default async function Rank({ params, searchParams }: Props) {
   // 2. 权限校验
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value;
-  const adminToken = cookieStore.get("admin_token")?.value;
+  const adminToken = cookieStore.get("auth_token")?.value;
   const payload = token ? await verifyAuth(token) : null;
 
   let currentUser = null;
@@ -99,13 +99,13 @@ export default async function Rank({ params, searchParams }: Props) {
   const config = contestInfo.config as ContestConfig;
   const now = new Date();
   const freezeTime =
-    contestInfo.endTime.getTime() - config.frozenDuration! * 60 * 1000;
+    contestInfo.endTime.getTime() - config?.frozenDuration * 60 * 1000;
 
   // 判断是否处于封榜显示状态
   // 条件：当前时间 >= 封榜时间 且 比赛未结束 (或者结束后管理员未解榜，这里假设封榜时间持续有效)
   // 如果 contestInfo.freezeTime 存在，且当前时间超过了它，就是封榜状态
   const isFrozen =
-    config.frozenDuration !== 0 &&
+    config?.frozenDuration !== 0 &&
     (freezeTime ? now.getTime() >= freezeTime : false);
 
   // 管理员可以看到实时榜单
@@ -522,6 +522,7 @@ export default async function Rank({ params, searchParams }: Props) {
                 isMyTeam={true}
                 isContestEnded={contestInfo.status === ContestStatus.ENDED}
                 contestProblems={contestProblems}
+                isFrozen={isFrozen}
               />
             </div>
           )}
@@ -532,6 +533,7 @@ export default async function Rank({ params, searchParams }: Props) {
             isMyTeam={false}
             isContestEnded={contestInfo.status === ContestStatus.ENDED}
             contestProblems={contestProblems}
+            isFrozen={isFrozen}
           />
         </>
       )}

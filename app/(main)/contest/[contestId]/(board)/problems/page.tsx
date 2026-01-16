@@ -30,6 +30,22 @@ export default async function Problems({ params }: Props) {
     },
   });
 
+  // 封榜统计逻辑
+  const config = contestInfo?.config as { frozenDuration?: number } | null;
+  const frozenDuration = config?.frozenDuration ?? 0;
+  const endTime = contestInfo?.endTime;
+
+  let dateFilter = {};
+
+  if (frozenDuration > 0 && endTime) {
+    const freezeTime = new Date(endTime.getTime() - frozenDuration * 60 * 1000);
+    dateFilter = {
+      submittedAt: {
+        lt: freezeTime,
+      },
+    };
+  }
+
   const totalStats = await prisma.submission.groupBy({
     by: ["problemId"],
     where: { contestId: contestId },
@@ -41,6 +57,7 @@ export default async function Problems({ params }: Props) {
     where: {
       contestId: contestId,
       verdict: Verdict.ACCEPTED,
+      ...dateFilter,
     },
     _count: { _all: true },
   });

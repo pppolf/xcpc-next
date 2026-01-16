@@ -57,11 +57,30 @@ export default async function ProblemDetail({ params }: Props) {
     },
     include: {
       problem: true,
+      contest: true,
     },
   });
   const problem = contestProblem?.problem;
 
-  if (!problem) notFound();
+  if (!problem || !contestProblem) notFound();
+
+  // 2. 封榜统计逻辑
+  const config = contestProblem.contest.config as {
+    frozenDuration?: number;
+  } | null;
+  const frozenDuration = config?.frozenDuration ?? 0;
+  const endTime = contestProblem.contest.endTime;
+
+  let dateFilter = {};
+
+  if (frozenDuration > 0 && endTime) {
+    const freezeTime = new Date(endTime.getTime() - frozenDuration * 60 * 1000);
+    dateFilter = {
+      submittedAt: {
+        lt: freezeTime,
+      },
+    };
+  }
 
   const totalStats = await prisma.submission.count({
     where: { contestId: cid, problemId: problem.id },
@@ -72,6 +91,7 @@ export default async function ProblemDetail({ params }: Props) {
       contestId: cid,
       problemId: problem.id,
       verdict: Verdict.ACCEPTED,
+      ...dateFilter,
     },
   });
   const info = {
@@ -88,7 +108,6 @@ export default async function ProblemDetail({ params }: Props) {
     (SuperAdmin as unknown as UserJwtPayload)?.isGlobalAdmin ||
     (user as unknown as UserJwtPayload)?.role !== ContestRole.TEAM;
 
-  console.log(user, isAdmin);
   return (
     <div className="flex flex-col w-full lg:flex-row gap-6 items-start">
       {/* --- 左侧：题目基本信息卡片 --- */}
@@ -168,7 +187,7 @@ export default async function ProblemDetail({ params }: Props) {
               <button
                 disabled
                 className="bg-gray-400 text-white font-medium rounded-sm text-sm px-8 py-3 shadow-md cursor-not-allowed opacity-60"
-                title="Admins cannot submit"
+                title="Cannot submit"
               >
                 Submit Solution
               </button>

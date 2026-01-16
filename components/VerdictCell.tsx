@@ -7,6 +7,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { Verdict } from "@/lib/generated/prisma/enums";
+import VerdictBadge from "./VerdictBadge";
 
 interface VerdictCellProps {
   submission: {
@@ -16,10 +17,26 @@ interface VerdictCellProps {
     totalTests: number;
     errorMessage?: string | null;
   };
+  isGuest?: boolean;
 }
 
-export default function VerdictCell({ submission }: VerdictCellProps) {
+export default function VerdictCell({
+  submission,
+  isGuest = false,
+}: VerdictCellProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  if (submission.verdict === "FROZEN") {
+    return <VerdictBadge status="FROZEN" />;
+  }
+
+  if (isGuest) {
+    if (submission.verdict === Verdict.ACCEPTED) {
+      return <VerdictBadge status={Verdict.ACCEPTED} />;
+    } else {
+      return <VerdictBadge status="REJECTED" />;
+    }
+  }
 
   // 如果不是编译错误，或者没有错误信息，直接显示普通状态
   if (

@@ -62,7 +62,7 @@ export default function ProblemInfoCard({
             <button
               disabled
               className="w-full bg-gray-400 text-white text-center py-2 rounded-sm font-bold shadow-sm cursor-not-allowed opacity-60"
-              title="Admins cannot submit"
+              title="Cannot submit"
             >
               Submit
             </button>

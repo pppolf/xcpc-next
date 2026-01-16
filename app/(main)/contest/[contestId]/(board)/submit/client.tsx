@@ -14,18 +14,18 @@ const LANGUAGES = [
 export default function SubmitForm({
   contestId,
   problemId,
+  isAdmin,
 }: {
   contestId: string;
   problemId: string;
+  isAdmin: boolean;
 }) {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("cpp");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 调用后端提交接口
-    const res = await submitCode(Number(contestId), problemId, language, code);
-    console.log(res);
+    await submitCode(Number(contestId), problemId, language, code);
   };
 
   return (
@@ -71,12 +71,23 @@ export default function SubmitForm({
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              type="submit"
-              className="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-sm text-sm px-8 py-3 shadow-md transition-colors"
-            >
-              Submit
-            </button>
+            {isAdmin ? (
+              <button
+                disabled
+                className="bg-gray-400 text-white font-medium rounded-sm text-sm px-8 py-3 shadow-md cursor-not-allowed opacity-60"
+                title="Admins cannot submit"
+              >
+                Submit
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-sm text-sm px-8 py-3 shadow-md transition-colors"
+              >
+                Submit
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setCode("")}

@@ -76,12 +76,26 @@ export default async function Status({ params, searchParams }: Props) {
     });
   }
 
+  const superAdminToken = cookieStore.get("auth_token")?.value;
+  let superAdmin = null;
+  if (superAdminToken) {
+    const superAdminPayload = (await verifyAuth(superAdminToken)) || null;
+    if (superAdminPayload?.userId) {
+      superAdmin = await prisma.globalUser.findUnique({
+        where: { id: superAdminPayload.userId },
+        select: {
+          id: true,
+        },
+      });
+    }
+  }
   // 4. 权限校验逻辑
   const isAdmin =
-    currentUser &&
-    currentUser.contestId === cid &&
-    (currentUser.role === ContestRole.ADMIN ||
-      currentUser.role === ContestRole.JUDGE);
+    superAdmin !== null ||
+    (currentUser &&
+      currentUser.contestId === cid &&
+      (currentUser.role === ContestRole.ADMIN ||
+        currentUser.role === ContestRole.JUDGE));
 
   const isContestEnded = contestInfo.status === ContestStatus.ENDED;
   const canViewAll = isContestEnded || isAdmin || false;
@@ -209,7 +223,7 @@ export default async function Status({ params, searchParams }: Props) {
       : "";
 
   return (
-    <div className="bg-white min-w-7xl max-w-7xl shadow-sm border border-gray-100 rounded-sm p-6">
+    <div className="bg-white w-full mx-auto px-4 shadow-sm border border-gray-100 rounded-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-serif font-bold text-gray-800">
           Status <span className="text-sm text-gray-500">{statusLabel}</span>

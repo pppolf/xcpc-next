@@ -57,30 +57,49 @@ export default async function SubmissionDetail({ params }: Props) {
   // 3. 权限校验逻辑
   const isContestEnded = contestInfo.status === ContestStatus.ENDED;
 
-  if (payload?.userId) {
-    const currentUser = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        role: true,
-        contestId: true,
-      },
-    });
+  const superAdminToken = cookieStore.get("auth_token")?.value;
+  let superAdmin = null;
+  if (superAdminToken) {
+    const superAdminPayload = (await verifyAuth(superAdminToken)) || null;
+    if (superAdminPayload?.userId) {
+      superAdmin = await prisma.globalUser.findUnique({
+        where: { id: superAdminPayload.userId },
+        select: {
+          id: true,
+        },
+      });
+    }
+  }
+
+  if (payload?.userId || superAdmin !== null) {
+    let currentUser = null;
+    if (payload?.userId) {
+      currentUser = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: {
+          id: true,
+          role: true,
+          contestId: true,
+        },
+      });
+
+      if (!currentUser || currentUser.contestId !== cid) {
+        return notFound();
+      }
+    }
 
     // 检查是否为当前比赛的用户
-    if (!currentUser || currentUser.contestId !== cid) {
-      return notFound();
-    }
 
     // 检查权限逻辑：
     // 1. 提交者总能看自己的
     // 2. 管理员/评委总能看所有的
     // 3. 普通用户只能在比赛结束后看其他人的
-    const isOwner = submission?.user?.id === currentUser.id;
-    const isAdmin =
-      currentUser.role === ContestRole.ADMIN ||
-      currentUser.role === ContestRole.JUDGE;
 
+    const isOwner = submission?.user?.id === currentUser?.id;
+    const isAdmin =
+      superAdmin !== null ||
+      currentUser?.role === ContestRole.ADMIN ||
+      currentUser?.role === ContestRole.JUDGE;
     const hasPermission = isOwner || isAdmin || (isContestEnded && !isOwner);
 
     if (!hasPermission) {
@@ -106,7 +125,7 @@ export default async function SubmissionDetail({ params }: Props) {
   const submitTime = new Date(submission.submittedAt).toLocaleString("zh-CN");
 
   return (
-    <div className="bg-white min-w-7xl max-w-7xl shadow-sm border border-gray-100 rounded-sm p-6">
+    <div className="bg-white w-full shadow-sm border border-gray-100 rounded-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-serif font-bold text-gray-800">
           Submission #{submission.displayId}

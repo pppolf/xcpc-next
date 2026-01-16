@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-// 定义 Props 接口，方便父组件传参
 interface ProblemInfoProps {
   contestId: string;
   problemId: string;
@@ -11,6 +10,7 @@ interface ProblemInfoProps {
     accepted: number;
   };
   type?: "problem" | "submit";
+  isAdmin?: boolean;
 }
 
 export default function ProblemInfoCard({
@@ -18,6 +18,7 @@ export default function ProblemInfoCard({
   problemId,
   info,
   type = "problem",
+  isAdmin = false,
 }: ProblemInfoProps) {
   const memoryLimit = info.memoryLimit * 1024;
   return (
@@ -57,14 +58,24 @@ export default function ProblemInfoCard({
         {/* 🔘 动态按钮逻辑 */}
         {type === "problem" ? (
           // 情况 A: 在题目页 -> 显示 "Submit" 按钮，去往提交页
-          <Link
-            href={`/contest/${contestId}/submit?problem=${problemId}`}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-sm font-bold shadow-sm transition-colors"
-          >
-            Submit
-          </Link>
+          isAdmin ? (
+            <button
+              disabled
+              className="w-full bg-gray-400 text-white text-center py-2 rounded-sm font-bold shadow-sm cursor-not-allowed opacity-60"
+              title="Admins cannot submit"
+            >
+              Submit
+            </button>
+          ) : (
+            <Link
+              href={`/contest/${contestId}/submit?problem=${problemId}`}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-sm font-bold shadow-sm transition-colors"
+            >
+              Submit
+            </Link>
+          )
         ) : (
-          // 情况 B: 在提交页 -> 显示 "< Problem" 按钮，回题目页
+          // 情况 B: 在提交页 -> 显示 "< Problem" 按钮，回题目页(
           <Link
             href={`/contest/${contestId}/problems/${problemId}`}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-sm font-bold shadow-sm transition-colors"

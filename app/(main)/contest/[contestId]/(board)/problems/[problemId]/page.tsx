@@ -8,8 +8,9 @@ import Link from "next/link";
 import CodeBlock from "@/components/CodeBlock";
 import ProblemInfoCard from "@/components/ProblemInfoCard";
 import { prisma } from "@/lib/prisma";
-import { Verdict } from "@/lib/generated/prisma/client";
+import { ContestRole, Verdict } from "@/lib/generated/prisma/client";
 import { notFound } from "next/navigation";
+import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
 
 type Problem = {
   id: number;
@@ -44,7 +45,6 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default async function ProblemDetail({ params }: Props) {
-  // 实际开发中：const problem = await fetchProblem(params.contestId, params.problemId);
   const { contestId, problemId } = await params;
   const cid = Number(contestId);
 
@@ -82,8 +82,15 @@ export default async function ProblemDetail({ params }: Props) {
   };
   // const problem = mockProblem;
 
+  const SuperAdmin = await getCurrentSuper();
+  const user = await getCurrentUser();
+  const isAdmin =
+    (SuperAdmin as unknown as UserJwtPayload)?.isGlobalAdmin ||
+    (user as unknown as UserJwtPayload)?.role !== ContestRole.TEAM;
+
+  console.log(user, isAdmin);
   return (
-    <div className="flex flex-col min-w-7xl max-w-7xl lg:flex-row gap-6 items-start">
+    <div className="flex flex-col w-full lg:flex-row gap-6 items-start">
       {/* --- 左侧：题目基本信息卡片 --- */}
       <aside className="w-full lg:w-72 shrink-0 space-y-4">
         <ProblemInfoCard
@@ -91,6 +98,7 @@ export default async function ProblemDetail({ params }: Props) {
           problemId={problemId}
           info={info}
           type="problem"
+          isAdmin={isAdmin}
         />
       </aside>
 
@@ -156,12 +164,22 @@ export default async function ProblemDetail({ params }: Props) {
           </div>
 
           <div className="mt-12 text-center">
-            <Link
-              href={`/contest/${contestId}/submit?problem=${problemId}`}
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-sm font-bold shadow-md transition-transform active:scale-95"
-            >
-              Submit Solution
-            </Link>
+            {isAdmin ? (
+              <button
+                disabled
+                className="bg-gray-400 text-white font-medium rounded-sm text-sm px-8 py-3 shadow-md cursor-not-allowed opacity-60"
+                title="Admins cannot submit"
+              >
+                Submit Solution
+              </button>
+            ) : (
+              <Link
+                href={`/contest/${contestId}/submit?problem=${problemId}`}
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-sm font-bold shadow-md transition-transform active:scale-95"
+              >
+                Submit Solution
+              </Link>
+            )}
           </div>
         </div>
       </main>

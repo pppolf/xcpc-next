@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { ContestType } from "@/lib/generated/prisma/client";
+import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -45,6 +45,17 @@ export async function updateContest(contestId: number, formData: FormData) {
     throw new Error("End time must be after start time");
   }
 
+  const now = new Date();
+  let newStatus: ContestStatus;
+
+  if (now < startTime) {
+    newStatus = ContestStatus.PENDING;
+  } else if (now >= startTime && now < endTime) {
+    newStatus = ContestStatus.RUNNING;
+  } else {
+    newStatus = ContestStatus.ENDED;
+  }
+
   await prisma.contest.update({
     where: { id: contestId },
     data: {
@@ -55,6 +66,7 @@ export async function updateContest(contestId: number, formData: FormData) {
       type,
       password: password || null,
       config: config,
+      status: newStatus,
     },
   });
 

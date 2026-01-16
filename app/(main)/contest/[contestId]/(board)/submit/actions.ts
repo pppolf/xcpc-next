@@ -1,7 +1,8 @@
 "use server";
 
+import { ContestConfig } from "@/app/(main)/page";
 import { verifyAuth } from "@/lib/auth";
-import { Verdict } from "@/lib/generated/prisma/client";
+import { ContestRole, Verdict } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { judgeQueue } from "@/lib/queue";
 import { cookies } from "next/headers";
@@ -29,10 +30,43 @@ export async function submitCode(
       contestId,
       displayId: problemDisplayId,
     },
+    include: {
+      contest: true,
+    },
   });
 
   if (!contestProblem) {
     throw new Error("Problem not found in this contest");
+  }
+
+  const contest = contestProblem.contest;
+
+  // === 新增逻辑开始 ===
+  const now = new Date();
+  const config = contest.config as ContestConfig;
+  const isEnded = now > contest.endTime;
+
+  // 计算封榜开始时间
+  let isFrozen = false;
+  if (config && config.frozenDuration) {
+    const freezeTime = new Date(
+      contest.endTime.getTime() - config.frozenDuration * 60 * 1000
+    );
+    // 如果当前时间已过封榜线，即为封榜状态（无论是否比赛结束，直到管理员修改配置解榜）
+    isFrozen = now >= freezeTime;
+  }
+
+  // 校验：比赛结束 && 封榜期间 && 非全局管理员/比赛管理员 -> 禁止提交
+  // (防止用户在封榜未揭晓前通过 Upsolving 试探结果)
+  const isAdmin =
+    payload?.role === ContestRole.ADMIN ||
+    payload?.role === ContestRole.JUDGE ||
+    payload?.isGlobalAdmin;
+  console.log(isEnded, isFrozen, isAdmin);
+  if (isEnded && isFrozen && !isAdmin) {
+    throw new Error(
+      "禁止提交：比赛已结束且处于封榜期间，请等待解榜后再尝试提交。"
+    );
   }
 
   // 使用事务处理 displayId 自增，防止并发冲突

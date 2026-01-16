@@ -2,6 +2,8 @@ import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { JsonValue } from "@prisma/client/runtime/client";
 import Link from "next/link";
+import { getCurrentUser, UserJwtPayload } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export type ContestConfig = {
   medal: {
@@ -29,6 +31,20 @@ export interface Contest {
 }
 
 export default async function ContestList() {
+  // 权限校验：检查当前用户是否为全局管理员
+  const currentUser = await getCurrentUser();
+
+  // 如果用户未登录或不是全局管理员，重定向到用户所在的比赛
+  if (
+    currentUser &&
+    typeof currentUser !== "string" &&
+    !(currentUser as UserJwtPayload).isGlobalAdmin
+  ) {
+    if ((currentUser as UserJwtPayload).contestId) {
+      redirect(`/contest/${(currentUser as UserJwtPayload).contestId}`);
+    }
+  }
+
   const contests: Contest[] = await prisma.contest.findMany({
     orderBy: { id: "desc" },
   });

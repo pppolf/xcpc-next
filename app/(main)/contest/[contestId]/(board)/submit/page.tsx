@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import ProblemInfoCard from "@/components/ProblemInfoCard";
 import { prisma } from "@/lib/prisma";
 import SubmitForm from "./client";
+import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
+import { ContestRole, Verdict } from "@/lib/generated/prisma/client";
 
 interface Props {
   searchParams: Promise<{ problem?: string }>;
@@ -26,7 +28,11 @@ export default async function SubmitPage({ params, searchParams }: Props) {
       where: { contestId: cid, problemId: problem.id },
     }),
     prisma.submission.count({
-      where: { contestId: cid, problemId: problem.id, verdict: "ACCEPTED" },
+      where: {
+        contestId: cid,
+        problemId: problem.id,
+        verdict: Verdict.ACCEPTED,
+      },
     }),
   ]);
 
@@ -37,18 +43,30 @@ export default async function SubmitPage({ params, searchParams }: Props) {
     accepted: acStats,
   };
 
+  const SuperAdmin = await getCurrentSuper();
+  const user = await getCurrentUser();
+
+  const isAdmin =
+    (SuperAdmin as unknown as UserJwtPayload)?.isGlobalAdmin ||
+    (user as unknown as UserJwtPayload)?.role !== ContestRole.TEAM;
+  console.log(isAdmin);
   return (
-    <div className="flex flex-col min-w-7xl max-w-7xl lg:flex-row gap-6 items-start">
+    <div className="flex flex-col w-full lg:flex-row gap-6 items-start">
       <aside>
         <ProblemInfoCard
           contestId={contestId}
           problemId={displayId}
           info={info}
           type="submit"
+          isAdmin={isAdmin}
         />
       </aside>
 
-      <SubmitForm contestId={contestId} problemId={displayId} />
+      <SubmitForm
+        contestId={contestId}
+        problemId={displayId}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }

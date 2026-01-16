@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Merriweather, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const serif = Merriweather({
   weight: ["300", "400", "700", "900"],
@@ -20,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XCPC Contest System",
-  description: "Algorithm Contest Platform",
+  title: "XCPC Next",
+  description: "Next generation XCPC platform",
 };
 
 export default function RootLayout({
@@ -32,11 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${serif.variable} ${geistSans.variable} ${geistMono.variable} bg-gray-50 min-h-screen flex flex-col font-sans`}
+        className={`${inter.variable} ${serif.variable} ${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
       >
-        <AuthProvider>
-            {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

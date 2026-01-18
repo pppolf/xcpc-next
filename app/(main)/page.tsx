@@ -2,7 +2,7 @@ import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { JsonValue } from "@prisma/client/runtime/client";
 import Link from "next/link";
-import { getCurrentSuper, UserJwtPayload } from "@/lib/auth";
+import { getCurrentUser, UserJwtPayload } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import {
   LockClosedIcon,
@@ -58,13 +58,9 @@ function formatDate(date: Date) {
 }
 
 export default async function ContestList() {
-  const currentUser = await getCurrentSuper();
+  const currentUser = await getCurrentUser();
 
-  if (
-    currentUser &&
-    typeof currentUser !== "string" &&
-    !(currentUser as UserJwtPayload).isGlobalAdmin
-  ) {
+  if (currentUser) {
     if ((currentUser as UserJwtPayload).contestId) {
       redirect(`/contest/${(currentUser as UserJwtPayload).contestId}`);
     }

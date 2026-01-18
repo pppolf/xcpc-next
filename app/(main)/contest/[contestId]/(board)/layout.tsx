@@ -66,7 +66,7 @@ export default async function ContestLayout({ children, params }: Props) {
             />
           </div>
         </div>
-        <div className="min-h-screen w-full overflow-x-hidden">{children}</div>
+        <div className="w-full overflow-x-hidden">{children}</div>
       </div>
     </div>
   );

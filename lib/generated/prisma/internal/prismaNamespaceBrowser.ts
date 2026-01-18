@@ -180,10 +180,13 @@ export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof
 export const ClarificationScalarFieldEnum = {
   id: 'id',
   contestId: 'contestId',
+  displayId: 'displayId',
+  problemId: 'problemId',
   userId: 'userId',
   title: 'title',
   content: 'content',
   category: 'category',
+  isPublic: 'isPublic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

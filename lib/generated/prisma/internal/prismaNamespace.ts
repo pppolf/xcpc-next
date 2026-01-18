@@ -1145,10 +1145,13 @@ export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof
 export const ClarificationScalarFieldEnum = {
   id: 'id',
   contestId: 'contestId',
+  displayId: 'displayId',
+  problemId: 'problemId',
   userId: 'userId',
   title: 'title',
   content: 'content',
   category: 'category',
+  isPublic: 'isPublic',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1344,6 +1347,13 @@ export type EnumClariCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'ClariCategory[]'
  */
 export type ListEnumClariCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ClariCategory[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

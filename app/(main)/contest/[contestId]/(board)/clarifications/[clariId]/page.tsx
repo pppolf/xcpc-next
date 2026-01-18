@@ -1,117 +1,233 @@
-"use client"; // 使用 Client Component 方便做表单交互
-
 import Link from "next/link";
-import * as React from 'react';
-
-// 模拟详情数据
-const mockThread = {
-  id: 101,
-  title: "#1002 1002 数据已更新，深感抱歉",
-  content: `由于比赛准备比较仓促，1002 虽然经过一定测试仍有问题，后续会 rejudge 之前的 1002 提交记录。\n\n对各位造成了不好的比赛体验，在这里表示抱歉。`,
-  author: "admin",
-  time: "21:28:02, Mar 7",
-  replies: [
-    {
-      id: 1,
-      content: "能不能给一下1002的数据啊，和std对拍找不出来错样例QwQ",
-      author: "team360 陈炎松 长安大学",
-      time: "23:22:47, Mar 10",
-    },
-  ],
-};
+import { notFound } from "next/navigation";
+import {
+  getClarificationDetail,
+  submitReply,
+  toggleClarificationVisibility,
+} from "../actions";
+import { format } from "date-fns";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  UserCircleIcon,
+  ClockIcon,
+} from "@heroicons/react/24/outline";
+import { ContestRole } from "@/lib/generated/prisma/enums";
 
 interface Props {
-  params: React.Usable<{
+  params: Promise<{
     contestId: string;
-		clariId: string;
+    clariId: string;
   }>;
 }
 
-export default function ClarificationDetail({
-  params,
-}: Props) {
-  // 实际开发中 const thread = await fetch(...)
-	const {contestId} = React.use(params);
+export default async function ClarificationDetail({ params }: Props) {
+  const { contestId, clariId } = await params;
+  const cid = Number(contestId);
+  const id = Number(clariId);
+
+  const data = await getClarificationDetail(cid, id);
+
+  if (!data) notFound();
+
+  const { thread, isAdmin, currentUserId } = data;
+  const formatDate = (date: Date) => format(date, "MMM d, HH:mm");
+
   return (
-    <div className="space-y-6 mx-auto">
-      {/* 返回按钮 */}
-      <Link
-        href={`/contest/${contestId}/clarifications`}
-        className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1 mb-2"
+    <div className="mx-auto pb-10">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href={`/contest/${contestId}/clarifications`}
+          className="text-sm font-medium text-gray-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+        >
+          &larr; Back to List
+        </Link>
+
+        {/* 【新增功能】管理员控制面板 */}
+        {isAdmin && (
+          <form
+            action={toggleClarificationVisibility.bind(
+              null,
+              cid,
+              id,
+              thread.isPublic
+            )}
+          >
+            <button
+              type="submit"
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold border transition-colors ${
+                thread.isPublic
+                  ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                  : "bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+              }`}
+            >
+              {thread.isPublic ? (
+                <>
+                  <EyeSlashIcon className="w-4 h-4" /> Unpublish (Make Private)
+                </>
+              ) : (
+                <>
+                  <EyeIcon className="w-4 h-4" /> Publish to All (Make Public)
+                </>
+              )}
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* --- Main Post --- */}
+      <div
+        className={`bg-white border rounded-lg shadow-sm overflow-hidden mb-8 ${
+          thread.isPublic ? "border-orange-300" : "border-gray-200"
+        }`}
       >
-        &larr; Back to Clarifications
-      </Link>
-
-      {/* --- 1. Main Post (主楼) --- */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-8">
-        <h1 className="text-2xl font-serif font-bold text-blue-900 mb-6">
-          {mockThread.title}
-        </h1>
-
-        {/* 杭电风格的细分割线 */}
-        <div className="h-px bg-gray-300 w-full mb-6"></div>
-
-        <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-line mb-8">
-          {mockThread.content}
+        {/* Header */}
+        <div
+          className={`px-6 py-5 border-b ${
+            thread.isPublic
+              ? "bg-orange-50 border-orange-100"
+              : "bg-gray-50 border-gray-100"
+          }`}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span
+                  className={`text-xs font-bold px-2 py-0.5 rounded border uppercase tracking-wide ${
+                    thread.isPublic
+                      ? "bg-orange-200 text-orange-800 border-orange-300"
+                      : "bg-gray-200 text-gray-700 border-gray-300"
+                  }`}
+                >
+                  {thread.isPublic ? "Public Board" : "Private"}
+                </span>
+                {thread.displayId && (
+                  <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    Problem {thread.displayId}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 font-serif leading-tight">
+                {thread.title}
+              </h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+            <span className="flex items-center gap-1">
+              <UserCircleIcon className="w-4 h-4" />
+              {thread.user?.displayName || thread.user?.username || "Unknown"}
+            </span>
+            <span className="flex items-center gap-1">
+              <ClockIcon className="w-4 h-4" />
+              {formatDate(thread.createdAt)}
+            </span>
+          </div>
         </div>
 
-        <div className="text-xs text-gray-500 font-mono">
-          {mockThread.author} @ {mockThread.time}
+        {/* Content */}
+        <div className="p-8 text-gray-800 leading-relaxed text-base whitespace-pre-wrap">
+          {thread.content}
         </div>
       </div>
 
-      {/* --- 2. Replies List (回复列表) --- */}
-      {mockThread.replies.length > 0 && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-8">
-          <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4 pl-2">
-            Replies
-          </h2>
-          <div className="h-px bg-gray-300 w-full mb-6"></div>
+      {/* --- Replies Section --- */}
+      <div className="space-y-6">
+        {thread.replies.map((reply) => {
+          // 判断是否是当前登录用户发的
+          const isMe = reply.userId === currentUserId;
+          // 判断回复者身份是否是管理员/裁判
+          const isReplyByStaff =
+            reply.user?.role === ContestRole.ADMIN ||
+            reply.user?.role === ContestRole.JUDGE;
 
-          <div className="space-y-8">
-            {mockThread.replies.map((reply) => (
+          return (
+            <div
+              key={reply.id}
+              className={`flex gap-4 ${isMe ? "flex-row-reverse" : ""}`}
+            >
+              {/* Avatar Placeholder */}
               <div
-                key={reply.id}
-                className="border-b border-gray-100 last:border-0 pb-6 last:pb-0"
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
+                  isMe
+                    ? "bg-blue-600 text-white border-blue-600" // 自己：深蓝背景
+                    : isReplyByStaff
+                    ? "bg-orange-100 text-orange-600 border-orange-200" // 管理员：橙色背景
+                    : "bg-gray-100 text-gray-500 border-gray-200" // 路人：灰色背景
+                }`}
+                title={reply.user?.username}
               >
-                <div className="text-gray-800 text-sm whitespace-pre-wrap mb-3">
+                <span className="font-bold text-xs">
+                  {isMe ? "ME" : isReplyByStaff ? "ADM" : "USR"}
+                </span>
+              </div>
+
+              {/* Chat Bubble */}
+              <div
+                className={`max-w-[85%] rounded-2xl p-4 shadow-sm border text-sm leading-relaxed whitespace-pre-wrap ${
+                  isMe
+                    ? "bg-blue-50 border-blue-100 rounded-tr-sm text-gray-800" // 自己：浅蓝气泡，直角在右上
+                    : "bg-white border-gray-200 rounded-tl-sm text-gray-800" // 别人：白色气泡，直角在左上
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2 mb-2 text-xs ${
+                    isMe ? "justify-end opacity-70" : "opacity-70"
+                  }`}
+                >
+                  {/* 这里处理名字显示逻辑：如果是别人发的，显示名字和头衔 */}
+                  {!isMe && (
+                    <span className="font-bold flex items-center gap-1">
+                      {reply.user?.displayName || reply.user?.username}
+                      {isReplyByStaff && (
+                        <span className="bg-orange-500 text-white px-1.5 rounded-sm text-[10px]">
+                          管理员
+                        </span>
+                      )}
+                    </span>
+                  )}
+
+                  <span className="font-mono text-gray-400">
+                    {formatDate(reply.createdAt)}
+                  </span>
+                </div>
+
+                <div className={isMe ? "text-right" : "text-left"}>
                   {reply.content}
                 </div>
-                <div className="text-xs text-gray-400 font-mono">
-                  {reply.author} @ {reply.time}
-                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* --- 3. Reply Form (回复框) --- */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-8">
-        <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4 pl-2">
-          Replay
-        </h2>
-        <div className="h-px bg-gray-300 w-full mb-6"></div>
+      {/* --- Reply Box --- */}
+      <div className="mt-10 pt-6 border-t border-gray-200">
+        <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">
+          Post a Reply
+        </h3>
+        <form action={submitReply} className="p-2">
+          <input type="hidden" name="contestId" value={contestId} />
+          <input type="hidden" name="clariId" value={clariId} />
 
-        <form className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Content
-            </label>
+          <div className="relative">
             <textarea
+              name="content"
+              required
               rows={4}
-              className="w-full bg-[#eef2f7] border border-gray-300 text-gray-900 text-sm rounded-sm focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none transition-colors hover:bg-white"
-              placeholder="Type your clarification here..."
+              className="w-full bg-white border border-gray-300 rounded-lg p-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm transition-all"
+              placeholder={
+                isAdmin ? "Type official response..." : "Add more details..."
+              }
             ></textarea>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-sm text-sm px-6 py-2.5 shadow-md transition-colors"
-            >
-              Submit Reply
-            </button>
+            <div className="absolute bottom-3 right-3">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-1.5 text-sm font-bold rounded hover:bg-blue-700 shadow-sm transition-colors"
+              >
+                Reply
+              </button>
+            </div>
           </div>
         </form>
       </div>

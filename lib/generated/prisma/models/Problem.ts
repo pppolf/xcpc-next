@@ -262,6 +262,7 @@ export type ProblemWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   contestProblems?: Prisma.ContestProblemListRelationFilter
   submissions?: Prisma.SubmissionListRelationFilter
+  clarifications?: Prisma.ClarificationListRelationFilter
 }
 
 export type ProblemOrderByWithRelationInput = {
@@ -278,6 +279,7 @@ export type ProblemOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   contestProblems?: Prisma.ContestProblemOrderByRelationAggregateInput
   submissions?: Prisma.SubmissionOrderByRelationAggregateInput
+  clarifications?: Prisma.ClarificationOrderByRelationAggregateInput
 }
 
 export type ProblemWhereUniqueInput = Prisma.AtLeast<{
@@ -297,6 +299,7 @@ export type ProblemWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   contestProblems?: Prisma.ContestProblemListRelationFilter
   submissions?: Prisma.SubmissionListRelationFilter
+  clarifications?: Prisma.ClarificationListRelationFilter
 }, "id">
 
 export type ProblemOrderByWithAggregationInput = {
@@ -348,6 +351,7 @@ export type ProblemCreateInput = {
   updatedAt?: Date | string
   contestProblems?: Prisma.ContestProblemCreateNestedManyWithoutProblemInput
   submissions?: Prisma.SubmissionCreateNestedManyWithoutProblemInput
+  clarifications?: Prisma.ClarificationCreateNestedManyWithoutProblemInput
 }
 
 export type ProblemUncheckedCreateInput = {
@@ -364,6 +368,7 @@ export type ProblemUncheckedCreateInput = {
   updatedAt?: Date | string
   contestProblems?: Prisma.ContestProblemUncheckedCreateNestedManyWithoutProblemInput
   submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutProblemInput
+  clarifications?: Prisma.ClarificationUncheckedCreateNestedManyWithoutProblemInput
 }
 
 export type ProblemUpdateInput = {
@@ -379,6 +384,7 @@ export type ProblemUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contestProblems?: Prisma.ContestProblemUpdateManyWithoutProblemNestedInput
   submissions?: Prisma.SubmissionUpdateManyWithoutProblemNestedInput
+  clarifications?: Prisma.ClarificationUpdateManyWithoutProblemNestedInput
 }
 
 export type ProblemUncheckedUpdateInput = {
@@ -395,6 +401,7 @@ export type ProblemUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contestProblems?: Prisma.ContestProblemUncheckedUpdateManyWithoutProblemNestedInput
   submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutProblemNestedInput
+  clarifications?: Prisma.ClarificationUncheckedUpdateManyWithoutProblemNestedInput
 }
 
 export type ProblemCreateManyInput = {
@@ -491,6 +498,11 @@ export type ProblemScalarRelationFilter = {
   isNot?: Prisma.ProblemWhereInput
 }
 
+export type ProblemNullableScalarRelationFilter = {
+  is?: Prisma.ProblemWhereInput | null
+  isNot?: Prisma.ProblemWhereInput | null
+}
+
 export type ProblemCreateNestedOneWithoutContestProblemsInput = {
   create?: Prisma.XOR<Prisma.ProblemCreateWithoutContestProblemsInput, Prisma.ProblemUncheckedCreateWithoutContestProblemsInput>
   connectOrCreate?: Prisma.ProblemCreateOrConnectWithoutContestProblemsInput
@@ -519,6 +531,22 @@ export type ProblemUpdateOneRequiredWithoutSubmissionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProblemUpdateToOneWithWhereWithoutSubmissionsInput, Prisma.ProblemUpdateWithoutSubmissionsInput>, Prisma.ProblemUncheckedUpdateWithoutSubmissionsInput>
 }
 
+export type ProblemCreateNestedOneWithoutClarificationsInput = {
+  create?: Prisma.XOR<Prisma.ProblemCreateWithoutClarificationsInput, Prisma.ProblemUncheckedCreateWithoutClarificationsInput>
+  connectOrCreate?: Prisma.ProblemCreateOrConnectWithoutClarificationsInput
+  connect?: Prisma.ProblemWhereUniqueInput
+}
+
+export type ProblemUpdateOneWithoutClarificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProblemCreateWithoutClarificationsInput, Prisma.ProblemUncheckedCreateWithoutClarificationsInput>
+  connectOrCreate?: Prisma.ProblemCreateOrConnectWithoutClarificationsInput
+  upsert?: Prisma.ProblemUpsertWithoutClarificationsInput
+  disconnect?: Prisma.ProblemWhereInput | boolean
+  delete?: Prisma.ProblemWhereInput | boolean
+  connect?: Prisma.ProblemWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProblemUpdateToOneWithWhereWithoutClarificationsInput, Prisma.ProblemUpdateWithoutClarificationsInput>, Prisma.ProblemUncheckedUpdateWithoutClarificationsInput>
+}
+
 export type ProblemCreateWithoutContestProblemsInput = {
   title: string
   type?: string
@@ -531,6 +559,7 @@ export type ProblemCreateWithoutContestProblemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   submissions?: Prisma.SubmissionCreateNestedManyWithoutProblemInput
+  clarifications?: Prisma.ClarificationCreateNestedManyWithoutProblemInput
 }
 
 export type ProblemUncheckedCreateWithoutContestProblemsInput = {
@@ -546,6 +575,7 @@ export type ProblemUncheckedCreateWithoutContestProblemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutProblemInput
+  clarifications?: Prisma.ClarificationUncheckedCreateNestedManyWithoutProblemInput
 }
 
 export type ProblemCreateOrConnectWithoutContestProblemsInput = {
@@ -576,6 +606,7 @@ export type ProblemUpdateWithoutContestProblemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.SubmissionUpdateManyWithoutProblemNestedInput
+  clarifications?: Prisma.ClarificationUpdateManyWithoutProblemNestedInput
 }
 
 export type ProblemUncheckedUpdateWithoutContestProblemsInput = {
@@ -591,6 +622,7 @@ export type ProblemUncheckedUpdateWithoutContestProblemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutProblemNestedInput
+  clarifications?: Prisma.ClarificationUncheckedUpdateManyWithoutProblemNestedInput
 }
 
 export type ProblemCreateWithoutSubmissionsInput = {
@@ -605,6 +637,7 @@ export type ProblemCreateWithoutSubmissionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   contestProblems?: Prisma.ContestProblemCreateNestedManyWithoutProblemInput
+  clarifications?: Prisma.ClarificationCreateNestedManyWithoutProblemInput
 }
 
 export type ProblemUncheckedCreateWithoutSubmissionsInput = {
@@ -620,6 +653,7 @@ export type ProblemUncheckedCreateWithoutSubmissionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   contestProblems?: Prisma.ContestProblemUncheckedCreateNestedManyWithoutProblemInput
+  clarifications?: Prisma.ClarificationUncheckedCreateNestedManyWithoutProblemInput
 }
 
 export type ProblemCreateOrConnectWithoutSubmissionsInput = {
@@ -650,6 +684,7 @@ export type ProblemUpdateWithoutSubmissionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contestProblems?: Prisma.ContestProblemUpdateManyWithoutProblemNestedInput
+  clarifications?: Prisma.ClarificationUpdateManyWithoutProblemNestedInput
 }
 
 export type ProblemUncheckedUpdateWithoutSubmissionsInput = {
@@ -665,6 +700,85 @@ export type ProblemUncheckedUpdateWithoutSubmissionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contestProblems?: Prisma.ContestProblemUncheckedUpdateManyWithoutProblemNestedInput
+  clarifications?: Prisma.ClarificationUncheckedUpdateManyWithoutProblemNestedInput
+}
+
+export type ProblemCreateWithoutClarificationsInput = {
+  title: string
+  type?: string
+  defaultTimeLimit: number
+  defaultMemoryLimit: number
+  sections: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  samples: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  hint?: string | null
+  judgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  contestProblems?: Prisma.ContestProblemCreateNestedManyWithoutProblemInput
+  submissions?: Prisma.SubmissionCreateNestedManyWithoutProblemInput
+}
+
+export type ProblemUncheckedCreateWithoutClarificationsInput = {
+  id?: number
+  title: string
+  type?: string
+  defaultTimeLimit: number
+  defaultMemoryLimit: number
+  sections: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  samples: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  hint?: string | null
+  judgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  contestProblems?: Prisma.ContestProblemUncheckedCreateNestedManyWithoutProblemInput
+  submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutProblemInput
+}
+
+export type ProblemCreateOrConnectWithoutClarificationsInput = {
+  where: Prisma.ProblemWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProblemCreateWithoutClarificationsInput, Prisma.ProblemUncheckedCreateWithoutClarificationsInput>
+}
+
+export type ProblemUpsertWithoutClarificationsInput = {
+  update: Prisma.XOR<Prisma.ProblemUpdateWithoutClarificationsInput, Prisma.ProblemUncheckedUpdateWithoutClarificationsInput>
+  create: Prisma.XOR<Prisma.ProblemCreateWithoutClarificationsInput, Prisma.ProblemUncheckedCreateWithoutClarificationsInput>
+  where?: Prisma.ProblemWhereInput
+}
+
+export type ProblemUpdateToOneWithWhereWithoutClarificationsInput = {
+  where?: Prisma.ProblemWhereInput
+  data: Prisma.XOR<Prisma.ProblemUpdateWithoutClarificationsInput, Prisma.ProblemUncheckedUpdateWithoutClarificationsInput>
+}
+
+export type ProblemUpdateWithoutClarificationsInput = {
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  defaultTimeLimit?: Prisma.IntFieldUpdateOperationsInput | number
+  defaultMemoryLimit?: Prisma.IntFieldUpdateOperationsInput | number
+  sections?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  samples?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  hint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  judgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  contestProblems?: Prisma.ContestProblemUpdateManyWithoutProblemNestedInput
+  submissions?: Prisma.SubmissionUpdateManyWithoutProblemNestedInput
+}
+
+export type ProblemUncheckedUpdateWithoutClarificationsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  defaultTimeLimit?: Prisma.IntFieldUpdateOperationsInput | number
+  defaultMemoryLimit?: Prisma.IntFieldUpdateOperationsInput | number
+  sections?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  samples?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  hint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  judgeConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  contestProblems?: Prisma.ContestProblemUncheckedUpdateManyWithoutProblemNestedInput
+  submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutProblemNestedInput
 }
 
 
@@ -675,11 +789,13 @@ export type ProblemUncheckedUpdateWithoutSubmissionsInput = {
 export type ProblemCountOutputType = {
   contestProblems: number
   submissions: number
+  clarifications: number
 }
 
 export type ProblemCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contestProblems?: boolean | ProblemCountOutputTypeCountContestProblemsArgs
   submissions?: boolean | ProblemCountOutputTypeCountSubmissionsArgs
+  clarifications?: boolean | ProblemCountOutputTypeCountClarificationsArgs
 }
 
 /**
@@ -706,6 +822,13 @@ export type ProblemCountOutputTypeCountSubmissionsArgs<ExtArgs extends runtime.T
   where?: Prisma.SubmissionWhereInput
 }
 
+/**
+ * ProblemCountOutputType without action
+ */
+export type ProblemCountOutputTypeCountClarificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ClarificationWhereInput
+}
+
 
 export type ProblemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -721,6 +844,7 @@ export type ProblemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   updatedAt?: boolean
   contestProblems?: boolean | Prisma.Problem$contestProblemsArgs<ExtArgs>
   submissions?: boolean | Prisma.Problem$submissionsArgs<ExtArgs>
+  clarifications?: boolean | Prisma.Problem$clarificationsArgs<ExtArgs>
   _count?: boolean | Prisma.ProblemCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["problem"]>
 
@@ -770,6 +894,7 @@ export type ProblemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type ProblemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contestProblems?: boolean | Prisma.Problem$contestProblemsArgs<ExtArgs>
   submissions?: boolean | Prisma.Problem$submissionsArgs<ExtArgs>
+  clarifications?: boolean | Prisma.Problem$clarificationsArgs<ExtArgs>
   _count?: boolean | Prisma.ProblemCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProblemIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -780,6 +905,7 @@ export type $ProblemPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     contestProblems: Prisma.$ContestProblemPayload<ExtArgs>[]
     submissions: Prisma.$SubmissionPayload<ExtArgs>[]
+    clarifications: Prisma.$ClarificationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1189,6 +1315,7 @@ export interface Prisma__ProblemClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   contestProblems<T extends Prisma.Problem$contestProblemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Problem$contestProblemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContestProblemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   submissions<T extends Prisma.Problem$submissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Problem$submissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  clarifications<T extends Prisma.Problem$clarificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Problem$clarificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ClarificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1662,6 +1789,30 @@ export type Problem$submissionsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.SubmissionScalarFieldEnum | Prisma.SubmissionScalarFieldEnum[]
+}
+
+/**
+ * Problem.clarifications
+ */
+export type Problem$clarificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Clarification
+   */
+  select?: Prisma.ClarificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Clarification
+   */
+  omit?: Prisma.ClarificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClarificationInclude<ExtArgs> | null
+  where?: Prisma.ClarificationWhereInput
+  orderBy?: Prisma.ClarificationOrderByWithRelationInput | Prisma.ClarificationOrderByWithRelationInput[]
+  cursor?: Prisma.ClarificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ClarificationScalarFieldEnum | Prisma.ClarificationScalarFieldEnum[]
 }
 
 /**

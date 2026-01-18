@@ -29,20 +29,25 @@ export type AggregateClarification = {
 export type ClarificationAvgAggregateOutputType = {
   id: number | null
   contestId: number | null
+  problemId: number | null
 }
 
 export type ClarificationSumAggregateOutputType = {
   id: number | null
   contestId: number | null
+  problemId: number | null
 }
 
 export type ClarificationMinAggregateOutputType = {
   id: number | null
   contestId: number | null
+  displayId: string | null
+  problemId: number | null
   userId: string | null
   title: string | null
   content: string | null
   category: $Enums.ClariCategory | null
+  isPublic: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,10 +55,13 @@ export type ClarificationMinAggregateOutputType = {
 export type ClarificationMaxAggregateOutputType = {
   id: number | null
   contestId: number | null
+  displayId: string | null
+  problemId: number | null
   userId: string | null
   title: string | null
   content: string | null
   category: $Enums.ClariCategory | null
+  isPublic: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -61,10 +69,13 @@ export type ClarificationMaxAggregateOutputType = {
 export type ClarificationCountAggregateOutputType = {
   id: number
   contestId: number
+  displayId: number
+  problemId: number
   userId: number
   title: number
   content: number
   category: number
+  isPublic: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -74,20 +85,25 @@ export type ClarificationCountAggregateOutputType = {
 export type ClarificationAvgAggregateInputType = {
   id?: true
   contestId?: true
+  problemId?: true
 }
 
 export type ClarificationSumAggregateInputType = {
   id?: true
   contestId?: true
+  problemId?: true
 }
 
 export type ClarificationMinAggregateInputType = {
   id?: true
   contestId?: true
+  displayId?: true
+  problemId?: true
   userId?: true
   title?: true
   content?: true
   category?: true
+  isPublic?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -95,10 +111,13 @@ export type ClarificationMinAggregateInputType = {
 export type ClarificationMaxAggregateInputType = {
   id?: true
   contestId?: true
+  displayId?: true
+  problemId?: true
   userId?: true
   title?: true
   content?: true
   category?: true
+  isPublic?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -106,10 +125,13 @@ export type ClarificationMaxAggregateInputType = {
 export type ClarificationCountAggregateInputType = {
   id?: true
   contestId?: true
+  displayId?: true
+  problemId?: true
   userId?: true
   title?: true
   content?: true
   category?: true
+  isPublic?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -204,10 +226,13 @@ export type ClarificationGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type ClarificationGroupByOutputType = {
   id: number
   contestId: number
+  displayId: string | null
+  problemId: number | null
   userId: string | null
-  title: string
+  title: string | null
   content: string
   category: $Enums.ClariCategory
+  isPublic: boolean
   createdAt: Date
   updatedAt: Date
   _count: ClarificationCountAggregateOutputType | null
@@ -238,13 +263,17 @@ export type ClarificationWhereInput = {
   NOT?: Prisma.ClarificationWhereInput | Prisma.ClarificationWhereInput[]
   id?: Prisma.IntFilter<"Clarification"> | number
   contestId?: Prisma.IntFilter<"Clarification"> | number
+  displayId?: Prisma.StringNullableFilter<"Clarification"> | string | null
+  problemId?: Prisma.IntNullableFilter<"Clarification"> | number | null
   userId?: Prisma.StringNullableFilter<"Clarification"> | string | null
-  title?: Prisma.StringFilter<"Clarification"> | string
+  title?: Prisma.StringNullableFilter<"Clarification"> | string | null
   content?: Prisma.StringFilter<"Clarification"> | string
   category?: Prisma.EnumClariCategoryFilter<"Clarification"> | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFilter<"Clarification"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Clarification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Clarification"> | Date | string
   contest?: Prisma.XOR<Prisma.ContestScalarRelationFilter, Prisma.ContestWhereInput>
+  problem?: Prisma.XOR<Prisma.ProblemNullableScalarRelationFilter, Prisma.ProblemWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   replies?: Prisma.ReplyListRelationFilter
 }
@@ -252,13 +281,17 @@ export type ClarificationWhereInput = {
 export type ClarificationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  displayId?: Prisma.SortOrderInput | Prisma.SortOrder
+  problemId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
-  title?: Prisma.SortOrder
+  title?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   contest?: Prisma.ContestOrderByWithRelationInput
+  problem?: Prisma.ProblemOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   replies?: Prisma.ReplyOrderByRelationAggregateInput
 }
@@ -269,13 +302,17 @@ export type ClarificationWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ClarificationWhereInput[]
   NOT?: Prisma.ClarificationWhereInput | Prisma.ClarificationWhereInput[]
   contestId?: Prisma.IntFilter<"Clarification"> | number
+  displayId?: Prisma.StringNullableFilter<"Clarification"> | string | null
+  problemId?: Prisma.IntNullableFilter<"Clarification"> | number | null
   userId?: Prisma.StringNullableFilter<"Clarification"> | string | null
-  title?: Prisma.StringFilter<"Clarification"> | string
+  title?: Prisma.StringNullableFilter<"Clarification"> | string | null
   content?: Prisma.StringFilter<"Clarification"> | string
   category?: Prisma.EnumClariCategoryFilter<"Clarification"> | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFilter<"Clarification"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Clarification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Clarification"> | Date | string
   contest?: Prisma.XOR<Prisma.ContestScalarRelationFilter, Prisma.ContestWhereInput>
+  problem?: Prisma.XOR<Prisma.ProblemNullableScalarRelationFilter, Prisma.ProblemWhereInput> | null
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   replies?: Prisma.ReplyListRelationFilter
 }, "id">
@@ -283,10 +320,13 @@ export type ClarificationWhereUniqueInput = Prisma.AtLeast<{
 export type ClarificationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  displayId?: Prisma.SortOrderInput | Prisma.SortOrder
+  problemId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
-  title?: Prisma.SortOrder
+  title?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ClarificationCountOrderByAggregateInput
@@ -302,21 +342,27 @@ export type ClarificationScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ClarificationScalarWhereWithAggregatesInput | Prisma.ClarificationScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"Clarification"> | number
   contestId?: Prisma.IntWithAggregatesFilter<"Clarification"> | number
+  displayId?: Prisma.StringNullableWithAggregatesFilter<"Clarification"> | string | null
+  problemId?: Prisma.IntNullableWithAggregatesFilter<"Clarification"> | number | null
   userId?: Prisma.StringNullableWithAggregatesFilter<"Clarification"> | string | null
-  title?: Prisma.StringWithAggregatesFilter<"Clarification"> | string
+  title?: Prisma.StringNullableWithAggregatesFilter<"Clarification"> | string | null
   content?: Prisma.StringWithAggregatesFilter<"Clarification"> | string
   category?: Prisma.EnumClariCategoryWithAggregatesFilter<"Clarification"> | $Enums.ClariCategory
+  isPublic?: Prisma.BoolWithAggregatesFilter<"Clarification"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Clarification"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Clarification"> | Date | string
 }
 
 export type ClarificationCreateInput = {
-  title: string
+  displayId?: string | null
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   contest: Prisma.ContestCreateNestedOneWithoutClarificationsInput
+  problem?: Prisma.ProblemCreateNestedOneWithoutClarificationsInput
   user?: Prisma.UserCreateNestedOneWithoutClarificationsInput
   replies?: Prisma.ReplyCreateNestedManyWithoutClarificationInput
 }
@@ -324,22 +370,28 @@ export type ClarificationCreateInput = {
 export type ClarificationUncheckedCreateInput = {
   id?: number
   contestId: number
+  displayId?: string | null
+  problemId?: number | null
   userId?: string | null
-  title: string
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutClarificationInput
 }
 
 export type ClarificationUpdateInput = {
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contest?: Prisma.ContestUpdateOneRequiredWithoutClarificationsNestedInput
+  problem?: Prisma.ProblemUpdateOneWithoutClarificationsNestedInput
   user?: Prisma.UserUpdateOneWithoutClarificationsNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutClarificationNestedInput
 }
@@ -347,10 +399,13 @@ export type ClarificationUpdateInput = {
 export type ClarificationUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutClarificationNestedInput
@@ -359,18 +414,23 @@ export type ClarificationUncheckedUpdateInput = {
 export type ClarificationCreateManyInput = {
   id?: number
   contestId: number
+  displayId?: string | null
+  problemId?: number | null
   userId?: string | null
-  title: string
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type ClarificationUpdateManyMutationInput = {
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -378,10 +438,13 @@ export type ClarificationUpdateManyMutationInput = {
 export type ClarificationUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -399,10 +462,13 @@ export type ClarificationOrderByRelationAggregateInput = {
 export type ClarificationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  displayId?: Prisma.SortOrder
+  problemId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -410,15 +476,19 @@ export type ClarificationCountOrderByAggregateInput = {
 export type ClarificationAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  problemId?: Prisma.SortOrder
 }
 
 export type ClarificationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  displayId?: Prisma.SortOrder
+  problemId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -426,10 +496,13 @@ export type ClarificationMaxOrderByAggregateInput = {
 export type ClarificationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  displayId?: Prisma.SortOrder
+  problemId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  isPublic?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -437,6 +510,7 @@ export type ClarificationMinOrderByAggregateInput = {
 export type ClarificationSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   contestId?: Prisma.SortOrder
+  problemId?: Prisma.SortOrder
 }
 
 export type ClarificationScalarRelationFilter = {
@@ -528,8 +602,54 @@ export type ClarificationUncheckedUpdateManyWithoutContestNestedInput = {
   deleteMany?: Prisma.ClarificationScalarWhereInput | Prisma.ClarificationScalarWhereInput[]
 }
 
+export type ClarificationCreateNestedManyWithoutProblemInput = {
+  create?: Prisma.XOR<Prisma.ClarificationCreateWithoutProblemInput, Prisma.ClarificationUncheckedCreateWithoutProblemInput> | Prisma.ClarificationCreateWithoutProblemInput[] | Prisma.ClarificationUncheckedCreateWithoutProblemInput[]
+  connectOrCreate?: Prisma.ClarificationCreateOrConnectWithoutProblemInput | Prisma.ClarificationCreateOrConnectWithoutProblemInput[]
+  createMany?: Prisma.ClarificationCreateManyProblemInputEnvelope
+  connect?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+}
+
+export type ClarificationUncheckedCreateNestedManyWithoutProblemInput = {
+  create?: Prisma.XOR<Prisma.ClarificationCreateWithoutProblemInput, Prisma.ClarificationUncheckedCreateWithoutProblemInput> | Prisma.ClarificationCreateWithoutProblemInput[] | Prisma.ClarificationUncheckedCreateWithoutProblemInput[]
+  connectOrCreate?: Prisma.ClarificationCreateOrConnectWithoutProblemInput | Prisma.ClarificationCreateOrConnectWithoutProblemInput[]
+  createMany?: Prisma.ClarificationCreateManyProblemInputEnvelope
+  connect?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+}
+
+export type ClarificationUpdateManyWithoutProblemNestedInput = {
+  create?: Prisma.XOR<Prisma.ClarificationCreateWithoutProblemInput, Prisma.ClarificationUncheckedCreateWithoutProblemInput> | Prisma.ClarificationCreateWithoutProblemInput[] | Prisma.ClarificationUncheckedCreateWithoutProblemInput[]
+  connectOrCreate?: Prisma.ClarificationCreateOrConnectWithoutProblemInput | Prisma.ClarificationCreateOrConnectWithoutProblemInput[]
+  upsert?: Prisma.ClarificationUpsertWithWhereUniqueWithoutProblemInput | Prisma.ClarificationUpsertWithWhereUniqueWithoutProblemInput[]
+  createMany?: Prisma.ClarificationCreateManyProblemInputEnvelope
+  set?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  disconnect?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  delete?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  connect?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  update?: Prisma.ClarificationUpdateWithWhereUniqueWithoutProblemInput | Prisma.ClarificationUpdateWithWhereUniqueWithoutProblemInput[]
+  updateMany?: Prisma.ClarificationUpdateManyWithWhereWithoutProblemInput | Prisma.ClarificationUpdateManyWithWhereWithoutProblemInput[]
+  deleteMany?: Prisma.ClarificationScalarWhereInput | Prisma.ClarificationScalarWhereInput[]
+}
+
+export type ClarificationUncheckedUpdateManyWithoutProblemNestedInput = {
+  create?: Prisma.XOR<Prisma.ClarificationCreateWithoutProblemInput, Prisma.ClarificationUncheckedCreateWithoutProblemInput> | Prisma.ClarificationCreateWithoutProblemInput[] | Prisma.ClarificationUncheckedCreateWithoutProblemInput[]
+  connectOrCreate?: Prisma.ClarificationCreateOrConnectWithoutProblemInput | Prisma.ClarificationCreateOrConnectWithoutProblemInput[]
+  upsert?: Prisma.ClarificationUpsertWithWhereUniqueWithoutProblemInput | Prisma.ClarificationUpsertWithWhereUniqueWithoutProblemInput[]
+  createMany?: Prisma.ClarificationCreateManyProblemInputEnvelope
+  set?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  disconnect?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  delete?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  connect?: Prisma.ClarificationWhereUniqueInput | Prisma.ClarificationWhereUniqueInput[]
+  update?: Prisma.ClarificationUpdateWithWhereUniqueWithoutProblemInput | Prisma.ClarificationUpdateWithWhereUniqueWithoutProblemInput[]
+  updateMany?: Prisma.ClarificationUpdateManyWithWhereWithoutProblemInput | Prisma.ClarificationUpdateManyWithWhereWithoutProblemInput[]
+  deleteMany?: Prisma.ClarificationScalarWhereInput | Prisma.ClarificationScalarWhereInput[]
+}
+
 export type EnumClariCategoryFieldUpdateOperationsInput = {
   set?: $Enums.ClariCategory
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type ClarificationCreateNestedOneWithoutRepliesInput = {
@@ -547,21 +667,27 @@ export type ClarificationUpdateOneRequiredWithoutRepliesNestedInput = {
 }
 
 export type ClarificationCreateWithoutUserInput = {
-  title: string
+  displayId?: string | null
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   contest: Prisma.ContestCreateNestedOneWithoutClarificationsInput
+  problem?: Prisma.ProblemCreateNestedOneWithoutClarificationsInput
   replies?: Prisma.ReplyCreateNestedManyWithoutClarificationInput
 }
 
 export type ClarificationUncheckedCreateWithoutUserInput = {
   id?: number
   contestId: number
-  title: string
+  displayId?: string | null
+  problemId?: number | null
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutClarificationInput
@@ -599,30 +725,39 @@ export type ClarificationScalarWhereInput = {
   NOT?: Prisma.ClarificationScalarWhereInput | Prisma.ClarificationScalarWhereInput[]
   id?: Prisma.IntFilter<"Clarification"> | number
   contestId?: Prisma.IntFilter<"Clarification"> | number
+  displayId?: Prisma.StringNullableFilter<"Clarification"> | string | null
+  problemId?: Prisma.IntNullableFilter<"Clarification"> | number | null
   userId?: Prisma.StringNullableFilter<"Clarification"> | string | null
-  title?: Prisma.StringFilter<"Clarification"> | string
+  title?: Prisma.StringNullableFilter<"Clarification"> | string | null
   content?: Prisma.StringFilter<"Clarification"> | string
   category?: Prisma.EnumClariCategoryFilter<"Clarification"> | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFilter<"Clarification"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Clarification"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Clarification"> | Date | string
 }
 
 export type ClarificationCreateWithoutContestInput = {
-  title: string
+  displayId?: string | null
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  problem?: Prisma.ProblemCreateNestedOneWithoutClarificationsInput
   user?: Prisma.UserCreateNestedOneWithoutClarificationsInput
   replies?: Prisma.ReplyCreateNestedManyWithoutClarificationInput
 }
 
 export type ClarificationUncheckedCreateWithoutContestInput = {
   id?: number
+  displayId?: string | null
+  problemId?: number | null
   userId?: string | null
-  title: string
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutClarificationInput
@@ -654,23 +789,82 @@ export type ClarificationUpdateManyWithWhereWithoutContestInput = {
   data: Prisma.XOR<Prisma.ClarificationUpdateManyMutationInput, Prisma.ClarificationUncheckedUpdateManyWithoutContestInput>
 }
 
-export type ClarificationCreateWithoutRepliesInput = {
-  title: string
+export type ClarificationCreateWithoutProblemInput = {
+  displayId?: string | null
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   contest: Prisma.ContestCreateNestedOneWithoutClarificationsInput
+  user?: Prisma.UserCreateNestedOneWithoutClarificationsInput
+  replies?: Prisma.ReplyCreateNestedManyWithoutClarificationInput
+}
+
+export type ClarificationUncheckedCreateWithoutProblemInput = {
+  id?: number
+  contestId: number
+  displayId?: string | null
+  userId?: string | null
+  title?: string | null
+  content: string
+  category?: $Enums.ClariCategory
+  isPublic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  replies?: Prisma.ReplyUncheckedCreateNestedManyWithoutClarificationInput
+}
+
+export type ClarificationCreateOrConnectWithoutProblemInput = {
+  where: Prisma.ClarificationWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClarificationCreateWithoutProblemInput, Prisma.ClarificationUncheckedCreateWithoutProblemInput>
+}
+
+export type ClarificationCreateManyProblemInputEnvelope = {
+  data: Prisma.ClarificationCreateManyProblemInput | Prisma.ClarificationCreateManyProblemInput[]
+  skipDuplicates?: boolean
+}
+
+export type ClarificationUpsertWithWhereUniqueWithoutProblemInput = {
+  where: Prisma.ClarificationWhereUniqueInput
+  update: Prisma.XOR<Prisma.ClarificationUpdateWithoutProblemInput, Prisma.ClarificationUncheckedUpdateWithoutProblemInput>
+  create: Prisma.XOR<Prisma.ClarificationCreateWithoutProblemInput, Prisma.ClarificationUncheckedCreateWithoutProblemInput>
+}
+
+export type ClarificationUpdateWithWhereUniqueWithoutProblemInput = {
+  where: Prisma.ClarificationWhereUniqueInput
+  data: Prisma.XOR<Prisma.ClarificationUpdateWithoutProblemInput, Prisma.ClarificationUncheckedUpdateWithoutProblemInput>
+}
+
+export type ClarificationUpdateManyWithWhereWithoutProblemInput = {
+  where: Prisma.ClarificationScalarWhereInput
+  data: Prisma.XOR<Prisma.ClarificationUpdateManyMutationInput, Prisma.ClarificationUncheckedUpdateManyWithoutProblemInput>
+}
+
+export type ClarificationCreateWithoutRepliesInput = {
+  displayId?: string | null
+  title?: string | null
+  content: string
+  category?: $Enums.ClariCategory
+  isPublic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  contest: Prisma.ContestCreateNestedOneWithoutClarificationsInput
+  problem?: Prisma.ProblemCreateNestedOneWithoutClarificationsInput
   user?: Prisma.UserCreateNestedOneWithoutClarificationsInput
 }
 
 export type ClarificationUncheckedCreateWithoutRepliesInput = {
   id?: number
   contestId: number
+  displayId?: string | null
+  problemId?: number | null
   userId?: string | null
-  title: string
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -692,22 +886,28 @@ export type ClarificationUpdateToOneWithWhereWithoutRepliesInput = {
 }
 
 export type ClarificationUpdateWithoutRepliesInput = {
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contest?: Prisma.ContestUpdateOneRequiredWithoutClarificationsNestedInput
+  problem?: Prisma.ProblemUpdateOneWithoutClarificationsNestedInput
   user?: Prisma.UserUpdateOneWithoutClarificationsNestedInput
 }
 
 export type ClarificationUncheckedUpdateWithoutRepliesInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -715,29 +915,38 @@ export type ClarificationUncheckedUpdateWithoutRepliesInput = {
 export type ClarificationCreateManyUserInput = {
   id?: number
   contestId: number
-  title: string
+  displayId?: string | null
+  problemId?: number | null
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type ClarificationUpdateWithoutUserInput = {
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contest?: Prisma.ContestUpdateOneRequiredWithoutClarificationsNestedInput
+  problem?: Prisma.ProblemUpdateOneWithoutClarificationsNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutClarificationNestedInput
 }
 
 export type ClarificationUncheckedUpdateWithoutUserInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutClarificationNestedInput
@@ -746,39 +955,51 @@ export type ClarificationUncheckedUpdateWithoutUserInput = {
 export type ClarificationUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ClarificationCreateManyContestInput = {
   id?: number
+  displayId?: string | null
+  problemId?: number | null
   userId?: string | null
-  title: string
+  title?: string | null
   content: string
   category?: $Enums.ClariCategory
+  isPublic?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type ClarificationUpdateWithoutContestInput = {
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  problem?: Prisma.ProblemUpdateOneWithoutClarificationsNestedInput
   user?: Prisma.UserUpdateOneWithoutClarificationsNestedInput
   replies?: Prisma.ReplyUpdateManyWithoutClarificationNestedInput
 }
 
 export type ClarificationUncheckedUpdateWithoutContestInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   replies?: Prisma.ReplyUncheckedUpdateManyWithoutClarificationNestedInput
@@ -786,10 +1007,66 @@ export type ClarificationUncheckedUpdateWithoutContestInput = {
 
 export type ClarificationUncheckedUpdateManyWithoutContestInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  problemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  title?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ClarificationCreateManyProblemInput = {
+  id?: number
+  contestId: number
+  displayId?: string | null
+  userId?: string | null
+  title?: string | null
+  content: string
+  category?: $Enums.ClariCategory
+  isPublic?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ClarificationUpdateWithoutProblemInput = {
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  contest?: Prisma.ContestUpdateOneRequiredWithoutClarificationsNestedInput
+  user?: Prisma.UserUpdateOneWithoutClarificationsNestedInput
+  replies?: Prisma.ReplyUpdateManyWithoutClarificationNestedInput
+}
+
+export type ClarificationUncheckedUpdateWithoutProblemInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  contestId?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  replies?: Prisma.ReplyUncheckedUpdateManyWithoutClarificationNestedInput
+}
+
+export type ClarificationUncheckedUpdateManyWithoutProblemInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  contestId?: Prisma.IntFieldUpdateOperationsInput | number
+  displayId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.EnumClariCategoryFieldUpdateOperationsInput | $Enums.ClariCategory
+  isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -828,13 +1105,17 @@ export type ClarificationCountOutputTypeCountRepliesArgs<ExtArgs extends runtime
 export type ClarificationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   contestId?: boolean
+  displayId?: boolean
+  problemId?: boolean
   userId?: boolean
   title?: boolean
   content?: boolean
   category?: boolean
+  isPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
+  problem?: boolean | Prisma.Clarification$problemArgs<ExtArgs>
   user?: boolean | Prisma.Clarification$userArgs<ExtArgs>
   replies?: boolean | Prisma.Clarification$repliesArgs<ExtArgs>
   _count?: boolean | Prisma.ClarificationCountOutputTypeDefaultArgs<ExtArgs>
@@ -843,53 +1124,67 @@ export type ClarificationSelect<ExtArgs extends runtime.Types.Extensions.Interna
 export type ClarificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   contestId?: boolean
+  displayId?: boolean
+  problemId?: boolean
   userId?: boolean
   title?: boolean
   content?: boolean
   category?: boolean
+  isPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
+  problem?: boolean | Prisma.Clarification$problemArgs<ExtArgs>
   user?: boolean | Prisma.Clarification$userArgs<ExtArgs>
 }, ExtArgs["result"]["clarification"]>
 
 export type ClarificationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   contestId?: boolean
+  displayId?: boolean
+  problemId?: boolean
   userId?: boolean
   title?: boolean
   content?: boolean
   category?: boolean
+  isPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
+  problem?: boolean | Prisma.Clarification$problemArgs<ExtArgs>
   user?: boolean | Prisma.Clarification$userArgs<ExtArgs>
 }, ExtArgs["result"]["clarification"]>
 
 export type ClarificationSelectScalar = {
   id?: boolean
   contestId?: boolean
+  displayId?: boolean
+  problemId?: boolean
   userId?: boolean
   title?: boolean
   content?: boolean
   category?: boolean
+  isPublic?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ClarificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "contestId" | "userId" | "title" | "content" | "category" | "createdAt" | "updatedAt", ExtArgs["result"]["clarification"]>
+export type ClarificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "contestId" | "displayId" | "problemId" | "userId" | "title" | "content" | "category" | "isPublic" | "createdAt" | "updatedAt", ExtArgs["result"]["clarification"]>
 export type ClarificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
+  problem?: boolean | Prisma.Clarification$problemArgs<ExtArgs>
   user?: boolean | Prisma.Clarification$userArgs<ExtArgs>
   replies?: boolean | Prisma.Clarification$repliesArgs<ExtArgs>
   _count?: boolean | Prisma.ClarificationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ClarificationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
+  problem?: boolean | Prisma.Clarification$problemArgs<ExtArgs>
   user?: boolean | Prisma.Clarification$userArgs<ExtArgs>
 }
 export type ClarificationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contest?: boolean | Prisma.ContestDefaultArgs<ExtArgs>
+  problem?: boolean | Prisma.Clarification$problemArgs<ExtArgs>
   user?: boolean | Prisma.Clarification$userArgs<ExtArgs>
 }
 
@@ -897,16 +1192,20 @@ export type $ClarificationPayload<ExtArgs extends runtime.Types.Extensions.Inter
   name: "Clarification"
   objects: {
     contest: Prisma.$ContestPayload<ExtArgs>
+    problem: Prisma.$ProblemPayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs> | null
     replies: Prisma.$ReplyPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     contestId: number
+    displayId: string | null
+    problemId: number | null
     userId: string | null
-    title: string
+    title: string | null
     content: string
     category: $Enums.ClariCategory
+    isPublic: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["clarification"]>
@@ -1304,6 +1603,7 @@ readonly fields: ClarificationFieldRefs;
 export interface Prisma__ClarificationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   contest<T extends Prisma.ContestDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ContestDefaultArgs<ExtArgs>>): Prisma.Prisma__ContestClient<runtime.Types.Result.GetResult<Prisma.$ContestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  problem<T extends Prisma.Clarification$problemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Clarification$problemArgs<ExtArgs>>): Prisma.Prisma__ProblemClient<runtime.Types.Result.GetResult<Prisma.$ProblemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.Clarification$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Clarification$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   replies<T extends Prisma.Clarification$repliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Clarification$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReplyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1337,10 +1637,13 @@ export interface Prisma__ClarificationClient<T, Null = never, ExtArgs extends ru
 export interface ClarificationFieldRefs {
   readonly id: Prisma.FieldRef<"Clarification", 'Int'>
   readonly contestId: Prisma.FieldRef<"Clarification", 'Int'>
+  readonly displayId: Prisma.FieldRef<"Clarification", 'String'>
+  readonly problemId: Prisma.FieldRef<"Clarification", 'Int'>
   readonly userId: Prisma.FieldRef<"Clarification", 'String'>
   readonly title: Prisma.FieldRef<"Clarification", 'String'>
   readonly content: Prisma.FieldRef<"Clarification", 'String'>
   readonly category: Prisma.FieldRef<"Clarification", 'ClariCategory'>
+  readonly isPublic: Prisma.FieldRef<"Clarification", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Clarification", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Clarification", 'DateTime'>
 }
@@ -1736,6 +2039,25 @@ export type ClarificationDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many Clarifications to delete.
    */
   limit?: number
+}
+
+/**
+ * Clarification.problem
+ */
+export type Clarification$problemArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Problem
+   */
+  select?: Prisma.ProblemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Problem
+   */
+  omit?: Prisma.ProblemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProblemInclude<ExtArgs> | null
+  where?: Prisma.ProblemWhereInput
 }
 
 /**

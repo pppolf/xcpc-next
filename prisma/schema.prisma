@@ -148,8 +148,9 @@ model Problem {
   contestProblems ContestProblem[]
   submissions     Submission[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  clarifications Clarification[]
 
   @@map("problems")
 }
@@ -224,12 +225,18 @@ model Clarification {
   contestId Int
   contest   Contest @relation(fields: [contestId], references: [id])
 
+  displayId String? // 存 A, B, C... 方便前端显示
+  problemId Int?
+  problem   Problem? @relation(fields: [problemId], references: [id])
+
   userId String? // 可选，Admin 发的公告可能没有 User
   user   User?   @relation(fields: [userId], references: [id])
 
-  title    String
+  title    String?
   content  String        @db.Text
   category ClariCategory @default(QUESTION)
+
+  isPublic Boolean @default(false) // 是否公开给所有队伍
 
   replies Reply[]
 

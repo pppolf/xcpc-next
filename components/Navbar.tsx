@@ -5,31 +5,43 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import AdminLoginModal from "./AdminLoginModal";
+import { ContestRole } from "@/lib/generated/prisma/enums";
+import { HomeIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   const [clickCount, setClickCount] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const { user, logout, revalidate } = useAuth();
   const isAdmin = user?.isGlobalAdmin;
 
-  // 当路径变化时，重新验证用户信息
   useEffect(() => {
     if (searchParams.get("login") === "true") {
       revalidate?.();
     }
   }, [searchParams, revalidate]);
 
-  // 核心逻辑：检测当前 URL 是否包含 /contest/[id]
+  useEffect(() => {
+    const closeMenu = () => setShowUserMenu(false);
+    if (showUserMenu) {
+      document.addEventListener("click", closeMenu);
+    }
+    return () => document.removeEventListener("click", closeMenu);
+  }, [showUserMenu]);
+
+  const handleUserMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowUserMenu(!showUserMenu);
+  };
+
   const match = pathname.match(/^\/contest\/(\d+)/);
   const contestId = match ? match[1] : null;
 
-  // 辅助函数：生成当前比赛上下文的链接
   const getContestLink = (subPath: string) => `/contest/${contestId}${subPath}`;
 
-  // 辅助函数：判断链接是否激活（用于高亮样式）
   const isActive = (path: string) => {
     if (path === `/contest/${contestId}`) {
       return pathname === `/contest/${contestId}`;
@@ -38,10 +50,11 @@ export default function Navbar() {
     return pathname.startsWith(path + "/");
   };
 
-  const linkClass = (path: string) =>
-    `px-3 py-2 font-bold transition-colors ${
+  // 修改 linkClass，允许传入额外的 className
+  const linkClass = (path: string, extraClass: string = "") =>
+    `px-3 py-2 font-bold transition-colors whitespace-nowrap ${
       isActive(path) ? "text-blue-700" : "text-gray-900 hover:text-blue-700"
-    }`;
+    } ${extraClass}`;
 
   useEffect(() => {
     if (clickCount === 0) return;
@@ -49,14 +62,11 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [clickCount]);
 
-  // 只在空白处点击时触发计数，不影响链接点击
   const handleNavClick = (e: React.MouseEvent) => {
-    // 如果已登录或点击的是链接/按钮，不触发计数
     if (user) return;
-
     const target = e.target as HTMLElement;
-    // 检查是否点击在 nav 的空白处（不是链接、按钮等）
-    if (target.tagName === "NAV" || target.className.includes("max-w-7xl")) {
+    console.log(target);
+    if (target.tagName === "NAV" || target?.className?.includes("max-w-7xl")) {
       const newCount = clickCount + 1;
       setClickCount(newCount);
       if (newCount === 3) {
@@ -66,6 +76,12 @@ export default function Navbar() {
     }
   };
 
+  const isContestAdmin =
+    isAdmin ||
+    user?.role === ContestRole.ADMIN ||
+    user?.role === ContestRole.JUDGE ||
+    user?.role === ContestRole.BALLOON;
+
   return (
     <>
       <nav
@@ -74,44 +90,66 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14 font-serif text-xl">
-            <div className="flex space-x-4 items-center">
-              {/* 1. 全局导航 */}
-              <Link href="/" className="text-gray-900 font-bold px-3 py-2">
-                Home
+            {/* 左侧导航区：使用 overflow-x-auto 防止小屏幕溢出难看，隐藏滚动条 */}
+            <div className="flex items-center overflow-x-auto no-scrollbar mask-gradient-right">
+              {/* 1. 全局导航 (移动端隐藏文字Home，或者只留图标，这里暂时先留着但设为 hidden sm:block 如果太挤的话，或者保持原样) */}
+              <Link
+                href="/"
+                className="text-gray-900 font-bold px-3 py-2 shrink-0"
+              >
+                {/* 移动端显示图标 (md:hidden 表示在中等屏幕以上隐藏) */}
+                <HomeIcon className="w-6 h-6 md:hidden" />
+
+                {/* 桌面端显示文字 (hidden md:block 表示默认隐藏，中等屏幕以上显示) */}
+                <span className="hidden md:block">Home</span>
               </Link>
 
               {/* 2. 比赛上下文导航 */}
               {contestId && (
                 <>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-300 shrink-0">|</span>
+
+                  {/* Contest Home: 始终显示 */}
                   <Link
                     href={getContestLink("")}
-                    className={linkClass(`/contest/${contestId}`)}
+                    className={linkClass(`/contest/${contestId}`, "shrink-0")}
                   >
                     Contest Home
                   </Link>
+
+                  {/* 常规比赛功能：移动端隐藏 (hidden)，桌面端显示 (md:block) */}
                   <Link
                     href={getContestLink("/problems")}
-                    className={linkClass(`/contest/${contestId}/problems`)}
+                    className={linkClass(
+                      `/contest/${contestId}/problems`,
+                      "hidden md:block"
+                    )}
                   >
                     Problems
                   </Link>
                   <Link
                     href={getContestLink("/status")}
-                    className={linkClass(`/contest/${contestId}/status`)}
+                    className={linkClass(
+                      `/contest/${contestId}/status`,
+                      "hidden md:block"
+                    )}
                   >
                     Status
                   </Link>
                   <Link
                     href={getContestLink("/rank")}
-                    className={linkClass(`/contest/${contestId}/rank`)}
+                    className={linkClass(
+                      `/contest/${contestId}/rank`,
+                      "hidden md:block"
+                    )}
                   >
                     Rank
                   </Link>
                   <Link
                     href={getContestLink("/clarifications")}
                     className={linkClass(
-                      `/contest/${contestId}/clarifications`
+                      `/contest/${contestId}/clarifications`,
+                      "hidden md:block"
                     )}
                   >
                     Clarifications
@@ -119,42 +157,85 @@ export default function Navbar() {
                 </>
               )}
 
-              {/* 3. 管理员导航 */}
+              {/* 2.5 气球管理：始终显示 (如果是管理员) */}
+              {contestId && isContestAdmin && (
+                <>
+                  {/* 在移动端，如果中间隐藏了，这里加个竖线分隔符更好看 */}
+                  <span className="text-gray-300 shrink-0 hidden md:inline">
+                    |
+                  </span>
+                  {/* 移动端直接紧跟 Contest Home，或者加个小分隔 */}
+                  <span className="text-gray-300 shrink-0 md:hidden">|</span>
+
+                  <Link
+                    href={getContestLink("/balloon")}
+                    className={linkClass(
+                      `/contest/${contestId}/balloon`,
+                      "text-orange-600 hover:text-orange-800 shrink-0" // 给气球一个醒目的颜色
+                    )}
+                  >
+                    🎈 Balloon
+                  </Link>
+                </>
+              )}
+
+              {/* 3. 后台 Panel：仅桌面显示 */}
               {isAdmin && (
                 <>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-300 shrink-0 hidden md:inline">
+                    |
+                  </span>
                   <Link
                     href="/admin"
-                    className="text-red-600 hover:text-red-800 px-3 py-2 text-xl font-bold flex items-center gap-1"
+                    className="text-red-600 hover:text-red-800 px-3 py-2 text-xl font-bold gap-1 hidden md:flex items-center shrink-0"
                   >
-                    Admin Panel
+                    Panel
                   </Link>
                 </>
               )}
             </div>
 
-            <div className="flex space-x-4 text-lg items-center gap-4">
+            {/* 右侧用户区 */}
+            <div className="flex space-x-4 text-lg items-center gap-4 shrink-0 pl-2 bg-linear-to-l from-white via-white to-transparent">
               {user ? (
                 // 登录后显示
-                <div className="relative group">
-                  <button className="text-gray-700 font-bold flex items-center gap-1">
+                <div className="relative">
+                  <button
+                    onClick={handleUserMenuClick} // 改为点击触发
+                    className="text-gray-700 font-bold flex items-center gap-1 max-w-30 sm:max-w-none truncate focus:outline-none cursor-pointer"
+                  >
                     {user.isGlobalAdmin && (
-                      <span className="text-red-600">[Admin]</span>
+                      <span className="text-red-600 hidden sm:inline">
+                        [Admin]
+                      </span>
                     )}
-                    {user.username} ▼
-                  </button>
-                  {/* 下拉登出菜单 */}
-                  <div className="absolute right-0 top-full pt-2 w-32 bg-white border border-gray-200 shadow-lg rounded-sm hidden group-hover:block">
-                    <button
-                      onClick={logout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    <span className="truncate">{user.username}</span>
+                    <span
+                      className="text-xs transition-transform duration-200"
+                      style={{
+                        transform: showUserMenu
+                          ? "rotate(180deg)"
+                          : "rotate(0)",
+                      }}
                     >
-                      Sign Out
-                    </button>
-                  </div>
+                      ▼
+                    </span>
+                  </button>
+
+                  {/* 下拉登出菜单 */}
+                  {/* 移除了 group-hover:block，改用状态控制显示 */}
+                  {showUserMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-32 bg-white border border-gray-200 shadow-lg rounded-sm z-50">
+                      <button
+                        onClick={logout}
+                        className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
-                // 未登录时：空白
                 <></>
               )}
             </div>
@@ -162,7 +243,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* 超管登录弹窗 */}
       {showAdminLogin && (
         <AdminLoginModal onClose={() => setShowAdminLogin(false)} />
       )}

@@ -89,8 +89,9 @@ model User {
   clarifications Clarification[]
   replies        Reply[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  balloons  Balloon[]
 
   // 联合唯一索引：保证同一场比赛内 username 唯一
   @@unique([contestId, username])
@@ -118,10 +119,33 @@ model Contest {
   submissions    Submission[]
   clarifications Clarification[]
 
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  balloons  Balloon[]
+
+  @@map("contests")
+}
+
+// 新增气球模型
+model Balloon {
+  id Int @id @default(autoincrement())
+
+  submissionId String     @unique // 一个 AC 提交对应一个气球
+  submission   Submission @relation(fields: [submissionId], references: [id])
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id])
+
+  // 状态: PENDING (待分配), ASSIGNED (已分配/配送中), COMPLETED (已送达)
+  status String @default("PENDING")
+
+  assignedToId String? // 指派给哪个用户 (Runner)
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("contests")
+  @@map("balloons")
 }
 
 // ================= 题目模块 (题库) =================
@@ -211,6 +235,7 @@ model Submission {
   totalTests  Int @default(0)
 
   submittedAt DateTime @default(now())
+  balloon     Balloon?
 
   @@index([contestId, userId])
   @@index([contestId, problemId])

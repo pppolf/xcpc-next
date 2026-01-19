@@ -387,6 +387,7 @@ export const ModelName = {
   GlobalUser: 'GlobalUser',
   User: 'User',
   Contest: 'Contest',
+  Balloon: 'Balloon',
   Problem: 'Problem',
   ContestProblem: 'ContestProblem',
   Submission: 'Submission',
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "globalUser" | "user" | "contest" | "problem" | "contestProblem" | "submission" | "clarification" | "reply"
+    modelProps: "globalUser" | "user" | "contest" | "balloon" | "problem" | "contestProblem" | "submission" | "clarification" | "reply"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -630,6 +631,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ContestCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ContestCountAggregateOutputType> | number
+        }
+      }
+    }
+    Balloon: {
+      payload: Prisma.$BalloonPayload<ExtArgs>
+      fields: Prisma.BalloonFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BalloonFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BalloonFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>
+        }
+        findFirst: {
+          args: Prisma.BalloonFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BalloonFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>
+        }
+        findMany: {
+          args: Prisma.BalloonFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>[]
+        }
+        create: {
+          args: Prisma.BalloonCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>
+        }
+        createMany: {
+          args: Prisma.BalloonCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BalloonCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>[]
+        }
+        delete: {
+          args: Prisma.BalloonDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>
+        }
+        update: {
+          args: Prisma.BalloonUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>
+        }
+        deleteMany: {
+          args: Prisma.BalloonDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BalloonUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BalloonUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>[]
+        }
+        upsert: {
+          args: Prisma.BalloonUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BalloonPayload>
+        }
+        aggregate: {
+          args: Prisma.BalloonAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBalloon>
+        }
+        groupBy: {
+          args: Prisma.BalloonGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BalloonGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BalloonCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BalloonCountAggregateOutputType> | number
         }
       }
     }
@@ -1090,6 +1165,19 @@ export const ContestScalarFieldEnum = {
 export type ContestScalarFieldEnum = (typeof ContestScalarFieldEnum)[keyof typeof ContestScalarFieldEnum]
 
 
+export const BalloonScalarFieldEnum = {
+  id: 'id',
+  submissionId: 'submissionId',
+  contestId: 'contestId',
+  status: 'status',
+  assignedToId: 'assignedToId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BalloonScalarFieldEnum = (typeof BalloonScalarFieldEnum)[keyof typeof BalloonScalarFieldEnum]
+
+
 export const ProblemScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -1468,6 +1556,7 @@ export type GlobalOmitConfig = {
   globalUser?: Prisma.GlobalUserOmit
   user?: Prisma.UserOmit
   contest?: Prisma.ContestOmit
+  balloon?: Prisma.BalloonOmit
   problem?: Prisma.ProblemOmit
   contestProblem?: Prisma.ContestProblemOmit
   submission?: Prisma.SubmissionOmit

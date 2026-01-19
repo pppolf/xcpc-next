@@ -57,9 +57,9 @@ export default async function ContestLogin({ params }: Props) {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-12 mt-10">
+    <div className="flex flex-col max-w-7xl mx-auto md:flex-row gap-12 mt-10">
       {/* 左侧：显示当前 Contest ID 对应的比赛信息 */}
-      <div className="flex-1 min-w-3xl">
+      <div className="flex-1 min-w-3xl hidden md:block">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
           <div className="p-6 md:p-8 border-b border-gray-100 bg-linear-to-b from-gray-50 to-white">

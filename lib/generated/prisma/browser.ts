@@ -33,6 +33,11 @@ export type User = Prisma.UserModel
  */
 export type Contest = Prisma.ContestModel
 /**
+ * Model Balloon
+ * 
+ */
+export type Balloon = Prisma.BalloonModel
+/**
  * Model Problem
  * 
  */

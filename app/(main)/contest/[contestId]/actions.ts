@@ -41,5 +41,5 @@ export async function loginContestUser(contestId: number, formData: FormData) {
   });
 
   // 5. 重定向到比赛主页
-  redirect(`/contest/${contestId}/problems?login=true`);
+  redirect(`/contest/${contestId}?login=true`);
 }

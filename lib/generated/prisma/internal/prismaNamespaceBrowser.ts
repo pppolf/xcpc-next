@@ -54,6 +54,7 @@ export const ModelName = {
   GlobalUser: 'GlobalUser',
   User: 'User',
   Contest: 'Contest',
+  Balloon: 'Balloon',
   Problem: 'Problem',
   ContestProblem: 'ContestProblem',
   Submission: 'Submission',
@@ -123,6 +124,19 @@ export const ContestScalarFieldEnum = {
 } as const
 
 export type ContestScalarFieldEnum = (typeof ContestScalarFieldEnum)[keyof typeof ContestScalarFieldEnum]
+
+
+export const BalloonScalarFieldEnum = {
+  id: 'id',
+  submissionId: 'submissionId',
+  contestId: 'contestId',
+  status: 'status',
+  assignedToId: 'assignedToId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BalloonScalarFieldEnum = (typeof BalloonScalarFieldEnum)[keyof typeof BalloonScalarFieldEnum]
 
 
 export const ProblemScalarFieldEnum = {

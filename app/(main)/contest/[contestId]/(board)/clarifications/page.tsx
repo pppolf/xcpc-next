@@ -11,6 +11,7 @@ import {
   TagIcon, // 新增图标
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth";
+import { ClariCategory } from "@/lib/generated/prisma/client";
 
 interface Props {
   searchParams: Promise<{
@@ -35,10 +36,15 @@ export default async function ClarificationsPage({
   const formatTime = (d: Date) => format(d, "MMM d, HH:mm");
 
   // 将 notifications 拆分为 公告(Notice) 和 公开提问(PublicQuestion)
-  const announcements = notifications.filter((n) => n.category === "NOTICE");
-  const publicQuestions = notifications.filter((n) => n.category !== "NOTICE");
+  const announcements = notifications.filter(
+    (n) => n.category === ClariCategory.NOTICE
+  );
+  const publicQuestions = notifications.filter(
+    (n) => n.category === ClariCategory.QUESTION
+  );
 
   const currentUser = await getCurrentUser();
+  const now = new Date();
 
   return (
     <div className="space-y-10 pb-12 max-w-7xl mx-auto">
@@ -67,26 +73,37 @@ export default async function ClarificationsPage({
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {announcements.map((note) => (
-              <Link
-                key={note.id}
-                href={`/contest/${contestId}/clarifications/${note.id}`}
-                className="block bg-white border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow p-5 rounded-r-lg"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 flex items-center gap-2">
-                    {note.title}
-                    {/* 如果是最新发布的(比如1小时内)，可以加个NEW标签，这里先简单展示 */}
-                  </h3>
-                  <span className="text-xs font-mono text-gray-400 whitespace-nowrap ml-4">
-                    {formatTime(note.createdAt)}
-                  </span>
-                </div>
-                <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed line-clamp-3">
-                  {note.content}
-                </div>
-              </Link>
-            ))}
+            {announcements.map((note) => {
+              // 计算是否为最新发布 (1小时内 = 3600000 毫秒)
+              const isNew =
+                now.getTime() - new Date(note.createdAt).getTime() <
+                1000 * 60 * 60;
+
+              return (
+                <Link
+                  key={note.id}
+                  href={`/contest/${contestId}/clarifications/${note.id}`}
+                  className="block bg-white border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow p-5 rounded-r-lg"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-orange-700 flex items-center gap-2">
+                      {note.title}
+                      {isNew && (
+                        <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-bold animate-pulse shadow-sm">
+                          NEW
+                        </span>
+                      )}
+                    </h3>
+                    <span className="text-xs font-mono text-gray-400 whitespace-nowrap ml-4">
+                      {formatTime(note.createdAt)}
+                    </span>
+                  </div>
+                  <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed line-clamp-3">
+                    {note.content}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
@@ -127,7 +144,9 @@ export default async function ClarificationsPage({
                 <div className="flex items-center justify-between text-xs text-gray-400 font-mono border-t border-gray-50 pt-3">
                   <span className="flex items-center gap-1">
                     <TagIcon className="w-3 h-3" />
-                    {note.category === "NOTICE" ? "Announcement" : "Public Q&A"}
+                    {note.category === ClariCategory.NOTICE
+                      ? "Announcement"
+                      : "Public Q&A"}
                   </span>
                   <span>{formatTime(note.createdAt)}</span>
                 </div>

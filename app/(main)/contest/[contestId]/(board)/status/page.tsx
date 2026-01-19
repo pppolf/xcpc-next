@@ -252,6 +252,16 @@ export default async function Status({ params, searchParams }: Props) {
     c: "C",
   };
 
+  const verdictRecord: Record<string, string> = {
+    [Verdict.ACCEPTED]: "Accepted",
+    [Verdict.WRONG_ANSWER]: "Wrong Answer",
+    [Verdict.TIME_LIMIT_EXCEEDED]: "Time Limit Exceeded",
+    [Verdict.MEMORY_LIMIT_EXCEEDED]: "Memory Limit Exceeded",
+    [Verdict.RUNTIME_ERROR]: "Runtime Error",
+    [Verdict.COMPILE_ERROR]: "Compile Error",
+    [Verdict.SYSTEM_ERROR]: "System Error",
+  };
+
   const statusLabel =
     !shouldViewAll && currentUser
       ? "(Your Submissions)"
@@ -271,6 +281,8 @@ export default async function Status({ params, searchParams }: Props) {
             problems={allProblems}
             languages={allLanguages}
             verdicts={allVerdicts}
+            verdictRecord={verdictRecord}
+            languageRecord={languageRecord}
           />
           {currentUser && <StatusControls canViewAll={canViewAll} />}
         </div>

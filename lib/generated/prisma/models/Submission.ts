@@ -336,6 +336,7 @@ export type SubmissionWhereInput = {
   globalUser?: Prisma.XOR<Prisma.GlobalUserNullableScalarRelationFilter, Prisma.GlobalUserWhereInput> | null
   contest?: Prisma.XOR<Prisma.ContestNullableScalarRelationFilter, Prisma.ContestWhereInput> | null
   problem?: Prisma.XOR<Prisma.ProblemScalarRelationFilter, Prisma.ProblemWhereInput>
+  balloon?: Prisma.XOR<Prisma.BalloonNullableScalarRelationFilter, Prisma.BalloonWhereInput> | null
 }
 
 export type SubmissionOrderByWithRelationInput = {
@@ -359,6 +360,7 @@ export type SubmissionOrderByWithRelationInput = {
   globalUser?: Prisma.GlobalUserOrderByWithRelationInput
   contest?: Prisma.ContestOrderByWithRelationInput
   problem?: Prisma.ProblemOrderByWithRelationInput
+  balloon?: Prisma.BalloonOrderByWithRelationInput
 }
 
 export type SubmissionWhereUniqueInput = Prisma.AtLeast<{
@@ -385,6 +387,7 @@ export type SubmissionWhereUniqueInput = Prisma.AtLeast<{
   globalUser?: Prisma.XOR<Prisma.GlobalUserNullableScalarRelationFilter, Prisma.GlobalUserWhereInput> | null
   contest?: Prisma.XOR<Prisma.ContestNullableScalarRelationFilter, Prisma.ContestWhereInput> | null
   problem?: Prisma.XOR<Prisma.ProblemScalarRelationFilter, Prisma.ProblemWhereInput>
+  balloon?: Prisma.XOR<Prisma.BalloonNullableScalarRelationFilter, Prisma.BalloonWhereInput> | null
 }, "id">
 
 export type SubmissionOrderByWithAggregationInput = {
@@ -450,6 +453,7 @@ export type SubmissionCreateInput = {
   globalUser?: Prisma.GlobalUserCreateNestedOneWithoutSubmissionsInput
   contest?: Prisma.ContestCreateNestedOneWithoutSubmissionsInput
   problem: Prisma.ProblemCreateNestedOneWithoutSubmissionsInput
+  balloon?: Prisma.BalloonCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionUncheckedCreateInput = {
@@ -469,6 +473,7 @@ export type SubmissionUncheckedCreateInput = {
   passedTests?: number
   totalTests?: number
   submittedAt?: Date | string
+  balloon?: Prisma.BalloonUncheckedCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionUpdateInput = {
@@ -488,6 +493,7 @@ export type SubmissionUpdateInput = {
   globalUser?: Prisma.GlobalUserUpdateOneWithoutSubmissionsNestedInput
   contest?: Prisma.ContestUpdateOneWithoutSubmissionsNestedInput
   problem?: Prisma.ProblemUpdateOneRequiredWithoutSubmissionsNestedInput
+  balloon?: Prisma.BalloonUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateInput = {
@@ -507,6 +513,7 @@ export type SubmissionUncheckedUpdateInput = {
   passedTests?: Prisma.IntFieldUpdateOperationsInput | number
   totalTests?: Prisma.IntFieldUpdateOperationsInput | number
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  balloon?: Prisma.BalloonUncheckedUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionCreateManyInput = {
@@ -570,6 +577,11 @@ export type SubmissionListRelationFilter = {
 
 export type SubmissionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type SubmissionScalarRelationFilter = {
+  is?: Prisma.SubmissionWhereInput
+  isNot?: Prisma.SubmissionWhereInput
 }
 
 export type SubmissionCountOrderByAggregateInput = {
@@ -777,6 +789,20 @@ export type SubmissionUncheckedUpdateManyWithoutContestNestedInput = {
   deleteMany?: Prisma.SubmissionScalarWhereInput | Prisma.SubmissionScalarWhereInput[]
 }
 
+export type SubmissionCreateNestedOneWithoutBalloonInput = {
+  create?: Prisma.XOR<Prisma.SubmissionCreateWithoutBalloonInput, Prisma.SubmissionUncheckedCreateWithoutBalloonInput>
+  connectOrCreate?: Prisma.SubmissionCreateOrConnectWithoutBalloonInput
+  connect?: Prisma.SubmissionWhereUniqueInput
+}
+
+export type SubmissionUpdateOneRequiredWithoutBalloonNestedInput = {
+  create?: Prisma.XOR<Prisma.SubmissionCreateWithoutBalloonInput, Prisma.SubmissionUncheckedCreateWithoutBalloonInput>
+  connectOrCreate?: Prisma.SubmissionCreateOrConnectWithoutBalloonInput
+  upsert?: Prisma.SubmissionUpsertWithoutBalloonInput
+  connect?: Prisma.SubmissionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SubmissionUpdateToOneWithWhereWithoutBalloonInput, Prisma.SubmissionUpdateWithoutBalloonInput>, Prisma.SubmissionUncheckedUpdateWithoutBalloonInput>
+}
+
 export type SubmissionCreateNestedManyWithoutProblemInput = {
   create?: Prisma.XOR<Prisma.SubmissionCreateWithoutProblemInput, Prisma.SubmissionUncheckedCreateWithoutProblemInput> | Prisma.SubmissionCreateWithoutProblemInput[] | Prisma.SubmissionUncheckedCreateWithoutProblemInput[]
   connectOrCreate?: Prisma.SubmissionCreateOrConnectWithoutProblemInput | Prisma.SubmissionCreateOrConnectWithoutProblemInput[]
@@ -839,6 +865,7 @@ export type SubmissionCreateWithoutGlobalUserInput = {
   user?: Prisma.UserCreateNestedOneWithoutSubmissionsInput
   contest?: Prisma.ContestCreateNestedOneWithoutSubmissionsInput
   problem: Prisma.ProblemCreateNestedOneWithoutSubmissionsInput
+  balloon?: Prisma.BalloonCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionUncheckedCreateWithoutGlobalUserInput = {
@@ -857,6 +884,7 @@ export type SubmissionUncheckedCreateWithoutGlobalUserInput = {
   passedTests?: number
   totalTests?: number
   submittedAt?: Date | string
+  balloon?: Prisma.BalloonUncheckedCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionCreateOrConnectWithoutGlobalUserInput = {
@@ -923,6 +951,7 @@ export type SubmissionCreateWithoutUserInput = {
   globalUser?: Prisma.GlobalUserCreateNestedOneWithoutSubmissionsInput
   contest?: Prisma.ContestCreateNestedOneWithoutSubmissionsInput
   problem: Prisma.ProblemCreateNestedOneWithoutSubmissionsInput
+  balloon?: Prisma.BalloonCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionUncheckedCreateWithoutUserInput = {
@@ -941,6 +970,7 @@ export type SubmissionUncheckedCreateWithoutUserInput = {
   passedTests?: number
   totalTests?: number
   submittedAt?: Date | string
+  balloon?: Prisma.BalloonUncheckedCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionCreateOrConnectWithoutUserInput = {
@@ -985,6 +1015,7 @@ export type SubmissionCreateWithoutContestInput = {
   user?: Prisma.UserCreateNestedOneWithoutSubmissionsInput
   globalUser?: Prisma.GlobalUserCreateNestedOneWithoutSubmissionsInput
   problem: Prisma.ProblemCreateNestedOneWithoutSubmissionsInput
+  balloon?: Prisma.BalloonCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionUncheckedCreateWithoutContestInput = {
@@ -1003,6 +1034,7 @@ export type SubmissionUncheckedCreateWithoutContestInput = {
   passedTests?: number
   totalTests?: number
   submittedAt?: Date | string
+  balloon?: Prisma.BalloonUncheckedCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionCreateOrConnectWithoutContestInput = {
@@ -1031,6 +1063,98 @@ export type SubmissionUpdateManyWithWhereWithoutContestInput = {
   data: Prisma.XOR<Prisma.SubmissionUpdateManyMutationInput, Prisma.SubmissionUncheckedUpdateManyWithoutContestInput>
 }
 
+export type SubmissionCreateWithoutBalloonInput = {
+  id?: string
+  displayId?: number
+  language: string
+  code: string
+  codeLength: number
+  verdict?: $Enums.Verdict
+  timeUsed?: number | null
+  memoryUsed?: number | null
+  errorMessage?: string | null
+  passedTests?: number
+  totalTests?: number
+  submittedAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutSubmissionsInput
+  globalUser?: Prisma.GlobalUserCreateNestedOneWithoutSubmissionsInput
+  contest?: Prisma.ContestCreateNestedOneWithoutSubmissionsInput
+  problem: Prisma.ProblemCreateNestedOneWithoutSubmissionsInput
+}
+
+export type SubmissionUncheckedCreateWithoutBalloonInput = {
+  id?: string
+  displayId?: number
+  userId?: string | null
+  globalUserId?: string | null
+  contestId?: number | null
+  problemId: number
+  language: string
+  code: string
+  codeLength: number
+  verdict?: $Enums.Verdict
+  timeUsed?: number | null
+  memoryUsed?: number | null
+  errorMessage?: string | null
+  passedTests?: number
+  totalTests?: number
+  submittedAt?: Date | string
+}
+
+export type SubmissionCreateOrConnectWithoutBalloonInput = {
+  where: Prisma.SubmissionWhereUniqueInput
+  create: Prisma.XOR<Prisma.SubmissionCreateWithoutBalloonInput, Prisma.SubmissionUncheckedCreateWithoutBalloonInput>
+}
+
+export type SubmissionUpsertWithoutBalloonInput = {
+  update: Prisma.XOR<Prisma.SubmissionUpdateWithoutBalloonInput, Prisma.SubmissionUncheckedUpdateWithoutBalloonInput>
+  create: Prisma.XOR<Prisma.SubmissionCreateWithoutBalloonInput, Prisma.SubmissionUncheckedCreateWithoutBalloonInput>
+  where?: Prisma.SubmissionWhereInput
+}
+
+export type SubmissionUpdateToOneWithWhereWithoutBalloonInput = {
+  where?: Prisma.SubmissionWhereInput
+  data: Prisma.XOR<Prisma.SubmissionUpdateWithoutBalloonInput, Prisma.SubmissionUncheckedUpdateWithoutBalloonInput>
+}
+
+export type SubmissionUpdateWithoutBalloonInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.IntFieldUpdateOperationsInput | number
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  codeLength?: Prisma.IntFieldUpdateOperationsInput | number
+  verdict?: Prisma.EnumVerdictFieldUpdateOperationsInput | $Enums.Verdict
+  timeUsed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memoryUsed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passedTests?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTests?: Prisma.IntFieldUpdateOperationsInput | number
+  submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutSubmissionsNestedInput
+  globalUser?: Prisma.GlobalUserUpdateOneWithoutSubmissionsNestedInput
+  contest?: Prisma.ContestUpdateOneWithoutSubmissionsNestedInput
+  problem?: Prisma.ProblemUpdateOneRequiredWithoutSubmissionsNestedInput
+}
+
+export type SubmissionUncheckedUpdateWithoutBalloonInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  displayId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  globalUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  problemId?: Prisma.IntFieldUpdateOperationsInput | number
+  language?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  codeLength?: Prisma.IntFieldUpdateOperationsInput | number
+  verdict?: Prisma.EnumVerdictFieldUpdateOperationsInput | $Enums.Verdict
+  timeUsed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memoryUsed?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passedTests?: Prisma.IntFieldUpdateOperationsInput | number
+  totalTests?: Prisma.IntFieldUpdateOperationsInput | number
+  submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type SubmissionCreateWithoutProblemInput = {
   id?: string
   displayId?: number
@@ -1047,6 +1171,7 @@ export type SubmissionCreateWithoutProblemInput = {
   user?: Prisma.UserCreateNestedOneWithoutSubmissionsInput
   globalUser?: Prisma.GlobalUserCreateNestedOneWithoutSubmissionsInput
   contest?: Prisma.ContestCreateNestedOneWithoutSubmissionsInput
+  balloon?: Prisma.BalloonCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionUncheckedCreateWithoutProblemInput = {
@@ -1065,6 +1190,7 @@ export type SubmissionUncheckedCreateWithoutProblemInput = {
   passedTests?: number
   totalTests?: number
   submittedAt?: Date | string
+  balloon?: Prisma.BalloonUncheckedCreateNestedOneWithoutSubmissionInput
 }
 
 export type SubmissionCreateOrConnectWithoutProblemInput = {
@@ -1127,6 +1253,7 @@ export type SubmissionUpdateWithoutGlobalUserInput = {
   user?: Prisma.UserUpdateOneWithoutSubmissionsNestedInput
   contest?: Prisma.ContestUpdateOneWithoutSubmissionsNestedInput
   problem?: Prisma.ProblemUpdateOneRequiredWithoutSubmissionsNestedInput
+  balloon?: Prisma.BalloonUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateWithoutGlobalUserInput = {
@@ -1145,6 +1272,7 @@ export type SubmissionUncheckedUpdateWithoutGlobalUserInput = {
   passedTests?: Prisma.IntFieldUpdateOperationsInput | number
   totalTests?: Prisma.IntFieldUpdateOperationsInput | number
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  balloon?: Prisma.BalloonUncheckedUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateManyWithoutGlobalUserInput = {
@@ -1199,6 +1327,7 @@ export type SubmissionUpdateWithoutUserInput = {
   globalUser?: Prisma.GlobalUserUpdateOneWithoutSubmissionsNestedInput
   contest?: Prisma.ContestUpdateOneWithoutSubmissionsNestedInput
   problem?: Prisma.ProblemUpdateOneRequiredWithoutSubmissionsNestedInput
+  balloon?: Prisma.BalloonUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateWithoutUserInput = {
@@ -1217,6 +1346,7 @@ export type SubmissionUncheckedUpdateWithoutUserInput = {
   passedTests?: Prisma.IntFieldUpdateOperationsInput | number
   totalTests?: Prisma.IntFieldUpdateOperationsInput | number
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  balloon?: Prisma.BalloonUncheckedUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateManyWithoutUserInput = {
@@ -1271,6 +1401,7 @@ export type SubmissionUpdateWithoutContestInput = {
   user?: Prisma.UserUpdateOneWithoutSubmissionsNestedInput
   globalUser?: Prisma.GlobalUserUpdateOneWithoutSubmissionsNestedInput
   problem?: Prisma.ProblemUpdateOneRequiredWithoutSubmissionsNestedInput
+  balloon?: Prisma.BalloonUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateWithoutContestInput = {
@@ -1289,6 +1420,7 @@ export type SubmissionUncheckedUpdateWithoutContestInput = {
   passedTests?: Prisma.IntFieldUpdateOperationsInput | number
   totalTests?: Prisma.IntFieldUpdateOperationsInput | number
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  balloon?: Prisma.BalloonUncheckedUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateManyWithoutContestInput = {
@@ -1343,6 +1475,7 @@ export type SubmissionUpdateWithoutProblemInput = {
   user?: Prisma.UserUpdateOneWithoutSubmissionsNestedInput
   globalUser?: Prisma.GlobalUserUpdateOneWithoutSubmissionsNestedInput
   contest?: Prisma.ContestUpdateOneWithoutSubmissionsNestedInput
+  balloon?: Prisma.BalloonUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateWithoutProblemInput = {
@@ -1361,6 +1494,7 @@ export type SubmissionUncheckedUpdateWithoutProblemInput = {
   passedTests?: Prisma.IntFieldUpdateOperationsInput | number
   totalTests?: Prisma.IntFieldUpdateOperationsInput | number
   submittedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  balloon?: Prisma.BalloonUncheckedUpdateOneWithoutSubmissionNestedInput
 }
 
 export type SubmissionUncheckedUpdateManyWithoutProblemInput = {
@@ -1404,6 +1538,7 @@ export type SubmissionSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   globalUser?: boolean | Prisma.Submission$globalUserArgs<ExtArgs>
   contest?: boolean | Prisma.Submission$contestArgs<ExtArgs>
   problem?: boolean | Prisma.ProblemDefaultArgs<ExtArgs>
+  balloon?: boolean | Prisma.Submission$balloonArgs<ExtArgs>
 }, ExtArgs["result"]["submission"]>
 
 export type SubmissionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1477,6 +1612,7 @@ export type SubmissionInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   globalUser?: boolean | Prisma.Submission$globalUserArgs<ExtArgs>
   contest?: boolean | Prisma.Submission$contestArgs<ExtArgs>
   problem?: boolean | Prisma.ProblemDefaultArgs<ExtArgs>
+  balloon?: boolean | Prisma.Submission$balloonArgs<ExtArgs>
 }
 export type SubmissionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Submission$userArgs<ExtArgs>
@@ -1498,6 +1634,7 @@ export type $SubmissionPayload<ExtArgs extends runtime.Types.Extensions.Internal
     globalUser: Prisma.$GlobalUserPayload<ExtArgs> | null
     contest: Prisma.$ContestPayload<ExtArgs> | null
     problem: Prisma.$ProblemPayload<ExtArgs>
+    balloon: Prisma.$BalloonPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1914,6 +2051,7 @@ export interface Prisma__SubmissionClient<T, Null = never, ExtArgs extends runti
   globalUser<T extends Prisma.Submission$globalUserArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Submission$globalUserArgs<ExtArgs>>): Prisma.Prisma__GlobalUserClient<runtime.Types.Result.GetResult<Prisma.$GlobalUserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   contest<T extends Prisma.Submission$contestArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Submission$contestArgs<ExtArgs>>): Prisma.Prisma__ContestClient<runtime.Types.Result.GetResult<Prisma.$ContestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   problem<T extends Prisma.ProblemDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProblemDefaultArgs<ExtArgs>>): Prisma.Prisma__ProblemClient<runtime.Types.Result.GetResult<Prisma.$ProblemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  balloon<T extends Prisma.Submission$balloonArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Submission$balloonArgs<ExtArgs>>): Prisma.Prisma__BalloonClient<runtime.Types.Result.GetResult<Prisma.$BalloonPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2409,6 +2547,25 @@ export type Submission$contestArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.ContestInclude<ExtArgs> | null
   where?: Prisma.ContestWhereInput
+}
+
+/**
+ * Submission.balloon
+ */
+export type Submission$balloonArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Balloon
+   */
+  select?: Prisma.BalloonSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Balloon
+   */
+  omit?: Prisma.BalloonOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BalloonInclude<ExtArgs> | null
+  where?: Prisma.BalloonWhereInput
 }
 
 /**

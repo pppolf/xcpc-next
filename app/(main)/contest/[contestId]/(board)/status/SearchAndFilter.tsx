@@ -8,6 +8,8 @@ interface SearchAndFilterProps {
   problems: Array<{ displayId: string; problemId: number }>;
   languages: string[];
   verdicts: string[];
+  verdictRecord: Record<string, string>;
+  languageRecord: Record<string, string>;
 }
 
 export default function SearchAndFilter({
@@ -15,6 +17,8 @@ export default function SearchAndFilter({
   problems,
   languages,
   verdicts,
+  verdictRecord,
+  languageRecord,
 }: SearchAndFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -144,7 +148,7 @@ export default function SearchAndFilter({
                 <option value="">All Languages</option>
                 {languages.map((lang) => (
                   <option key={lang} value={lang}>
-                    {lang}
+                    {languageRecord[lang]}
                   </option>
                 ))}
               </select>
@@ -163,7 +167,7 @@ export default function SearchAndFilter({
                 <option value="">All Status</option>
                 {verdicts.map((verdict) => (
                   <option key={verdict} value={verdict}>
-                    {verdict}
+                    {verdictRecord[verdict]}
                   </option>
                 ))}
               </select>

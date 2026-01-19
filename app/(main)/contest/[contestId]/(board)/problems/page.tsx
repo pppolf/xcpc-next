@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ContestStatus, Verdict } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, UserJwtPayload } from "@/lib/auth";
+import { getDictionary } from "@/lib/get-dictionary";
 
 interface Props {
   params: Promise<{
@@ -72,34 +73,37 @@ export default async function Problems({ params }: Props) {
   });
   const statsMap = new Map(userStats.map((s) => [s.problemId, 1]));
 
+  const dict = await getDictionary();
+
   return (
     <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-6">
       <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6 pl-2">
-        Problems
+        {dict.problemList.title}
       </h2>
       {contestInfo?.status === ContestStatus.PENDING ? (
         <div className="text-center py-10 text-gray-500">
-          The contest has not started yet.
+          {dict.contestList.noContestsFound}
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm font-serif text-left text-gray-600">
             <thead className="text-lg text-gray-700 bg-white border-b border-gray-400 border-t">
               <tr>
-                <th scope="col" className="px-6 py-2 w-16">
-                  Solved
+                <th scope="col" className="px-6 py-2 w-24">
+                  {dict.problemDetail.status}
                 </th>
                 <th scope="col" className="px-6 py-2 w-24">
                   ID
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Title
+                  {dict.problemDetail.title}
                 </th>
                 <th scope="col" className="px-6 py-2 w-80">
-                  Ratio (Accepted / Submitted)
+                  {dict.problemDetail.ratio} ({dict.problemDetail.accepted} /{" "}
+                  {dict.problemDetail.submissions})
                 </th>
-                <th scope="col" className="px-6 py-2 w-16">
-                  Ballon
+                <th scope="col" className="px-6 py-2 w-24">
+                  {dict.problemDetail.balloon}
                 </th>
               </tr>
             </thead>

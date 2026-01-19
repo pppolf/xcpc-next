@@ -7,6 +7,7 @@ import VerdictBadge from "@/components/VerdictBadge";
 import Link from "next/link";
 import CodeViewer from "./CodeViewer";
 import { ContestConfig } from "@/app/(main)/page";
+import { getDictionary } from "@/lib/get-dictionary";
 
 interface Props {
   params: Promise<{
@@ -141,11 +142,13 @@ export default async function SubmissionDetail({ params }: Props) {
     c: "C",
   };
 
+  const dict = await getDictionary();
+
   return (
     <div className="bg-white w-full shadow-sm border border-gray-100 rounded-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-serif font-bold text-gray-800">
-          Submission #{submission.displayId}
+          {dict.submission.submission} #{submission.displayId}
         </h2>
         <Link
           href={`/contest/${contestId}/status`}
@@ -159,13 +162,13 @@ export default async function SubmissionDetail({ params }: Props) {
       <div className="bg-gray-50 border border-gray-200 rounded-sm p-6 mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="font-bold text-gray-600">User:</span>
+            <span className="font-bold text-gray-600">{dict.submission.user}:</span>
             <p className="text-gray-900">
               {submission.user?.displayName || submission.user?.username}
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Problem:</span>
+            <span className="font-bold text-gray-600">{dict.submission.problem}:</span>
             <p className="text-gray-900">
               <Link
                 href={`/contest/${contestId}/problems/${contestProblem?.displayId}`}
@@ -176,29 +179,29 @@ export default async function SubmissionDetail({ params }: Props) {
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Language:</span>
+            <span className="font-bold text-gray-600">{dict.submission.language}:</span>
             <p className="text-gray-900">
               {languageRecord[submission.language] || submission.language}
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Submit Time:</span>
+            <span className="font-bold text-gray-600">{dict.submission.submitTime}:</span>
             <p className="text-gray-900">{submitTime}</p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Verdict:</span>
+            <span className="font-bold text-gray-600">{dict.submission.verdict}:</span>
             <div className="mt-1">
               <VerdictBadge status={submission.verdict} />
             </div>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Time:</span>
+            <span className="font-bold text-gray-600">{dict.submission.time}:</span>
             <p className="text-gray-900">
               {submission.timeUsed !== null ? `${submission.timeUsed} ms` : "-"}
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Memory:</span>
+            <span className="font-bold text-gray-600">{dict.submission.memory}:</span>
             <p className="text-gray-900">
               {submission.memoryUsed !== null
                 ? `${submission.memoryUsed} KB`
@@ -206,7 +209,7 @@ export default async function SubmissionDetail({ params }: Props) {
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">Code Length:</span>
+            <span className="font-bold text-gray-600">{dict.submission.codeLength}:</span>
             <p className="text-gray-900">{submission.codeLength} bytes</p>
           </div>
         </div>

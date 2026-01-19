@@ -12,6 +12,7 @@ import {
   TrophyIcon,
   HashtagIcon,
 } from "@heroicons/react/24/outline";
+import { getDictionary } from "@/lib/get-dictionary";
 
 export type ContestConfig = {
   medal: {
@@ -97,6 +98,8 @@ export default async function ContestList() {
     orderBy: { id: "desc" },
   });
 
+  const dict = await getDictionary();
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
       {/* 头部区域 */}
@@ -106,10 +109,10 @@ export default async function ContestList() {
         </div>
         <div>
           <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 tracking-tight">
-            Contests
+            {dict.contestList.title}
           </h1>
           <p className="text-gray-500 text-xs md:text-sm mt-0.5">
-            View and manage all programming contests
+            {dict.contestList.subtitle}
           </p>
         </div>
       </div>
@@ -117,7 +120,7 @@ export default async function ContestList() {
       {contests.length === 0 ? (
         <div className="text-center py-16 text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
           <TrophyIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-          <p className="text-lg font-medium">No contests found</p>
+          <p className="text-lg font-medium">{dict.contestList.noContestsFound}</p>
         </div>
       ) : (
         <>
@@ -163,7 +166,7 @@ export default async function ContestList() {
                   <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm text-gray-600">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] uppercase text-gray-400 font-bold">
-                        Start Time
+                        {dict.contestList.startTime}
                       </span>
                       <div className="flex items-center gap-1.5 font-medium">
                         <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
@@ -172,7 +175,7 @@ export default async function ContestList() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] uppercase text-gray-400 font-bold">
-                        Duration
+                        {dict.contestList.duration}
                       </span>
                       <div className="flex items-center gap-1.5 font-medium">
                         <ClockIcon className="w-4 h-4 text-gray-400" />
@@ -192,11 +195,11 @@ export default async function ContestList() {
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
                     <th className="px-6 py-4 w-20 text-center">ID</th>
-                    <th className="px-6 py-4 w-1/3">Title</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Timeline</th>
-                    <th className="px-6 py-4 text-center">Duration</th>
+                    <th className="px-6 py-4 w-1/3">{dict.contestList.title}</th>
+                    <th className="px-6 py-4">{dict.contestList.status}</th>
+                    <th className="px-6 py-4">{dict.contestList.type}</th>
+                    <th className="px-6 py-4">{dict.contestList.timeline}</th>
+                    <th className="px-6 py-4 text-center">{dict.contestList.duration}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -241,12 +244,12 @@ export default async function ContestList() {
                           {contest.type === ContestType.PRIVATE ? (
                             <div className="flex items-center gap-1.5 text-gray-600 text-sm font-medium">
                               <LockClosedIcon className="w-4 h-4 text-orange-500" />
-                              <span>Private</span>
+                              <span>{dict.contestList.private}</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 text-gray-600 text-sm font-medium">
                               <GlobeAltIcon className="w-4 h-4 text-blue-500" />
-                              <span>Public</span>
+                              <span>{dict.contestList.public}</span>
                             </div>
                           )}
                         </td>

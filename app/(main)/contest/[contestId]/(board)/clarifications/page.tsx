@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { getClarificationData, submitQuestion } from "./actions";
-import { format } from "date-fns";
 import {
   MegaphoneIcon,
   ChatBubbleLeftRightIcon,
@@ -12,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getCurrentUser } from "@/lib/auth";
 import { ClariCategory } from "@/lib/generated/prisma/client";
+import { getDictionary } from "@/lib/get-dictionary";
 
 interface Props {
   searchParams: Promise<{
@@ -33,7 +33,9 @@ export default async function ClarificationsPage({
   const { notifications, clarifications, total, problems, isAdmin } =
     await getClarificationData(cid, Number(page) || 1);
 
-  const formatTime = (d: Date) => format(d, "MMM d, HH:mm");
+  const formatTime = (d: Date) => {
+    return new Date(d).toLocaleString();
+  };
 
   // 将 notifications 拆分为 公告(Notice) 和 公开提问(PublicQuestion)
   const announcements = notifications.filter(
@@ -46,6 +48,7 @@ export default async function ClarificationsPage({
   const currentUser = await getCurrentUser();
   const now = new Date();
 
+  const dict = await getDictionary();
   return (
     <div className="space-y-10 pb-12 max-w-7xl mx-auto">
       {/* --- Section 1: Official Announcements (拆分出的公告区) --- */}
@@ -55,7 +58,7 @@ export default async function ClarificationsPage({
             <span className="text-orange-600">
               <MegaphoneIcon className="w-6 h-6" />
             </span>
-            Official Announcements
+            {dict.clarifications.announcement}
           </h2>
           {isAdmin && (
             <Link
@@ -116,7 +119,7 @@ export default async function ClarificationsPage({
               <GlobeAltIcon className="w-5 h-5" />
             </span>
             <h2 className="text-lg font-bold text-gray-800 font-serif">
-              Public Q&A Board
+              {dict.clarifications.public}
             </h2>
           </div>
 
@@ -161,7 +164,9 @@ export default async function ClarificationsPage({
         <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2 mt-8">
           <LockClosedIcon className="w-5 h-5 text-gray-500" />
           <h2 className="text-xl font-bold text-gray-800 font-serif">
-            {isAdmin ? "Inbox (Private Questions)" : "My Private Questions"}
+            {isAdmin
+              ? "Inbox (Private Questions)"
+              : `${dict.clarifications.private}`}
           </h2>
         </div>
 
@@ -171,11 +176,15 @@ export default async function ClarificationsPage({
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 w-32">Problem</th>
-                  <th className="px-6 py-3">Title</th>
+                  <th className="px-6 py-3 w-32">
+                    {dict.clarifications.problem}
+                  </th>
+                  <th className="px-6 py-3">{dict.clarifications.title}</th>
                   {isAdmin && <th className="px-6 py-3 w-40">Author</th>}
-                  <th className="px-6 py-3 w-40">Time</th>
-                  <th className="px-6 py-3 w-20 text-center">Replies</th>
+                  <th className="px-6 py-3 w-50">{dict.clarifications.time}</th>
+                  <th className="px-6 py-3 w-20 text-center">
+                    {dict.clarifications.replay}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -246,7 +255,7 @@ export default async function ClarificationsPage({
         <section className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 md:p-8">
           {/* ... form content remains the same ... */}
           <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-2">
-            Ask a Question
+            {dict.clarifications.askQuestion}
           </h3>
           <form action={submitQuestion} className="flex flex-col gap-5">
             <input type="hidden" name="contestId" value={cid} />
@@ -255,13 +264,13 @@ export default async function ClarificationsPage({
               {/* Select Problem */}
               <div className="md:col-span-1">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                  Problem
+                  {dict.clarifications.problem}
                 </label>
                 <select
                   name="displayId"
                   className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none"
                 >
-                  <option value="General">General / System</option>
+                  <option value="General">{dict.clarifications.general}</option>
                   {problems.map((p) => (
                     <option key={p.displayId} value={p.displayId}>
                       Problem {p.displayId}
@@ -273,7 +282,7 @@ export default async function ClarificationsPage({
               {/* Title Input */}
               <div className="md:col-span-3">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                  Subject / Title
+                  {dict.clarifications.title}
                 </label>
                 <input
                   name="title"
@@ -286,7 +295,7 @@ export default async function ClarificationsPage({
 
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                Detail Content
+                {dict.clarifications.content}
               </label>
               <textarea
                 name="content"
@@ -300,9 +309,9 @@ export default async function ClarificationsPage({
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded shadow-sm transition-colors text-sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded shadow-sm transition-colors text-sm cursor-pointer"
               >
-                Submit Question
+                {dict.clarifications.submitQuestion}
               </button>
             </div>
           </form>

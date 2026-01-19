@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Merriweather, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const serif = Merriweather({
   weight: ["300", "400", "700", "900"],
@@ -33,7 +34,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${serif.variable} ${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

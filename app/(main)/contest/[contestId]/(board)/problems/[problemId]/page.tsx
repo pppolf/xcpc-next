@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { ContestRole, Verdict } from "@/lib/generated/prisma/client";
 import { notFound } from "next/navigation";
 import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
+import { getDictionary } from "@/lib/get-dictionary";
 
 type Problem = {
   id: number;
@@ -108,6 +109,8 @@ export default async function ProblemDetail({ params }: Props) {
     (SuperAdmin as unknown as UserJwtPayload)?.isGlobalAdmin ||
     (user as unknown as UserJwtPayload)?.role !== ContestRole.TEAM;
 
+  const dict = await getDictionary();
+
   return (
     <div className="flex flex-col w-full lg:flex-row gap-6 items-start">
       {/* --- 左侧：题目基本信息卡片 --- */}
@@ -189,14 +192,14 @@ export default async function ProblemDetail({ params }: Props) {
                 className="bg-gray-400 text-white font-medium rounded-sm text-sm px-8 py-3 shadow-md cursor-not-allowed opacity-60"
                 title="Cannot submit"
               >
-                Submit Solution
+                {dict.common.submit}
               </button>
             ) : (
               <Link
                 href={`/contest/${contestId}/submit?problem=${problemId}`}
                 className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-sm font-bold shadow-md transition-transform active:scale-95"
               >
-                Submit Solution
+                {dict.common.submit}
               </Link>
             )}
           </div>

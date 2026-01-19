@@ -6,7 +6,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import AdminLoginModal from "./AdminLoginModal";
 import { ContestRole } from "@/lib/generated/prisma/enums";
-import { HomeIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, LanguageIcon } from "@heroicons/react/24/outline";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Navbar() {
   const [clickCount, setClickCount] = useState(0);
@@ -16,6 +17,7 @@ export default function Navbar() {
   const searchParams = useSearchParams();
 
   const { user, logout, revalidate } = useAuth();
+  const { dict, toggleLanguage, lang } = useLanguage();
   const isAdmin = user?.isGlobalAdmin;
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function Navbar() {
                 <HomeIcon className="w-6 h-6 md:hidden" />
 
                 {/* 桌面端显示文字 (hidden md:block 表示默认隐藏，中等屏幕以上显示) */}
-                <span className="hidden md:block">Home</span>
+                <span className="hidden md:block">{dict.nav.home}</span>
               </Link>
 
               {/* 2. 比赛上下文导航 */}
@@ -114,7 +116,7 @@ export default function Navbar() {
                     href={getContestLink("")}
                     className={linkClass(`/contest/${contestId}`, "shrink-0")}
                   >
-                    Contest Home
+                    {dict.nav.contest}
                   </Link>
 
                   {/* 常规比赛功能：移动端隐藏 (hidden)，桌面端显示 (md:block) */}
@@ -125,7 +127,7 @@ export default function Navbar() {
                       "hidden md:block"
                     )}
                   >
-                    Problems
+                    {dict.nav.problems}
                   </Link>
                   <Link
                     href={getContestLink("/status")}
@@ -134,7 +136,7 @@ export default function Navbar() {
                       "hidden md:block"
                     )}
                   >
-                    Status
+                    {dict.nav.status}
                   </Link>
                   <Link
                     href={getContestLink("/rank")}
@@ -143,7 +145,7 @@ export default function Navbar() {
                       "hidden md:block"
                     )}
                   >
-                    Rank
+                    {dict.nav.rank}
                   </Link>
                   <Link
                     href={getContestLink("/clarifications")}
@@ -152,7 +154,7 @@ export default function Navbar() {
                       "hidden md:block"
                     )}
                   >
-                    Clarifications
+                    {dict.nav.clarifications}
                   </Link>
                 </>
               )}
@@ -174,7 +176,7 @@ export default function Navbar() {
                       "text-orange-600 hover:text-orange-800 shrink-0" // 给气球一个醒目的颜色
                     )}
                   >
-                    🎈 Balloon
+                    🎈 {dict.nav.balloon}
                   </Link>
                 </>
               )}
@@ -189,7 +191,7 @@ export default function Navbar() {
                     href="/admin"
                     className="text-red-600 hover:text-red-800 px-3 py-2 text-xl font-bold gap-1 hidden md:flex items-center shrink-0"
                   >
-                    Panel
+                    {dict.nav.adminPanel}
                   </Link>
                 </>
               )}
@@ -197,6 +199,17 @@ export default function Navbar() {
 
             {/* 右侧用户区 */}
             <div className="flex space-x-4 text-lg items-center gap-4 shrink-0 pl-2 bg-linear-to-l from-white via-white to-transparent">
+              {/* 切换语言按钮 */}
+              <button
+                onClick={toggleLanguage}
+                className="p-2 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-gray-100 cursor-pointer"
+                title="Switch Language"
+              >
+                <div className="flex items-center text-sm font-bold gap-1">
+                  <LanguageIcon className="w-5 h-5" />
+                  <span>{lang === "zh" ? "中" : "EN"}</span>
+                </div>
+              </button>
               {user ? (
                 // 登录后显示
                 <div className="relative">
@@ -206,7 +219,7 @@ export default function Navbar() {
                   >
                     {user.isGlobalAdmin && (
                       <span className="text-red-600 hidden sm:inline">
-                        [Admin]
+                        [{dict.nav.superAdmin}]
                       </span>
                     )}
                     <span className="truncate">{user.username}</span>
@@ -230,7 +243,7 @@ export default function Navbar() {
                         onClick={logout}
                         className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
                       >
-                        Sign Out
+                        {dict.nav.logout}
                       </button>
                     </div>
                   )}

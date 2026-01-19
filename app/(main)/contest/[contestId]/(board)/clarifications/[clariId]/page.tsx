@@ -5,7 +5,6 @@ import {
   submitReply,
   toggleClarificationVisibility,
 } from "../actions";
-import { format } from "date-fns";
 import {
   EyeIcon,
   EyeSlashIcon,
@@ -13,6 +12,7 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/outline";
 import { ContestRole } from "@/lib/generated/prisma/enums";
+import { getDictionary } from "@/lib/get-dictionary";
 
 interface Props {
   params: Promise<{
@@ -31,7 +31,11 @@ export default async function ClarificationDetail({ params }: Props) {
   if (!data) notFound();
 
   const { thread, isAdmin, currentUserId } = data;
-  const formatDate = (date: Date) => format(date, "MMM d, HH:mm");
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleString();
+  };
+
+  const dict = await getDictionary();
 
   return (
     <div className="mx-auto pb-10">
@@ -204,7 +208,7 @@ export default async function ClarificationDetail({ params }: Props) {
       {/* --- Reply Box --- */}
       <div className="mt-10 pt-6 border-t border-gray-200">
         <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">
-          Post a Reply
+          {dict.clarifications.reply}
         </h3>
         <form action={submitReply} className="p-2">
           <input type="hidden" name="contestId" value={contestId} />
@@ -223,9 +227,9 @@ export default async function ClarificationDetail({ params }: Props) {
             <div className="absolute bottom-3 right-3">
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-1.5 text-sm font-bold rounded hover:bg-blue-700 shadow-sm transition-colors"
+                className="bg-blue-600 text-white px-6 py-1.5 text-sm font-bold rounded hover:bg-blue-700 shadow-sm transition-colors cursor-pointer"
               >
-                Reply
+                {dict.clarifications.replay}
               </button>
             </div>
           </div>

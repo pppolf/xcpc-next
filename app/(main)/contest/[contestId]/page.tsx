@@ -16,6 +16,7 @@ import {
   TrophyIcon,
 } from "@heroicons/react/24/outline";
 import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
+import { getDictionary } from "@/lib/get-dictionary";
 
 interface Props {
   params: Promise<{
@@ -55,6 +56,8 @@ export default async function ContestLogin({ params }: Props) {
     if (!payload || !payload.userId) throw new Error("Invalid Token");
     super_admin = payload.username;
   }
+
+  const dict = await getDictionary();
 
   return (
     <div className="flex flex-col max-w-7xl mx-auto md:flex-row gap-12 mt-10">
@@ -106,7 +109,7 @@ export default async function ContestLogin({ params }: Props) {
               <CalendarDaysIcon className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                  Start Time
+                  {dict.contestList.startTime}
                 </p>
                 <p className="text-sm font-medium text-gray-900 font-mono">
                   {contest.startTime.toLocaleString("zh-CN", {
@@ -130,12 +133,12 @@ export default async function ContestLogin({ params }: Props) {
               )}
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                  Access Type
+                  {dict.contestList.type}
                 </p>
                 <p className="text-sm font-medium text-gray-900">
                   {contest.type === ContestType.PRIVATE
-                    ? "Private Contest"
-                    : "Public Contest"}
+                    ? dict.contestList.private
+                    : dict.contestList.public}
                 </p>
               </div>
             </div>
@@ -146,7 +149,7 @@ export default async function ContestLogin({ params }: Props) {
             <div className="p-6 md:p-8">
               <h3 className="text-sm font-bold text-gray-900 mb-5 flex items-center gap-2 uppercase tracking-wide">
                 <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
-                Information
+                {dict.contestList.information}
               </h3>
               <article className="prose prose-sm md:prose-base max-w-none text-gray-600 prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200 prose-pre:text-gray-800">
                 <ReactMarkdown

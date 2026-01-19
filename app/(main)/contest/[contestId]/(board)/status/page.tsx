@@ -13,6 +13,7 @@ import SearchAndFilter from "./SearchAndFilter";
 import { verifyAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { ContestConfig } from "@/app/(main)/page";
+import { getDictionary } from "@/lib/get-dictionary";
 
 interface Props {
   searchParams: Promise<{
@@ -269,11 +270,14 @@ export default async function Status({ params, searchParams }: Props) {
       ? "(Contest Ended - All Submissions Visible)"
       : "";
 
+  const dict = await getDictionary();
+
   return (
     <div className="bg-white w-full mx-auto px-4 shadow-sm border border-gray-100 rounded-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-serif font-bold text-gray-800">
-          Status <span className="text-sm text-gray-500">{statusLabel}</span>
+          {dict.submission.title}{" "}
+          <span className="text-sm text-gray-500">{statusLabel}</span>
         </h2>
         <div className="flex items-center gap-4">
           <SearchAndFilter
@@ -290,7 +294,7 @@ export default async function Status({ params, searchParams }: Props) {
 
       {contestInfo.status === ContestStatus.PENDING ? (
         <div className="text-center py-10 text-gray-500">
-          The contest has not started yet.
+          {dict.contestList.noContestsFound}
         </div>
       ) : displaySubmissions.length === 0 ? (
         <div className="text-center py-10 text-gray-500">
@@ -307,25 +311,25 @@ export default async function Status({ params, searchParams }: Props) {
                   Run ID
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Submit Time
+                  {dict.submission.submitTime}
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  User
+                  {dict.submission.user}
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Problem
+                  {dict.submission.problem}
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Time
+                  {dict.submission.time}
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Memory
+                  {dict.submission.memory}
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Language
+                  {dict.submission.language}
                 </th>
                 <th scope="col" className="px-6 py-2">
-                  Judge Status
+                  {dict.submission.status}
                 </th>
               </tr>
             </thead>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CodeEditor from "@/components/CodeEditor";
 import { submitCode } from "./actions";
+import { useLanguage } from "@/context/LanguageContext";
 
 const LANGUAGES = [
   { value: "c", label: "C" },
@@ -22,6 +23,7 @@ export default function SubmitForm({
 }) {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("cpp");
+  const { dict } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,13 +34,13 @@ export default function SubmitForm({
     <main className="flex-1 w-full min-w-0">
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-6">
         <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6 border-b pb-4">
-          Submit Solution
+          {dict.submit.title}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              Language
+              {dict.common.language}
             </label>
             <select
               value={language}
@@ -55,7 +57,7 @@ export default function SubmitForm({
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              Source Code
+              {dict.common.code}
             </label>
             <div className="relative">
               <CodeEditor
@@ -77,14 +79,14 @@ export default function SubmitForm({
                 className="bg-gray-400 text-white font-medium rounded-sm text-sm px-8 py-3 shadow-md cursor-not-allowed opacity-60"
                 title="Admins cannot submit"
               >
-                Submit
+                {dict.common.submit}
               </button>
             ) : (
               <button
                 type="submit"
                 className="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-sm text-sm px-8 py-3 shadow-md transition-colors"
               >
-                Submit
+                {dict.common.submit}
               </button>
             )}
 
@@ -93,7 +95,7 @@ export default function SubmitForm({
               onClick={() => setCode("")}
               className="text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium rounded-sm text-sm px-6 py-3 transition-colors"
             >
-              Clear
+              {dict.common.cancel}
             </button>
           </div>
         </form>

@@ -67,7 +67,7 @@ export default function Navbar() {
   const handleNavClick = (e: React.MouseEvent) => {
     if (user) return;
     const target = e.target as HTMLElement;
-    console.log(target);
+    // console.log(target);
     if (target.tagName === "NAV" || target?.className?.includes("max-w-7xl")) {
       const newCount = clickCount + 1;
       setClickCount(newCount);
@@ -124,7 +124,7 @@ export default function Navbar() {
                     href={getContestLink("/problems")}
                     className={linkClass(
                       `/contest/${contestId}/problems`,
-                      "hidden md:block"
+                      "hidden md:block",
                     )}
                   >
                     {dict.nav.problems}
@@ -133,7 +133,7 @@ export default function Navbar() {
                     href={getContestLink("/status")}
                     className={linkClass(
                       `/contest/${contestId}/status`,
-                      "hidden md:block"
+                      "hidden md:block",
                     )}
                   >
                     {dict.nav.status}
@@ -142,7 +142,7 @@ export default function Navbar() {
                     href={getContestLink("/rank")}
                     className={linkClass(
                       `/contest/${contestId}/rank`,
-                      "hidden md:block"
+                      "hidden md:block",
                     )}
                   >
                     {dict.nav.rank}
@@ -151,7 +151,7 @@ export default function Navbar() {
                     href={getContestLink("/clarifications")}
                     className={linkClass(
                       `/contest/${contestId}/clarifications`,
-                      "hidden md:block"
+                      "hidden md:block",
                     )}
                   >
                     {dict.nav.clarifications}
@@ -173,7 +173,7 @@ export default function Navbar() {
                     href={getContestLink("/balloon")}
                     className={linkClass(
                       `/contest/${contestId}/balloon`,
-                      "text-orange-600 hover:text-orange-800 shrink-0" // 给气球一个醒目的颜色
+                      "text-orange-600 hover:text-orange-800 shrink-0", // 给气球一个醒目的颜色
                     )}
                   >
                     🎈 {dict.nav.balloon}

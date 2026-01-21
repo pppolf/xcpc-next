@@ -29,7 +29,9 @@
     "jose": "^6.1.3",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.3",
+    "jszip": "^3.10.1",
     "katex": "^0.16.27",
+    "mime": "^4.1.0",
     "next": "16.1.1",
     "pg": "^8.16.3",
     "qrcode.react": "^4.2.0",
@@ -38,7 +40,8 @@
     "react-markdown": "^10.1.0",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -47,6 +50,8 @@
     "@types/ioredis": "^4.28.10",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/jszip": "^3.4.0",
+    "@types/mime": "^3.0.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

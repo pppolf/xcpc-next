@@ -13,7 +13,7 @@ export async function submitCode(
   contestId: number,
   problemDisplayId: string,
   language: string,
-  code: string
+  code: string,
 ) {
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value;
@@ -50,7 +50,7 @@ export async function submitCode(
   let isFrozen = false;
   if (config && config.frozenDuration) {
     const freezeTime = new Date(
-      contest.endTime.getTime() - config.frozenDuration * 60 * 1000
+      contest.endTime.getTime() - config.frozenDuration * 60 * 1000,
     );
     // 如果当前时间已过封榜线，即为封榜状态（无论是否比赛结束，直到管理员修改配置解榜）
     isFrozen = now >= freezeTime;
@@ -62,10 +62,10 @@ export async function submitCode(
     payload?.role === ContestRole.ADMIN ||
     payload?.role === ContestRole.JUDGE ||
     payload?.isGlobalAdmin;
-  console.log(isEnded, isFrozen, isAdmin);
+  // console.log(isEnded, isFrozen, isAdmin);
   if (isEnded && isFrozen && !isAdmin) {
     throw new Error(
-      "禁止提交：比赛已结束且处于封榜期间，请等待解榜后再尝试提交。"
+      "禁止提交：比赛已结束且处于封榜期间，请等待解榜后再尝试提交。",
     );
   }
 

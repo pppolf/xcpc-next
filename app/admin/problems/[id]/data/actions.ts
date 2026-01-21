@@ -5,6 +5,7 @@ import path from "path";
 import yaml from "js-yaml";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import JSZip from "jszip";
 
 const UPLOAD_ROOT = path.join(process.cwd(), "uploads", "problems");
 
@@ -160,12 +161,41 @@ export async function uploadFiles(problemId: number, formData: FormData) {
 
   // 3. 写入新上传的文件
   const entries = Array.from(formData.entries());
-  for (const value of entries.values()) {
-    if (value[1] instanceof File) {
-      const arrayBuffer = await value[1].arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const fileName = path.basename(value[1].name);
-      await fs.writeFile(path.join(dir, fileName), buffer);
+  for (const [, value] of entries) {
+    if (value instanceof File) {
+      // 特殊处理 ZIP 文件
+      if (value.name.toLowerCase().endsWith(".zip")) {
+        const arrayBuffer = await value.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+
+        // 遍历压缩包内容
+        const writePromises: Promise<void>[] = [];
+
+        zip.forEach((relativePath, zipEntry) => {
+          if (zipEntry.dir) return; // 跳过目录
+
+          // 防止路径遍历攻击，只取文件名
+          // 如果你需要保留 zip 里的目录结构，这里需要更复杂的逻辑来创建嵌套文件夹
+          const fileName = path.basename(relativePath);
+
+          // 忽略以 . 或 __MACOSX 开头的隐藏/系统文件
+          if (fileName.startsWith(".") || relativePath.includes("__MACOSX"))
+            return;
+
+          const promise = zipEntry.async("nodebuffer").then((content) => {
+            return fs.writeFile(path.join(dir, fileName), content);
+          });
+          writePromises.push(promise);
+        });
+
+        await Promise.all(writePromises);
+      } else {
+        // 普通文件直接写入
+        const arrayBuffer = await value.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const fileName = path.basename(value.name);
+        await fs.writeFile(path.join(dir, fileName), buffer);
+      }
     }
   }
 

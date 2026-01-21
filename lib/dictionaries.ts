@@ -31,7 +31,7 @@ export const en = {
   },
   problemDetail: {
     title: "Title",
-    ratio: "Acceptance Rate",
+    ratio: "Rate",
     balloon: "Balloon",
     accepted: "Accepted",
     submissions: "Submitted",

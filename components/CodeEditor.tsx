@@ -11,7 +11,6 @@ interface CodeEditorProps {
   readOnly?: boolean;
 }
 
-// 语言映射：将你的系统语言代码映射为 Monaco 支持的语言 ID
 const LANGUAGE_MAP: Record<string, string> = {
   c: "c",
   cpp: "cpp",
@@ -24,7 +23,7 @@ export default function CodeEditor({
   language,
   onChange,
   height = "500px",
-  readOnly = false
+  readOnly = false,
 }: CodeEditorProps) {
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const [, setMounted] = useState(false);
@@ -34,32 +33,43 @@ export default function CodeEditor({
     editorRef.current = editor;
     setMounted(true);
 
-    // 你可以在这里配置一些全局设置，比如自动格式化等
-    // monaco.languages.registerCompletionItemProvider()
+    // 关键修复：延迟 100ms 强制刷新一次布局
+    // 解决 DOM 挂载初期尺寸为 0 导致 Monaco 计算出 1.6e7px 巨大尺寸的问题
+    setTimeout(() => {
+      editor.layout();
+    }, 100);
   };
 
   const monacoLanguage = LANGUAGE_MAP[language] || "plaintext";
 
   return (
     <div
-      className="border border-gray-300 rounded-sm overflow-hidden shadow-sm"
+      // 关键修复：添加 w-full h-full 确保填满外部的 absolute 容器
+      className="border border-gray-300 rounded-sm overflow-hidden shadow-sm relative w-full h-full"
       style={{ height: height }}
     >
       <Editor
         height="100%"
+        width="100%"
         language={monacoLanguage}
         value={value}
         onChange={(val) => onChange && onChange(val || "")}
-        theme="vs-light" // 浅色主题，契合你的系统风格 (vs-dark 为深色)
+        theme="vs-light"
         options={{
           readOnly: readOnly,
           domReadOnly: readOnly,
-          minimap: { enabled: false }, // 关闭右侧代码缩略图，节省空间
+          minimap: { enabled: false },
           fontSize: 14,
-          scrollBeyondLastLine: false, // 滚动条不滚过最后一行
-          automaticLayout: true, // 自动适应容器大小
+          mouseWheelZoom: true,
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
           tabSize: 4,
-          fontFamily: "'Fira Code', 'Consolas', monospace", // 推荐字体
+          fontFamily: "'Fira Code', 'Consolas', monospace",
+          // 关键修复：开启自动换行，防止宽度被计算为只有一行无限长
+          wordWrap: "on",
+          // 隐藏垂直滚动条概览，有时候它也会导致布局计算问题
+          overviewRulerBorder: false,
+          fixedOverflowWidgets: true,
         }}
         onMount={handleEditorDidMount}
         loading={

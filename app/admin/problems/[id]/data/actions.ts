@@ -87,7 +87,7 @@ export async function getProblemData(problemId: number) {
     files.map(async (file) => {
       const stat = await fs.stat(path.join(dir, file));
       return { name: file, size: stat.size, updatedAt: stat.mtime };
-    })
+    }),
   );
 
   fileStats.sort((a, b) => naturalSort(a.name, b.name));
@@ -147,7 +147,7 @@ export async function uploadFiles(problemId: number, formData: FormData) {
   try {
     currentYamlContent = await fs.readFile(
       path.join(dir, "problem.yml"),
-      "utf-8"
+      "utf-8",
     );
   } catch {}
 
@@ -155,16 +155,16 @@ export async function uploadFiles(problemId: number, formData: FormData) {
   await Promise.all(
     existingFiles.map(async (file) => {
       await fs.unlink(path.join(dir, file));
-    })
+    }),
   );
 
   // 3. 写入新上传的文件
   const entries = Array.from(formData.entries());
   for (const value of entries.values()) {
-    if (value instanceof File) {
-      const arrayBuffer = await value.arrayBuffer();
+    if (value[1] instanceof File) {
+      const arrayBuffer = await value[1].arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const fileName = path.basename(value.name);
+      const fileName = path.basename(value[1].name);
       await fs.writeFile(path.join(dir, fileName), buffer);
     }
   }
@@ -204,7 +204,7 @@ export async function getFileContent(problemId: number, fileName: string) {
 export async function saveFileContent(
   problemId: number,
   fileName: string,
-  content: string
+  content: string,
 ) {
   const dir = getDataDir(problemId);
   const filePath = path.join(dir, fileName);

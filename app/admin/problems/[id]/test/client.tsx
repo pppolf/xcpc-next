@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -44,7 +44,33 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
   const [language, setLanguage] = useState("cpp");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastId, setLastId] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const cacheKey = `xcpc_admin_p${problem.id}_code`;
+    const langKey = `xcpc_admin_p${problem.id}_lang`;
+
+    const savedCode = localStorage.getItem(cacheKey);
+    const savedLang = localStorage.getItem(langKey);
+
+    if (savedCode !== null) setCode(savedCode);
+    if (savedLang !== null) setLanguage(savedLang);
+
+    setIsLoaded(true);
+  }, [problem.id]);
+
+  useEffect(() => {
+    if (!isLoaded) return; // 防止未加载完成前的空状态覆盖了缓存
+
+    const timer = setTimeout(() => {
+      localStorage.setItem(`xcpc_admin_p${problem.id}_code`, code);
+      localStorage.setItem(`xcpc_admin_p${problem.id}_lang`, language);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [code, language, problem.id, isLoaded]);
+
   const handleSubmit = async () => {
     if (!code.trim()) return alert("Code cannot be empty");
     setIsSubmitting(true);
@@ -152,13 +178,17 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
         </div>
 
         {/* min-h-0 对于 flex 容器内的 Monaco 很重要 */}
-        <div className="h-full">
-          <CodeEditor
-            value={code}
-            language={language}
-            onChange={setCode}
-            height="100%"
-          />
+        <div className="flex-1 relative min-h-0 w-full">
+          <div className="absolute inset-0 pb-2">
+            {" "}
+            {/* pb-2 留一点底部空隙防止贴底 */}
+            <CodeEditor
+              value={code}
+              language={language}
+              onChange={setCode}
+              height="100%"
+            />
+          </div>
         </div>
 
         {lastId && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CodeEditor from "@/components/CodeEditor";
 import { submitCode } from "./actions";
 import { useLanguage } from "@/context/LanguageContext";
@@ -24,6 +24,50 @@ export default function SubmitForm({
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("cpp");
   const { dict } = useLanguage();
+
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // 1. 初始化时读取缓存（根据 Contest ID 和 Problem Display ID）
+  useEffect(() => {
+    // 基础键，用于在不看代码时记忆上次选的语言
+    const lastLangKey = `xcpc_c${contestId}_p${problemId}_last_lang`;
+
+    // 如果是第一次加载页面，先恢复上次选的语言
+    if (!isLoaded) {
+      const savedLastLang = localStorage.getItem(lastLangKey);
+      if (savedLastLang) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLanguage(savedLastLang);
+        setIsLoaded(true);
+        return;
+      }
+      setIsLoaded(true);
+    }
+
+    const codeKey = `xcpc_c${contestId}_p${problemId}_code_${language}`;
+    const savedCode = localStorage.getItem(codeKey);
+
+    if (savedCode !== null) {
+      setCode(savedCode);
+    } else {
+      setCode("");
+    }
+  }, [contestId, problemId, language, isLoaded]);
+
+  // 2. 代码变化时写入当前语言的缓存
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const codeKey = `xcpc_c${contestId}_p${problemId}_code_${language}`;
+    const lastLangKey = `xcpc_c${contestId}_p${problemId}_last_lang`;
+
+    const timer = setTimeout(() => {
+      localStorage.setItem(codeKey, code);
+      localStorage.setItem(lastLangKey, language);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [code, language, contestId, problemId, isLoaded]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

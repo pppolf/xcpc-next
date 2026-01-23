@@ -49,7 +49,6 @@ export default async function SubmitPage({ params, searchParams }: Props) {
   const isAdmin =
     (SuperAdmin as unknown as UserJwtPayload)?.isGlobalAdmin ||
     (user as unknown as UserJwtPayload)?.role !== ContestRole.TEAM;
-  console.log(isAdmin);
   return (
     <div className="flex flex-col w-full lg:flex-row gap-6 items-start">
       <aside>

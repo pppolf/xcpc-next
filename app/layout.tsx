@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XCPC Next",
-  description: "Next generation XCPC platform",
+  title: "XCPC Contest Platform",
+  description: "Next Contest Platform for XCPC",
 };
 
 export default function RootLayout({

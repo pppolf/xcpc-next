@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: xcpc-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: xcpc_oj
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: xcpc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+#  go-judge:
+#    # build:
+#    #   context: .
+#    #   dockerfile: Dockerfile
+#    image: go-judge:latest
+#    container_name: xcpc-go-judge
+#    ports:
+#      - "5050:5050"
+#      - "5051:5051"
+#    volumes:
+#      - /tmp/judge:/tmp/judge
+#    privileged: true
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:5050"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

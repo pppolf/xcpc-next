@@ -1,35 +1,139 @@
+'use client';
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { getContests } from "./actions";
 import Pagination from "@/components/Pagination";
 import {
   PlusIcon,
   UserGroupIcon,
   DocumentTextIcon,
+  PlusCircleIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 import { ContestStatus, ContestType } from "@/lib/generated/prisma/enums";
+import { toast } from "sonner";
 
-export default async function AdminContestsPage({
+interface Contest {
+  id: number;
+  title: string;
+  status: string;
+  type: string;
+  startTime: Date;
+  endTime: Date;
+  _count: {
+    problems: number;
+    users: number;
+  };
+}
+
+export default function AdminContestsPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const { page } = await searchParams;
-  const currentPage = Number(page) || 1;
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [total, setTotal] = useState(0);
+  const [selectedContestIds, setSelectedContestIds] = useState<Set<number>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
   const pageSize = 15;
 
-  const { contests, total } = await getContests(currentPage, pageSize);
+  useEffect(() => {
+    const loadContests = async () => {
+      const { page } = await searchParams;
+      const pageNum = Number(page) || 1;
+      const { contests: loadedContests, total: loadedTotal } = await getContests(pageNum, pageSize);
+      setContests(loadedContests);
+      setTotal(loadedTotal);
+    };
+    
+    loadContests();
+  }, [searchParams]);
+
+  function toggleContestSelection(contestId: number) {
+    const newSelected = new Set(selectedContestIds);
+    if (newSelected.has(contestId)) {
+      newSelected.delete(contestId);
+    } else {
+      newSelected.add(contestId);
+    }
+    setSelectedContestIds(newSelected);
+  }
+
+  function selectAllContests() {
+    if (selectedContestIds.size === contests.length) {
+      setSelectedContestIds(new Set());
+    } else {
+      setSelectedContestIds(new Set(contests.map(c => c.id)));
+    }
+  }
+
+  async function handleExport() {
+    if (selectedContestIds.size === 0) {
+      toast.error("Please select at least one contest to export");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/contests/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ contestIds: Array.from(selectedContestIds) }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contests_${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Successfully exported ${selectedContestIds.size} contests`);
+    } catch {
+      toast.error('Export failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Contest Management</h1>
-        <Link
-          href="/admin/contests/create"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Create Contest
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExport}
+            disabled={isLoading || selectedContestIds.size === 0}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            <PlusCircleIcon className="w-5 h-5" />
+            Export ({selectedContestIds.size})
+          </button>
+          <Link
+            href="/admin/contests/import"
+            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+          >
+            <PlayIcon className="w-5 h-5" />
+            Import
+          </Link>
+          <Link
+            href="/admin/contests/create"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Create Contest
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
@@ -37,6 +141,14 @@ export default async function AdminContestsPage({
           <table className="w-full text-sm text-left text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-bold border-b uppercase text-xs">
               <tr>
+                <th className="px-4 py-3 w-12">
+                  <input
+                    type="checkbox"
+                    checked={contests.length > 0 && selectedContestIds.size === contests.length}
+                    onChange={selectAllContests}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
                 <th className="px-6 py-3">ID</th>
                 <th className="px-6 py-3">Title</th>
                 <th className="px-6 py-3">Status</th>
@@ -64,6 +176,14 @@ export default async function AdminContestsPage({
 
                 return (
                   <tr key={contest.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedContestIds.has(contest.id)}
+                        onChange={() => toggleContestSelection(contest.id)}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4 font-mono text-xs">
                       {contest.id}
                     </td>
@@ -98,11 +218,11 @@ export default async function AdminContestsPage({
                           className="flex items-center gap-1"
                           title="Problems"
                         >
-                          <DocumentTextIcon className="w-4 h-4" />{" "}
+                          <DocumentTextIcon className="w-4 h-4" />
                           {contest._count.problems}
                         </span>
                         <span className="flex items-center gap-1" title="Teams">
-                          <UserGroupIcon className="w-4 h-4" />{" "}
+                          <UserGroupIcon className="w-4 h-4" />
                           {contest._count.users}
                         </span>
                       </div>
@@ -135,7 +255,7 @@ export default async function AdminContestsPage({
               {contests.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-6 py-8 text-center text-gray-400 italic"
                   >
                     No contests found. Create one to get started.

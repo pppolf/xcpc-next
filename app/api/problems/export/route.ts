@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const problemDir = zip.folder(`problem_${problemId}_${problem.title.replace(/[^a-zA-Z0-9]/g, '_')}`);
+      const problemDir = zip.folder(`problem_${problemId}_${problem.title.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')}`);
       if (!problemDir) continue;
 
       // 4.2 导出题目基本信息
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
     // 6. 返回ZIP文件
-    return new Response(zipBuffer, {
+    return new Response(zipBuffer as BodyInit, {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="problems_${Date.now()}.zip"`,

@@ -60,10 +60,14 @@ export async function POST(request: Request) {
     const zipEntries = Object.keys(zip.files);
     const problemDirs = new Set<string>();
 
-    // 4.1 收集所有题目目录
+    // 4.1 收集所有题目目录（只包含problem.json的目录）
     for (const entry of zipEntries) {
       if (entry.endsWith('/')) {
-        problemDirs.add(entry);
+        const possibleProblemDir = entry;
+        const problemJsonEntry = zip.files[`${possibleProblemDir}problem.json`];
+        if (problemJsonEntry) {
+          problemDirs.add(possibleProblemDir);
+        }
       }
     }
 
@@ -73,7 +77,6 @@ export async function POST(request: Request) {
         // 4.2.1 读取题目信息
         const problemJsonEntry = zip.files[`${problemDir}problem.json`];
         if (!problemJsonEntry) {
-          errors.push(`Missing problem.json in ${problemDir}`);
           continue;
         }
 
@@ -86,19 +89,62 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // 4.2.3 创建或更新题目
-        const problem = await prisma.problem.create({
-          data: {
-            title: problemData.title,
-            type: problemData.type,
-            defaultTimeLimit: problemData.defaultTimeLimit,
-            defaultMemoryLimit: problemData.defaultMemoryLimit,
-            sections: problemData.sections,
-            samples: problemData.samples,
-            hint: problemData.hint,
-            judgeConfig: problemData.judgeConfig,
-          },
-        });
+        // 4.2.3 创建或更新题目（保持ID一致）
+        let problem;
+        const exportedId = (problemData as ProblemData).id;
+        
+        if (exportedId) {
+          // 检查导出的ID是否已存在
+          const existingProblem = await prisma.problem.findUnique({
+            where: { id: exportedId },
+          });
+          
+          if (existingProblem) {
+            // 更新现有题目
+            problem = await prisma.problem.update({
+              where: { id: exportedId },
+              data: {
+                title: problemData.title,
+                type: problemData.type,
+                defaultTimeLimit: problemData.defaultTimeLimit,
+                defaultMemoryLimit: problemData.defaultMemoryLimit,
+                sections: problemData.sections,
+                samples: problemData.samples,
+                hint: problemData.hint,
+                judgeConfig: problemData.judgeConfig,
+              },
+            });
+          } else {
+            // 使用导出的ID创建新题目
+            problem = await prisma.problem.create({
+              data: {
+                id: exportedId,
+                title: problemData.title,
+                type: problemData.type,
+                defaultTimeLimit: problemData.defaultTimeLimit,
+                defaultMemoryLimit: problemData.defaultMemoryLimit,
+                sections: problemData.sections,
+                samples: problemData.samples,
+                hint: problemData.hint,
+                judgeConfig: problemData.judgeConfig,
+              },
+            });
+          }
+        } else {
+          // 没有导出ID，创建新题目
+          problem = await prisma.problem.create({
+            data: {
+              title: problemData.title,
+              type: problemData.type,
+              defaultTimeLimit: problemData.defaultTimeLimit,
+              defaultMemoryLimit: problemData.defaultMemoryLimit,
+              sections: problemData.sections,
+              samples: problemData.samples,
+              hint: problemData.hint,
+              judgeConfig: problemData.judgeConfig,
+            },
+          });
+        }
 
         importedProblems.push({ id: problem.id, title: problem.title });
 

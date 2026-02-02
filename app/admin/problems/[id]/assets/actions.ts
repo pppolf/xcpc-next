@@ -42,8 +42,8 @@ export async function uploadAsset(problemId: number, formData: FormData) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  // 防止文件名冲突或路径遍历，最好重命名或者清理文件名
-  const safeName = path.basename(file.name).replace(/[^a-zA-Z0-9._-]/g, "_");
+  // 防止文件名冲突或路径遍历，只移除危险字符，保留中文字符
+  const safeName = path.basename(file.name).replace(/[<>:"/\\|?*\x00-\x1F]/g, "_");
 
   await fs.writeFile(path.join(dir, safeName), buffer);
   revalidatePath(`/admin/problems/${problemId}`); // 刷新页面

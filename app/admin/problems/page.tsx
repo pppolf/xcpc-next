@@ -1,38 +1,144 @@
+'use client';
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { getProblems } from "./actions";
 import {
   PencilSquareIcon,
   ServerStackIcon,
   BeakerIcon,
+  PlayCircleIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 import Pagination from "@/components/Pagination";
 import RejudgeButton from "./RejudgeProblemButton";
 import DeleteProblemButton from "./DeleteProblemButton";
+import { toast } from "sonner";
 
-export default async function ProblemsPage({
+export default function ProblemsPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const page = Number((await searchParams).page) || 1;
-  const { problems, total } = await getProblems(page);
+  const [problems, setProblems] = useState<Array<{
+    id: number;
+    title: string;
+    type: string;
+    updatedAt: Date;
+  }>>([]);
+  const [total, setTotal] = useState(0);
+  const [selectedProblemIds, setSelectedProblemIds] = useState<Set<number>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function loadProblems() {
+    const page = Number((await searchParams).page) || 1;
+    const { problems: loadedProblems, total: loadedTotal } = await getProblems(page);
+    setProblems(loadedProblems);
+    setTotal(loadedTotal);
+  }
+
+  useEffect(() => {
+    loadProblems();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toggleProblemSelection(problemId: number) {
+    const newSelected = new Set(selectedProblemIds);
+    if (newSelected.has(problemId)) {
+      newSelected.delete(problemId);
+    } else {
+      newSelected.add(problemId);
+    }
+    setSelectedProblemIds(newSelected);
+  }
+
+  function selectAllProblems() {
+    if (selectedProblemIds.size === problems.length) {
+      setSelectedProblemIds(new Set());
+    } else {
+      setSelectedProblemIds(new Set(problems.map(p => p.id)));
+    }
+  }
+
+  async function handleExport() {
+    if (selectedProblemIds.size === 0) {
+      toast.error("Please select at least one problem to export");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/problems/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ problemIds: Array.from(selectedProblemIds) }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `problems_${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Successfully exported ${selectedProblemIds.size} problems`);
+    } catch {
+      toast.error('Export failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Problem Bank</h1>
-        <Link
-          href="/admin/problems/create"
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
-        >
-          + Create Problem
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExport}
+            disabled={isLoading || selectedProblemIds.size === 0}
+            className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            <PlayCircleIcon className="w-4 h-4" />
+            Export ({selectedProblemIds.size})
+          </button>
+          <Link
+            href="/admin/problems/import"
+            className="bg-purple-600 text-white px-4 py-2 rounded shadow hover:bg-purple-700 transition flex items-center gap-2"
+          >
+            <PlayIcon className="w-4 h-4" />
+            Import
+          </Link>
+          <Link
+            href="/admin/problems/create"
+            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+          >
+            + Create Problem
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white shadow rounded overflow-hidden">
         <table className="w-full text-sm text-left text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-bold border-b">
             <tr>
+              <th className="px-6 py-3 w-12">
+                <input
+                  type="checkbox"
+                  checked={problems.length > 0 && selectedProblemIds.size === problems.length}
+                  onChange={selectAllProblems}
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />
+              </th>
               <th className="px-6 py-3 w-20">ID</th>
               <th className="px-6 py-3">Title</th>
               <th className="px-6 py-3 w-48">Type</th>
@@ -43,6 +149,14 @@ export default async function ProblemsPage({
           <tbody className="divide-y divide-gray-100">
             {problems.map((problem) => (
               <tr key={problem.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedProblemIds.has(problem.id)}
+                    onChange={() => toggleProblemSelection(problem.id)}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />
+                </td>
                 <td className="px-6 py-4 font-mono">#{problem.id}</td>
                 <td className="px-6 py-4 font-medium text-gray-900">
                   <Link

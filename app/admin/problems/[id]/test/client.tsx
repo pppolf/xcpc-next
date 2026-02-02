@@ -91,63 +91,65 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-4">
       {/* --- 左侧：题目预览区 (50%) --- */}
-      <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto p-6">
-        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-8 text-center border-b pb-4">
-          {problem.title}
-        </h1>
+      <div className="flex-1 relative bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto p-6 min-h-0">
+        <div className="absolute inset-0 overflow-y-auto p-6">
+          <h1 className="text-3xl font-serif font-bold text-gray-900 mb-8 text-center border-b pb-4">
+            {problem.title}
+          </h1>
 
-        <div className="space-y-8">
-          {/* 1. 渲染常规文本段落 (Description, Input, Output) */}
-          {problem.sections.map((section: Section, index: number) => (
-            <div key={`section-${index}`}>
-              <SectionTitle>{section.title}</SectionTitle>
-              <article className="prose prose-sm md:prose-base max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-pre:bg-gray-100 prose-pre:text-gray-800">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                >
-                  {section.content}
-                </ReactMarkdown>
-              </article>
-            </div>
-          ))}
-          {/* 2. 渲染样例数组 */}
-          {problem.samples.map((sample: Sample, index: number) => {
-            // 如果只有一组样例，标题不显示序号；如果有多组，显示 1, 2, 3...
-            const suffix = problem.samples.length > 1 ? ` ${index + 1}` : "";
-
-            return (
-              <div key={`sample-${index}`} className="grid grid-cols-1 gap-6">
-                <div>
-                  <SectionTitle>Sample Input{suffix}</SectionTitle>
-                  <CodeBlock code={sample.input} />
-                </div>
-                <div>
-                  <SectionTitle>Sample Output{suffix}</SectionTitle>
-                  <CodeBlock code={sample.output} />
-                </div>
+          <div className="space-y-8">
+            {/* 1. 渲染常规文本段落 (Description, Input, Output) */}
+            {problem.sections.map((section: Section, index: number) => (
+              <div key={`section-${index}`}>
+                <SectionTitle>{section.title}</SectionTitle>
+                <article className="prose prose-sm md:prose-base max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-pre:bg-gray-100 prose-pre:text-gray-800">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {section.content}
+                  </ReactMarkdown>
+                </article>
               </div>
-            );
-          })}
-          {/* 3. 渲染 Hint (如果有) */}
-          {problem.hint && (
-            <div>
-              <SectionTitle>Hint</SectionTitle>
-              <article className="prose prose-sm md:prose-base max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                >
-                  {problem.hint}
-                </ReactMarkdown>
-              </article>
-            </div>
-          )}
+            ))}
+            {/* 2. 渲染样例数组 */}
+            {problem.samples.map((sample: Sample, index: number) => {
+              // 如果只有一组样例，标题不显示序号；如果有多组，显示 1, 2, 3...
+              const suffix = problem.samples.length > 1 ? ` ${index + 1}` : "";
+
+              return (
+                <div key={`sample-${index}`} className="grid grid-cols-1 gap-6">
+                  <div>
+                    <SectionTitle>Sample Input{suffix}</SectionTitle>
+                    <CodeBlock code={sample.input} />
+                  </div>
+                  <div>
+                    <SectionTitle>Sample Output{suffix}</SectionTitle>
+                    <CodeBlock code={sample.output} />
+                  </div>
+                </div>
+              );
+            })}
+            {/* 3. 渲染 Hint (如果有) */}
+            {problem.hint && (
+              <div>
+                <SectionTitle>Hint</SectionTitle>
+                <article className="prose prose-sm md:prose-base max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {problem.hint}
+                  </ReactMarkdown>
+                </article>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* --- 右侧：代码编辑区 (50%) --- */}
-      <div className="flex-1 h-full flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div className="bg-gray-50 border-b px-4 py-2 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="font-bold text-gray-700">Code Editor</span>
@@ -178,9 +180,8 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
         </div>
 
         {/* min-h-0 对于 flex 容器内的 Monaco 很重要 */}
-        <div className="flex-1 relative min-h-0 w-full">
-          <div className="absolute inset-0 pb-2">
-            {" "}
+        <div className="flex-1 relative w-full min-h-0">
+          <div className="absolute inset-0">
             {/* pb-2 留一点底部空隙防止贴底 */}
             <CodeEditor
               value={code}

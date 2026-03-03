@@ -238,7 +238,7 @@ export async function POST(request: Request) {
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
     // 6. 返回ZIP文件
-    return new Response(zipBuffer, {
+    return new Response(new Uint8Array(zipBuffer), {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="contests_${Date.now()}.zip"`,

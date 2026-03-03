@@ -617,7 +617,7 @@ export async function POST(request: Request) {
     // 5. 返回导入结果
     return NextResponse.json({
       success: true,
-      importedContests,
+      importedContests: importedContests.map(c => c.title),
       errors,
     });
 

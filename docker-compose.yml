@@ -44,7 +44,7 @@ services:
      - /tmp/judge:/tmp/judge
    privileged: true
    healthcheck:
-     test: ["CMD", "curl", "-f", "http://localhost:5050"]
+     test: ["CMD", "curl", "-f", "http://localhost:5050/config"]
      interval: 10s
      timeout: 5s
      retries: 5

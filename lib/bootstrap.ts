@@ -1,6 +1,11 @@
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 
+async function resetIdentitySequence(table: string, column: string) {
+  const sql = `SELECT setval(pg_get_serial_sequence('"public"."${table}"','${column}'), (SELECT COALESCE(MAX("${column}"),0)+1 FROM "public"."${table}"), false);`;
+  await prisma.$executeRawUnsafe(sql);
+}
+
 export async function initSuperAdmin() {
   const username = process.env.SUPER_ADMIN_USERNAME;
   const password = process.env.SUPER_ADMIN_PASSWORD;
@@ -13,6 +18,11 @@ export async function initSuperAdmin() {
   }
 
   try {
+    await resetIdentitySequence("contests", "id");
+    await resetIdentitySequence("problems", "id");
+    await resetIdentitySequence("balloons", "id");
+    await resetIdentitySequence("clarifications", "id");
+    await resetIdentitySequence("replies", "id");
     // 1. 检查是否存在任何 GlobalUser
     // 这里也可以改成 findUnique 检查特定用户名是否存在
     const adminCount = await prisma.globalUser.count();

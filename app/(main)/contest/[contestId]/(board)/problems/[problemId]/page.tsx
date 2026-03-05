@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
 import "katex/dist/katex.min.css";
 import Link from "next/link";
 import CodeBlock from "@/components/CodeBlock";
@@ -151,7 +152,7 @@ export default async function ProblemDetail({ params }: Props) {
                 <article className="prose prose-sm md:prose-base max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-pre:bg-gray-100 prose-pre:text-gray-800">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
+                    rehypePlugins={[rehypeKatex, rehypeRaw]}
                   >
                     {section.content}
                   </ReactMarkdown>
@@ -186,7 +187,7 @@ export default async function ProblemDetail({ params }: Props) {
                 <article className="prose prose-sm md:prose-base max-w-none">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
+                    rehypePlugins={[rehypeKatex, rehypeRaw]}
                   >
                     {problem.hint}
                   </ReactMarkdown>

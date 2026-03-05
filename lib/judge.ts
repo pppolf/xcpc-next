@@ -5,6 +5,7 @@ import { promises as fs } from "fs";
 import { Verdict } from "@/lib/generated/prisma/enums";
 
 const GO_JUDGE_URL = process.env.GO_JUDGE_API || "http://localhost:5050";
+const STACK_SIZE_KB = Number(process.env.JUDGE_STACK_KB || 2097152);
 
 // --- 类型定义 ---
 interface LanguageConfig {
@@ -57,7 +58,7 @@ const LANGUAGES: Record<string, LanguageConfig> = {
       "-static",
       "-std=c11",
     ],
-    runCmd: ["./main"],
+    runCmd: ["/usr/bin/bash", "-c", `ulimit -s ${STACK_SIZE_KB}; ./main`],
   },
   cpp: {
     srcName: "main.cpp",
@@ -73,7 +74,7 @@ const LANGUAGES: Record<string, LanguageConfig> = {
       "-static",
       "-std=c++23",
     ],
-    runCmd: ["./main"],
+    runCmd: ["/usr/bin/bash", "-c", `ulimit -s ${STACK_SIZE_KB}; ./main`],
   },
   java: {
     srcName: "Main.java",
@@ -169,8 +170,9 @@ async function compileChecker(dataDir: string, checkerName: string) {
         ],
         env: ["PATH=/usr/bin:/bin"],
         files: [
-          { content: "", name: "stdout", max: 1000000 },
-          { content: "", name: "stderr", max: 1000000 },
+          { content: "" },
+          { name: "stdout", max: 1000000 },
+          { name: "stderr", max: 1000000 },
         ],
         cpuLimit: 10000000000,
         memoryLimit: 1024 * 1024 * 1024, // 1GB
@@ -179,13 +181,23 @@ async function compileChecker(dataDir: string, checkerName: string) {
           "checker.cpp": { content: checkerCode },
           "testlib.h": { content: testlibCode },
         },
+        copyOut: ["stdout", "stderr"],
         copyOutCached: ["checker"],
       },
     ],
   });
 
   if (compileRes[0].status !== "Accepted") {
-    throw new Error(`Checker Compile Failed: ${compileRes[0].files?.stderr}`);
+    const fe = Array.isArray(compileRes[0].fileError)
+      ? compileRes[0].fileError
+          .map((x: { message?: string }) => x.message)
+          .filter(Boolean)
+          .join("; ")
+      : "";
+    const stderr = compileRes[0].files?.stderr || "";
+    const stdout = compileRes[0].files?.stdout || "";
+    const msg = stderr || fe || stdout || "Checker compile failed";
+    throw new Error(msg);
   }
 
   return compileRes[0].fileIds["checker"];
@@ -225,8 +237,9 @@ async function compileInteractor(dataDir: string, interactorName: string) {
         ],
         env: ["PATH=/usr/bin:/bin"],
         files: [
-          { content: "", name: "stdout", max: 1000000 },
-          { content: "", name: "stderr", max: 1000000 },
+          { content: "" },
+          { name: "stdout", max: 1000000 },
+          { name: "stderr", max: 1000000 },
         ],
         cpuLimit: 10000000000,
         memoryLimit: 1024 * 1024 * 1024,
@@ -235,14 +248,22 @@ async function compileInteractor(dataDir: string, interactorName: string) {
           "interactor.cpp": { content: interactorCode },
           "testlib.h": { content: testlibCode },
         },
+        copyOut: ["stdout", "stderr"],
         copyOutCached: ["interactor"],
       },
     ],
   });
   if (compileRes[0].status !== "Accepted") {
-    throw new Error(
-      `Interactor Compile Failed: ${compileRes[0].files?.stderr}`
-    );
+    const fe = Array.isArray(compileRes[0].fileError)
+      ? compileRes[0].fileError
+          .map((x: { message?: string }) => x.message)
+          .filter(Boolean)
+          .join("; ")
+      : "";
+    const stderr = compileRes[0].files?.stderr || "";
+    const stdout = compileRes[0].files?.stdout || "";
+    const msg = stderr || fe || stdout || "Interactor compile failed";
+    throw new Error(msg);
   }
 
   return compileRes[0].fileIds["interactor"];
@@ -280,7 +301,7 @@ export async function judgeSubmission(submissionId: string) {
       "uploads",
       "problems",
       problem.id.toString(),
-      "data"
+      "data",
     );
 
     // 配对输入输出
@@ -313,11 +334,11 @@ export async function judgeSubmission(submissionId: string) {
       } catch (err) {
         console.error(
           `Error reading test case files: ${caseItem.input} / ${caseItem.output}`,
-          err
+          err,
         );
         // 提供更友好的错误提示
         throw new Error(
-          `Missing data files: ${caseItem.input} or ${caseItem.output}. Make sure they exist or use /dev/null.`
+          `Missing data files: ${caseItem.input} or ${caseItem.output}. Make sure they exist or use /dev/null.`,
         );
       }
     }
@@ -392,6 +413,7 @@ export async function judgeSubmission(submissionId: string) {
     if (isSpj && judgeConfig.checker) {
       try {
         checkerFileId = await compileChecker(dataDir, judgeConfig.checker);
+        console.log(checkerFileId);
       } catch (e) {
         const err = e as Error;
         await prisma.submission.update({
@@ -405,7 +427,7 @@ export async function judgeSubmission(submissionId: string) {
       try {
         interactorFileId = await compileInteractor(
           dataDir,
-          judgeConfig.interactor
+          judgeConfig.interactor,
         );
       } catch (e) {
         const err = e as Error;

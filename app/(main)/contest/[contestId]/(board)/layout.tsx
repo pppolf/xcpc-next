@@ -18,7 +18,7 @@ export default async function ContestLayout({ children, params }: Props) {
 
   if (!contest) return <div>Contest not found</div>;
   const frozenDuration = Number(
-    (contest.config as ContestConfig)?.frozenDuration || 0
+    (contest.config as ContestConfig)?.frozenDuration || 0,
   );
 
   return (
@@ -66,7 +66,7 @@ export default async function ContestLayout({ children, params }: Props) {
             />
           </div>
         </div>
-        <div className="w-full overflow-x-hidden">{children}</div>
+        <div className="w-full">{children}</div>
       </div>
     </div>
   );

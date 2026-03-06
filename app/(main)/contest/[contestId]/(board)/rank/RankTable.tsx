@@ -82,19 +82,22 @@ export default function RankTable({
       <table className="w-full text-center text-xs border-collapse">
         <thead>
           <tr
-            className={`h-10 text-base font-serif font-bold border-b-2 border-gray-400 ${
+            className={`h-15 text-base font-serif font-bold border-b-2 border-gray-400 ${
               isMyTeam
                 ? "bg-linear-to-r from-blue-400 to-blue-300 text-white"
                 : "bg-white text-gray-700"
             }`}
           >
-            <th className="w-12">Rank</th>
-            <th className="w-52">Team</th>
-            <th className="w-12">Solved</th>
-            <th className="w-20">Penalty</th>
+            <th className="w-12 min-w-12">Rank</th>
+            <th className="w-34 min-w-34">Team</th>
+            <th className="w-12 min-w-12">Solved</th>
+            <th className="w-16 min-w-16">Penalty</th>
             {contestProblems.map((cp, i) => (
-              <th key={cp.problemId} className="min-w-20 text-gray-600">
-                <div className="flex items-center justify-center gap-2">
+              <th
+                key={cp.problemId}
+                className="w-15 min-w-15 max-w-15 text-gray-600"
+              >
+                <div className="flex items-center justify-center gap-0.5">
                   <Link href={`/contest/${contestId}/problems/${cp.displayId}`}>
                     {String.fromCharCode(65 + i)}
                   </Link>
@@ -118,7 +121,7 @@ export default function RankTable({
           {teams.map((team) => (
             <tr
               key={team.id}
-              className={`h-16 font-[Menlo] ${
+              className={`h-15 font-[Menlo] ${
                 isMyTeam
                   ? "bg-linear-to-r from-blue-100 via-blue-50 to-blue-100 hover:from-blue-200 hover:via-blue-100 hover:to-blue-200"
                   : "even:bg-[#eff5fa] odd:bg-white hover:bg-blue-100"
@@ -128,8 +131,8 @@ export default function RankTable({
                 {typeof team.rank === "number" ? team.rank : `${team.rank}`}
               </td>
               <td>
-                <div className="flex flex-col items-center max-h-full">
-                  <div className="font-bold text-blue-900 truncate max-w-37.5">
+                <div className="flex flex-col items-center max-h-full max-w-full">
+                  <div className="font-bold text-blue-900 truncate w-full px-2">
                     {team.category === "1"
                       ? "⭐"
                       : team.category === "2"
@@ -137,10 +140,10 @@ export default function RankTable({
                         : ""}
                     {team.displayName || team.username}
                   </div>
-                  <div className="text-gray-900 truncate max-w-37.5 text-xs">
+                  <div className="text-gray-900 truncate w-full px-2 text-xs">
                     {team.members || team.username}
                   </div>
-                  <div className="text-gray-900 truncate max-w-37.5 text-xs">
+                  <div className="text-gray-900 truncate w-full px-2 text-xs">
                     {team.school}
                   </div>
                 </div>

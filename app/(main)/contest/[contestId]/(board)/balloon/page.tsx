@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   generateBalloons,
+  syncBalloons,
   getBalloonData,
   assignBalloon,
   completeBalloon,
@@ -12,6 +13,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { QRCodeSVG } from "qrcode.react";
 import { getDictionary } from "@/lib/get-dictionary";
+import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
+import { ContestRole } from "@/lib/generated/prisma/client";
+import { headers } from "next/headers";
 
 interface Props {
   params: Promise<{ contestId: string }>;
@@ -21,21 +25,45 @@ export default async function BalloonPage({ params }: Props) {
   const { contestId } = await params;
   const cid = Number(contestId);
 
+  const user = await getCurrentUser();
+  const superAdmin = (await getCurrentSuper()) as UserJwtPayload;
+  const role = (user as UserJwtPayload)?.role;
+  const isAuthorized =
+    role === ContestRole.ADMIN ||
+    role === ContestRole.JUDGE ||
+    role === ContestRole.BALLOON ||
+    superAdmin.isGlobalAdmin;
+
+  if (!(user || superAdmin) || !isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">403</h1>
+        <p className="text-xl text-gray-600 mb-8">Access Denied</p>
+        <p className="text-gray-500 max-w-md">
+          Only contest administrators and balloon volunteers can access this
+          page.
+        </p>
+      </div>
+    );
+  }
+
   // 尝试生成新气球任务
-  await generateBalloons(cid);
-  const { balloons, runners, isMaster, currentUserId } = await getBalloonData(
-    cid
-  );
+  await syncBalloons(cid);
+  const { balloons, runners, isMaster, currentUserId } =
+    await getBalloonData(cid);
 
   const pending = balloons.filter((b) => b.status === "PENDING");
   const assigned = balloons.filter((b) => b.status === "ASSIGNED");
   const completed = balloons.filter((b) => b.status === "COMPLETED");
 
   // 构建让志愿者扫码登录的 URL
-  // 这里假设你的登录页是 /login，为了方便志愿者，可以带上 contest redirect 参数
-  // 实际生产中可能需要一个专门的 token 或者 invite link，这里用简化版链接
-  // 因为无法在 Server Component 获取 window.location，这里硬编码或用环境变量
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  // 使用 next/headers 动态获取当前域名
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  // 默认使用 http，如果部署环境有反向代理支持 x-forwarded-proto 则使用它
+  const protocol = headersList.get("x-forwarded-proto") || "http";
+  const baseUrl = `${protocol}://${host}`;
+
   const loginUrl = `${baseUrl}/login?redirect=/contest/${cid}/balloon`;
 
   const contestProblem = await prisma.contestProblem.findMany({

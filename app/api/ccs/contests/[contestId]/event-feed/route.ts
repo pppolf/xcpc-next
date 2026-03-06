@@ -12,6 +12,9 @@ import {
   getGroups,
   getOrganizations,
   getSubmissionStates,
+  formatSubmission,
+  formatJudgement,
+  formatRun,
 } from "@/lib/ccs/fetchers";
 import { toCCSVerdict, toISO8601, getRelativeTime } from "@/lib/ccs/utils";
 import { Verdict } from "@/lib/generated/prisma/enums";
@@ -47,6 +50,7 @@ export async function GET(
 
   const { contestId } = await params;
   const id = parseInt(contestId, 10);
+  const isStatic = req.nextUrl.searchParams.get("stream") === "false";
 
   if (isNaN(id)) {
     return NextResponse.json({ error: "Invalid contest ID" }, { status: 400 });
@@ -180,9 +184,15 @@ export async function GET(
         });
       }
 
+      // 如果是静态导出，到这里就结束流，不要进入轮询
+      if (isStatic) {
+        controller.close();
+        return;
+      }
+
       // Polling Loop
       const checkInterval = 2000; // Check every 2 seconds
-      console.log(`[EventFeed] Starting polling loop for contest ${id}`);
+      // console.log(`[EventFeed] Starting polling loop for contest ${id}`);
 
       try {
         while (true) {
@@ -204,9 +214,9 @@ export async function GET(
 
           // B. Check Submissions / Runs / Judgements
           const currentStates = await getSubmissionStates(id);
-          console.log(
-            `[EventFeed] Polling... Submissions count: ${currentStates.length}`,
-          );
+          // console.log(
+          //   `[EventFeed] Polling... Submissions count: ${currentStates.length}`,
+          // );
 
           // Use contest start time from the initial fetch.
           // Note: If contest start time changes, we might need to refetch contest info,
@@ -249,7 +259,7 @@ export async function GET(
             const startTime = sub.submittedAt;
 
             if (!known) {
-              console.log(`[EventFeed] New submission detected: ${sub.id}`);
+              // console.log(`[EventFeed] New submission detected: ${sub.id}`);
               // ==========================================
               // 1. New Submission (First time seen)
               // ==========================================
@@ -264,32 +274,13 @@ export async function GET(
               });
 
               // Event 1: Create Submission
-              const submissionData = {
-                id: sub.id,
-                team_id: teamId,
-                problem_id: sub.problemId.toString(),
-                language_id: sub.language,
-                time: toISO8601(startTime),
-                contest_time: getRelativeTime(contestStartTime, startTime),
-                files: [],
-              };
+              const submissionData = formatSubmission(sub, contestStartTime);
               enqueue(
                 createEvent("submissions", sub.id, submissionData, "create"),
               );
 
               // Event 2: Create Judgement (Start Pending)
-              const judgementData = {
-                id: sub.id,
-                submission_id: sub.id,
-                judgement_type_id: null,
-                start_time: toISO8601(startTime),
-                end_time: null,
-                start_contest_time: getRelativeTime(
-                  contestStartTime,
-                  startTime,
-                ),
-                end_contest_time: null,
-              };
+              const judgementData = formatJudgement(sub, contestStartTime);
               enqueue(
                 createEvent("judgements", sub.id, judgementData, "create"),
               );
@@ -297,17 +288,13 @@ export async function GET(
               // Event 3: Emit existing runs (if any)
               for (let i = 1; i <= passedTests; i++) {
                 const runTime = new Date(startTime.getTime() + i * 100);
-                const runData = {
-                  id: `${sub.id}-${i}`,
-                  judgement_id: sub.id,
-                  ordinal: i,
-                  judgement_type_id: "AC",
-                  time: toISO8601(runTime),
-                  contest_time: getRelativeTime(contestStartTime, runTime),
-                  team_id: teamId,
-                  problem_id: sub.problemId.toString(),
-                  language_id: sub.language,
-                };
+                const runData = formatRun(
+                  sub,
+                  i,
+                  contestStartTime,
+                  "AC",
+                  runTime,
+                );
                 enqueue(createEvent("runs", runData.id, runData, "create"));
               }
 
@@ -318,17 +305,13 @@ export async function GET(
                 const runTime = new Date(
                   startTime.getTime() + totalVirtualRuns * 100,
                 );
-                const runData = {
-                  id: `${sub.id}-${totalVirtualRuns}`,
-                  judgement_id: sub.id,
-                  ordinal: totalVirtualRuns,
-                  judgement_type_id: verdictCode,
-                  time: toISO8601(runTime),
-                  contest_time: getRelativeTime(contestStartTime, runTime),
-                  team_id: teamId,
-                  problem_id: sub.problemId.toString(),
-                  language_id: sub.language,
-                };
+                const runData = formatRun(
+                  sub,
+                  totalVirtualRuns,
+                  contestStartTime,
+                  verdictCode,
+                  runTime,
+                );
                 enqueue(createEvent("runs", runData.id, runData, "create"));
               }
 
@@ -338,12 +321,12 @@ export async function GET(
                 const endTime = new Date(
                   startTime.getTime() + Math.max(1000, realWorldDuration),
                 );
-                const finalJudgementData = {
-                  ...judgementData,
-                  judgement_type_id: verdictCode,
-                  end_time: toISO8601(endTime),
-                  end_contest_time: getRelativeTime(contestStartTime, endTime),
-                };
+                const finalJudgementData = formatJudgement(
+                  sub,
+                  contestStartTime,
+                  verdictCode,
+                  endTime,
+                );
                 enqueue(
                   createEvent(
                     "judgements",
@@ -357,9 +340,9 @@ export async function GET(
               known.verdict !== sub.verdict ||
               passedTests > known.passedTests
             ) {
-              console.log(
-                `[EventFeed] Update detected for ${sub.id}: Verdict ${known.verdict}->${sub.verdict}, Tests ${known.passedTests}->${passedTests}`,
-              );
+              // console.log(
+              //   `[EventFeed] Update detected for ${sub.id}: Verdict ${known.verdict}->${sub.verdict}, Tests ${known.passedTests}->${passedTests}`,
+              // );
               // ==========================================
               // 2. Status Update (Progressing or Finished)
               // ==========================================
@@ -392,9 +375,6 @@ export async function GET(
                 // IMPORTANT: Update Judgement end_time to match the latest run
                 // This forces ICPC Live to "refresh" the judgement state and redraw the progress bar
                 // We keep judgement_type_id as null because it's still JUDGING
-                const currentRunTime = new Date(
-                  startTime.getTime() + i * 100 + 50,
-                ); // Slightly after run
                 const judgementData = {
                   id: sub.id,
                   submission_id: sub.id,

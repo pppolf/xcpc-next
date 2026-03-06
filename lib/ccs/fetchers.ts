@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { ContestConfig } from "@/app/(main)/page";
 import {
   toISO8601,
@@ -172,8 +173,8 @@ export async function getProblems(contestId: number) {
     if (cp.problem.judgeConfig) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const config = cp.problem.judgeConfig as any;
-      if (Array.isArray(config.testcases)) {
-        testDataCount = config.testcases.length;
+      if (Array.isArray(config.cases)) {
+        testDataCount = config.cases.length;
       }
     }
 
@@ -231,6 +232,84 @@ export async function getLanguages(contestId: number) {
   }));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function formatSubmission(sub: any, contestStartTime: Date) {
+  return {
+    id: sub.id,
+    team_id: sub.user?.username || sub.userId,
+    problem_id: sub.problemId.toString(),
+    language_id: sub.language,
+    time: toISO8601(sub.submittedAt),
+    contest_time: getRelativeTime(contestStartTime, sub.submittedAt),
+    files: [],
+  };
+}
+
+export function formatJudgement(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sub: any,
+  contestStartTime: Date,
+  overrideVerdict?: string | null,
+  overrideEndTime?: Date,
+) {
+  const verdict =
+    overrideVerdict !== undefined ? overrideVerdict : toCCSVerdict(sub.verdict);
+
+  const startTime = sub.submittedAt;
+  let endTime = null;
+  let judgementTypeId = null;
+
+  if (verdict && sub.verdict !== "PENDING" && sub.verdict !== "JUDGING") {
+    // Finished judging
+    if (overrideEndTime) {
+      endTime = overrideEndTime;
+    } else {
+      endTime = sub.timeUsed
+        ? new Date(startTime.getTime() + sub.timeUsed)
+        : startTime;
+    }
+    judgementTypeId = verdict;
+  } else {
+    // Currently judging or pending
+    endTime = null;
+    judgementTypeId = null;
+  }
+
+  return {
+    id: sub.id,
+    submission_id: sub.id,
+    judgement_type_id: judgementTypeId,
+    start_time: toISO8601(startTime),
+    end_time: endTime ? toISO8601(endTime) : null,
+    start_contest_time: getRelativeTime(contestStartTime, startTime),
+    end_contest_time: endTime
+      ? getRelativeTime(contestStartTime, endTime)
+      : null,
+  };
+}
+
+export function formatRun(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sub: any,
+  ordinal: number,
+  contestStartTime: Date,
+  verdict: string = "AC",
+  runTime?: Date,
+) {
+  const time = runTime || sub.submittedAt;
+  return {
+    id: `${sub.id}-${ordinal}`,
+    judgement_id: sub.id,
+    ordinal: ordinal,
+    judgement_type_id: verdict,
+    time: toISO8601(time),
+    contest_time: getRelativeTime(contestStartTime, time),
+    team_id: sub.user?.username || sub.userId,
+    problem_id: sub.problemId.toString(),
+    language_id: sub.language,
+  };
+}
+
 export async function getSubmissions(contestId: number) {
   const contest = await prisma.contest.findUnique({ where: { id: contestId } });
   if (!contest) return [];
@@ -248,15 +327,7 @@ export async function getSubmissions(contestId: number) {
     },
   });
 
-  return submissions.map((sub) => ({
-    id: sub.id,
-    team_id: sub.user?.username || sub.userId,
-    problem_id: sub.problemId.toString(),
-    language_id: sub.language,
-    time: toISO8601(sub.submittedAt),
-    contest_time: getRelativeTime(contest.startTime, sub.submittedAt),
-    files: [],
-  }));
+  return submissions.map((sub) => formatSubmission(sub, contest.startTime));
 }
 
 export async function getJudgements(contestId: number) {
@@ -278,48 +349,8 @@ export async function getJudgements(contestId: number) {
 
   return submissions
     .map((sub) => {
-      // If verdict is pending, return null or handle appropriately?
-      // CCS spec says judgements are created when judging starts.
-      // If it's PENDING, maybe we shouldn't return a judgement yet unless we want to show it in queue.
-      // But usually 'submissions' puts it in queue?
-      // Actually, CCS says: Submission -> Judgement (start) -> Runs -> Judgement (end)
-      // So if we have a submission, we should have a judgement if it's being judged.
-
       if (sub.verdict === "PENDING") return null;
-
-      const verdict = toCCSVerdict(sub.verdict);
-      // If verdict is null (e.g. JUDGING), we still want to return a judgement with no end_time
-
-      const startTime = sub.submittedAt;
-      let endTime = null;
-      let judgementTypeId = null;
-
-      if (verdict) {
-        // Finished judging
-        endTime = sub.timeUsed
-          ? new Date(startTime.getTime() + sub.timeUsed)
-          : startTime;
-        judgementTypeId = verdict;
-      } else if (sub.verdict === "JUDGING") {
-        // Currently judging
-        endTime = null;
-        judgementTypeId = null;
-      } else {
-        // PENDING or other ignored states
-        return null;
-      }
-
-      return {
-        id: sub.id,
-        submission_id: sub.id,
-        judgement_type_id: judgementTypeId,
-        start_time: toISO8601(startTime),
-        end_time: endTime ? toISO8601(endTime) : null,
-        start_contest_time: getRelativeTime(contest.startTime, startTime),
-        end_contest_time: endTime
-          ? getRelativeTime(contest.startTime, endTime)
-          : null,
-      };
+      return formatJudgement(sub, contest.startTime);
     })
     .filter(Boolean);
 }
@@ -332,7 +363,7 @@ export async function getRuns(contestId: number) {
     where: {
       contestId,
       verdict: {
-        not: "PENDING", // Only return runs for things that started judging
+        not: "PENDING", // 只返回开始评测的提交
       },
     },
     include: {
@@ -344,51 +375,44 @@ export async function getRuns(contestId: number) {
     },
   });
 
-  // Flatten submissions into runs
-  // Scheme:
-  // 1. For each passed test (1..passedTests), generate an 'AC' run.
-  // 2. If verdict is not AC and not judging/pending (e.g. WA/TLE), append one final run with that verdict.
-  //    (We don't know exactly which test failed, but we assume it's the next one)
-
-  // Note: This is a simulation because we don't store individual runs in DB yet.
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allRuns: any[] = [];
 
-  submissions.forEach((sub) => {
+  for (const sub of submissions) {
     const verdict = toCCSVerdict(sub.verdict);
 
-    // Generate AC runs for passed tests
-    for (let i = 1; i <= sub.passedTests; i++) {
-      allRuns.push({
-        id: `${sub.id}-${i}`,
-        judgement_id: sub.id,
-        ordinal: i,
-        judgement_type_id: "AC",
-        time: toISO8601(sub.submittedAt), // Ideally should be slightly later, but we lack data
-        contest_time: getRelativeTime(contest.startTime, sub.submittedAt),
-        team_id: sub.user?.username || sub.userId,
-        problem_id: sub.problemId.toString(),
-        language_id: sub.language,
-      });
+    // ==========================================
+    // 核心修改：如果是 JUDGING 状态，从 Redis 获取实时进度
+    // ==========================================
+    let passedTests = sub.passedTests || 0;
+    if (sub.verdict === "JUDGING") {
+      const redisKey = `submission:${sub.id}:progress`;
+      const redisData = await redis.get(redisKey);
+      if (redisData) {
+        try {
+          const progress = JSON.parse(redisData as string);
+          if (progress && typeof progress.passedTests === "number") {
+            // 取 DB 和 Redis 的最大值，防止数据回退
+            passedTests = Math.max(passedTests, progress.passedTests);
+          }
+        } catch (e) {
+          console.log("Redis parse error in getRuns:", e);
+        }
+      }
     }
 
-    // If finished and not AC, add the failing run
-    if (verdict && verdict !== "AC") {
-      const failOrdinal = sub.passedTests + 1;
-      allRuns.push({
-        id: `${sub.id}-${failOrdinal}`,
-        judgement_id: sub.id,
-        ordinal: failOrdinal,
-        judgement_type_id: verdict,
-        time: toISO8601(sub.submittedAt),
-        contest_time: getRelativeTime(contest.startTime, sub.submittedAt),
-        team_id: sub.user?.username || sub.userId,
-        problem_id: sub.problemId.toString(),
-        language_id: sub.language,
-      });
+    // 为通过的测试点生成 AC 的 Runs
+    for (let i = 1; i <= passedTests; i++) {
+      allRuns.push(formatRun(sub, i, contest.startTime));
     }
-  });
+
+    // 如果判题彻底结束且不是 AC，添加最后一个报错的 Run
+    // 必须确保它不是 JUDGING 状态！
+    if (verdict && verdict !== "AC" && sub.verdict !== "JUDGING") {
+      const failOrdinal = passedTests + 1;
+      allRuns.push(formatRun(sub, failOrdinal, contest.startTime, verdict));
+    }
+  }
 
   return allRuns;
 }

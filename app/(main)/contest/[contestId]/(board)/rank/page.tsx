@@ -12,6 +12,7 @@ import RankTable from "./RankTable";
 import Pagination from "@/components/Pagination";
 import { ContestConfig } from "@/app/(main)/page";
 import UnfreezeButton from "./UnfreezeButton";
+import ExportEventFeedButton from "./ExportEventFeedButton";
 import { getDictionary } from "@/lib/get-dictionary";
 
 // 辅助函数：计算时间差
@@ -714,6 +715,7 @@ export default async function Rank({ params, searchParams }: Props) {
         <h2 className="text-2xl font-serif font-bold text-gray-800 pl-2 flex items-center">
           Rank
           {showUnfreezeButton && <UnfreezeButton contest={contestInfo} />}
+          {canSeeLiveBoard && <ExportEventFeedButton contestId={cid} />}
         </h2>
         <RankSearch
           schools={allSchools.map((s) => s.school).filter(Boolean) as string[]}

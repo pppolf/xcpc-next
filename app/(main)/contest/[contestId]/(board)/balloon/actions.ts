@@ -9,13 +9,18 @@ import { revalidatePath } from "next/cache";
 // 判断权限辅助函数
 async function checkPermission() {
   const user = await getCurrentUser();
-  if (!user) return null;
-  return user as UserJwtPayload;
+  const superAdmin = await getCurrentSuper();
+  if (!user && !superAdmin) return null;
+  const isAdmin =
+    (user as UserJwtPayload)?.role === ContestRole.ADMIN ||
+    (user as UserJwtPayload)?.role === ContestRole.JUDGE ||
+    (superAdmin as UserJwtPayload)?.isGlobalAdmin;
+  return isAdmin;
 }
 
-export async function generateBalloons(contestId: number) {
-  const user = await checkPermission();
-  if (!user) return;
+export async function syncBalloons(contestId: number) {
+  const isAdmin = await checkPermission();
+  if (!isAdmin) return;
 
   const acSubmissions = await prisma.submission.findMany({
     where: { contestId, verdict: Verdict.ACCEPTED },
@@ -43,8 +48,12 @@ export async function generateBalloons(contestId: number) {
     });
     count++;
   }
+  return count;
+}
 
-  if (count > 0) revalidatePath(`/contest/${contestId}/balloon`);
+export async function generateBalloons(contestId: number) {
+  const count = await syncBalloons(contestId);
+  if (count && count > 0) revalidatePath(`/contest/${contestId}/balloon`);
 }
 
 export async function getBalloonData(contestId: number) {

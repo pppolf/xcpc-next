@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deleteUser } from "./actions";
+import { deleteUser, deleteUsers } from "./actions";
 import EditUserModal from "./EditUserModal";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import {
@@ -47,6 +47,42 @@ export default function ClientUserTable({
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showPasswords, setShowPasswords] = useState(false); // 控制是否显示密码
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+
+  // 批量删除
+  const handleBulkDelete = async () => {
+    setIsBulkDeleteConfirmOpen(false);
+    try {
+      await deleteUsers(Array.from(selectedUserIds), contestId);
+      setSelectedUserIds(new Set());
+      toast.success(`Successfully deleted ${selectedUserIds.size} users.`);
+    } catch (error) {
+      toast.error("Failed to delete users: " + error);
+    }
+  };
+
+  // 全选/取消全选
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUserIds(new Set(initialUsers.map((u) => u.id)));
+    } else {
+      setSelectedUserIds(new Set());
+    }
+  };
+
+  // 单选/取消单选
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    const newSelected = new Set(selectedUserIds);
+    if (checked) {
+      newSelected.add(userId);
+    } else {
+      newSelected.delete(userId);
+    }
+    setSelectedUserIds(newSelected);
+  };
 
   // 删除用户操作
   const handleDelete = async () => {
@@ -123,15 +159,39 @@ export default function ClientUserTable({
         onCancel={() => setDeletingUser(null)}
         isDestructive
       />
+      <ConfirmModal
+        isOpen={isBulkDeleteConfirmOpen}
+        title="Delete Users"
+        message={`Are you sure you want to delete ${selectedUserIds.size} selected users? This action cannot be undone.`}
+        confirmText="Delete Selected"
+        onConfirm={handleBulkDelete}
+        onCancel={() => setIsBulkDeleteConfirmOpen(false)}
+        isDestructive
+      />
       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h3 className="font-bold text-gray-700">User List</h3>
           <span className="text-xs text-gray-500 bg-white border px-2 py-1 rounded">
             Total: {initialUsers.length}
           </span>
+          {selectedUserIds.size > 0 && (
+            <span className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 rounded font-medium">
+              Selected: {selectedUserIds.size}
+            </span>
+          )}
         </div>
 
         <div className="flex gap-2">
+          {selectedUserIds.size > 0 && (
+            <button
+              onClick={() => setIsBulkDeleteConfirmOpen(true)}
+              className="flex items-center gap-1 text-sm font-medium text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
+            >
+              <TrashIcon className="w-4 h-4" />
+              Delete Selected
+            </button>
+          )}
+
           {/* 切换密码显示按钮 */}
           <button
             onClick={() => setShowPasswords(!showPasswords)}
@@ -160,6 +220,17 @@ export default function ClientUserTable({
         <table className="w-full text-sm text-left whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-600 font-medium border-b uppercase text-xs">
             <tr>
+              <th className="px-6 py-3 w-4">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={
+                    initialUsers.length > 0 &&
+                    selectedUserIds.size === initialUsers.length
+                  }
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+              </th>
               <th className="px-6 py-3">Username</th>
               <th className="px-6 py-3">Display Name</th>
 
@@ -182,6 +253,16 @@ export default function ClientUserTable({
           <tbody className="divide-y divide-gray-100">
             {initialUsers.map((user: User) => (
               <tr key={user.id} className="hover:bg-gray-50 group">
+                <td className="px-6 py-3">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={selectedUserIds.has(user.id)}
+                    onChange={(e) =>
+                      handleSelectUser(user.id, e.target.checked)
+                    }
+                  />
+                </td>
                 <td className="px-6 py-3 font-mono font-medium text-blue-600">
                   {user.username}
                 </td>

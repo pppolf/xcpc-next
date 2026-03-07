@@ -30,6 +30,7 @@ export default function ApiKeyManager({
   const [isCreating, setIsCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
+  const [, setCopied] = useState(false);
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
     try {
@@ -79,9 +80,55 @@ export default function ApiKeyManager({
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+  const copy = async (text: string) => {
+    // 1. 优先尝试使用现代 Clipboard API (仅在 HTTPS 或 localhost 下可用)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (err) {
+        console.warn("Clipboard API failed, trying fallback...", err);
+      }
+    }
+
+    // 2. 回退方案：使用传统的 document.execCommand (兼容 HTTP 环境)
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+
+      // 确保 textarea 不可见且不影响布局
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      document.body.appendChild(textArea);
+
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      return successful;
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+      return false;
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    const success = await copy(text);
+
+    if (success) {
+      setCopied(true);
+      toast.success("Copied to clipboard");
+
+      // 2秒后恢复图标状态
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } else {
+      toast.error("Failed to copy code");
+    }
   };
 
   return (

@@ -158,6 +158,25 @@ export async function updateUser(
 
 // 删除用户
 export async function deleteUser(userId: string, contestId: number) {
-  await prisma.user.delete({ where: { id: userId } });
+  await prisma.user.delete({
+    where: {
+      id: userId,
+    },
+  });
+
+  revalidatePath(`/admin/contests/${contestId}/users`);
+}
+
+// 批量删除用户
+export async function deleteUsers(userIds: string[], contestId: number) {
+  if (!userIds.length) return;
+
+  await prisma.user.deleteMany({
+    where: {
+      id: { in: userIds },
+      contestId: contestId, // 确保只删除本场比赛的用户
+    },
+  });
+
   revalidatePath(`/admin/contests/${contestId}/users`);
 }

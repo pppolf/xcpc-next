@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { toast } from "sonner";
 
 interface CodeBlockProps {
   code: string;
@@ -10,17 +11,54 @@ interface CodeBlockProps {
 export default function CodeBlock({ code }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const copyToClipboard = async (text: string) => {
+    // 1. 优先尝试使用现代 Clipboard API (仅在 HTTPS 或 localhost 下可用)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (err) {
+        console.warn("Clipboard API failed, trying fallback...", err);
+      }
+    }
+
+    // 2. 回退方案：使用传统的 document.execCommand (兼容 HTTP 环境)
     try {
-      await navigator.clipboard.writeText(code);
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // 确保 textarea 不可见且不影响布局
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      document.body.appendChild(textArea);
+      
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      
+      return successful;
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+      return false;
+    }
+  };
+
+  const handleCopy = async () => {
+    const success = await copyToClipboard(code);
+    
+    if (success) {
       setCopied(true);
+      toast.success("Copied to clipboard");
       
       // 2秒后恢复图标状态
       setTimeout(() => {
         setCopied(false);
       }, 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
+    } else {
+      toast.error("Failed to copy code");
     }
   };
 

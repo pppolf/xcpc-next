@@ -766,7 +766,7 @@ export default async function Rank({ params, searchParams }: Props) {
 
         // 只计算 VP 窗口内的提交
         const submissions = rawSubs.filter(
-          (s) => new Date(s.submittedAt).getTime() <= vpEndMs,
+          (s) => new Date(s.submittedAt).getTime() < vpEndMs,
         );
 
         let isAccepted = false;
@@ -815,7 +815,7 @@ export default async function Rank({ params, searchParams }: Props) {
     );
 
     vpRanks.push({
-      rank: "*",
+      rank: "VP",
       id: vpSession.globalUser.id,
       username: vpSession.globalUser.username,
       displayName: vpSession.globalUser.displayName,

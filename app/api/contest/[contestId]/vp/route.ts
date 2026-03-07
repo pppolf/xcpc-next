@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyAuth } from "@/lib/auth";
+import { verifyAuth, UserJwtPayload } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { ContestStatus } from "@/lib/generated/prisma/client";
 
@@ -8,26 +8,28 @@ interface Params {
   params: Promise<{ contestId: string }>;
 }
 
+// 从 auth_token cookie 中获取外部登录用户的 payload（非超级管理员）
+async function getExternalUserPayload(): Promise<UserJwtPayload | null> {
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get("auth_token")?.value;
+  if (!authToken) return null;
+
+  try {
+    const payload = await verifyAuth(authToken);
+    if (!payload?.userId || payload.isGlobalAdmin) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 // GET /api/contest/[contestId]/vp - 获取当前用户的 VP 状态
 export async function GET(_req: Request, { params }: Params) {
   const { contestId } = await params;
   const cid = Number(contestId);
 
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get("auth_token")?.value;
-  if (!authToken) {
-    return NextResponse.json({ vpSession: null });
-  }
-
-  let payload;
-  try {
-    payload = await verifyAuth(authToken);
-  } catch {
-    return NextResponse.json({ vpSession: null });
-  }
-
-  // 仅限外部登录用户（非超级管理员）
-  if (!payload?.userId || payload.isGlobalAdmin) {
+  const payload = await getExternalUserPayload();
+  if (!payload) {
     return NextResponse.json({ vpSession: null });
   }
 
@@ -69,24 +71,11 @@ export async function POST(_req: Request, { params }: Params) {
   const { contestId } = await params;
   const cid = Number(contestId);
 
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get("auth_token")?.value;
-  if (!authToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  let payload;
-  try {
-    payload = await verifyAuth(authToken);
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
-
-  // 仅限外部登录用户（非超级管理员）
-  if (!payload?.userId || payload.isGlobalAdmin) {
+  const payload = await getExternalUserPayload();
+  if (!payload) {
     return NextResponse.json(
       { error: "只有外部登录用户可以进行虚拟参赛" },
-      { status: 403 },
+      { status: 401 },
     );
   }
 

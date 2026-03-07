@@ -94,7 +94,7 @@ export async function submitCode(
         vpSession.startedAt.getTime() + contestDurationMs,
       );
 
-      if (now <= vpEndTime) {
+      if (now < vpEndTime) {
         // VP 会话仍在进行中，允许提交并标记为 VP 提交
         virtualContestId = vpSession.id;
       }

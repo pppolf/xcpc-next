@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 
 // ================= 配置区 =================
 // 1. 刚才运行的 Node.js 控制中心地址
-const CONTROL_SERVER_URL = "http://localhost:4000";
+const CONTROL_SERVER_URL =
+  process.env.CONTROL_SERVER_URL || "http://localhost:4000";
 // 2. MediaMTX (流媒体服务器) 的接收地址
-const RTSP_BASE_URL = "rtsp://localhost:8554";
+const RTSP_BASE_URL = process.env.RTSP_BASE_URL || "rtsp://localhost:8554";
 
 interface ClientAgent {
   socketId: string;

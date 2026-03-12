@@ -42,14 +42,14 @@ export default function MonitorPage() {
   }, []);
 
   // 2. 发送“开始推流”指令
-  const handleStartStream = async (seat: string) => {
+  const handleStartStream = async (teamName: string) => {
     // 动态生成推流目标地址，例如: rtsp://192.168.1.100:8554/PC-001
-    const streamUrl = `${RTSP_BASE_URL}/${seat}`;
+    const streamUrl = `${RTSP_BASE_URL}/${teamName}`;
     try {
       const res = await fetch(`${CONTROL_SERVER_URL}/api/stream/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seat, streamUrl }),
+        body: JSON.stringify({ teamName, streamUrl }),
       });
       if (!res.ok) alert("下发指令失败！");
     } catch (e) {
@@ -59,12 +59,12 @@ export default function MonitorPage() {
   };
 
   // 3. 发送“停止推流”指令
-  const handleStopStream = async (seat: string) => {
+  const handleStopStream = async (teamName: string) => {
     try {
       const res = await fetch(`${CONTROL_SERVER_URL}/api/stream/stop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seat }),
+        body: JSON.stringify({ teamName }),
       });
       if (!res.ok) alert("停止推流失败！");
     } catch (e) {
@@ -134,7 +134,7 @@ export default function MonitorPage() {
                 <div className="flex gap-2">
                   {!client.isStreaming ? (
                     <button
-                      onClick={() => handleStartStream(client.seat)}
+                      onClick={() => handleStartStream(client.teamName)}
                       disabled={isOffline}
                       className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-2 rounded-lg text-sm font-medium transition disabled:opacity-50"
                     >
@@ -142,7 +142,7 @@ export default function MonitorPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleStopStream(client.seat)}
+                      onClick={() => handleStopStream(client.teamName)}
                       className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium transition"
                     >
                       ■ 停止推流

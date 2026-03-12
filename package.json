@@ -9,7 +9,8 @@
     "lint": "eslint",
     "prisma": "npx prisma generate",
     "worker": "tsx -r dotenv/config worker.ts",
-    "worker:dev": "tsx watch -r dotenv/config worker.ts"
+    "worker:dev": "tsx watch -r dotenv/config worker.ts",
+    "postinstall": "npx prisma db push && npx prisma generate && npx tsx scripts/copy-monaco.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -33,6 +34,7 @@
     "jszip": "^3.10.1",
     "katex": "^0.16.27",
     "mime": "^4.1.0",
+    "monaco-editor": "^0.55.1",
     "next": "16.1.1",
     "pg": "^8.16.3",
     "qrcode.react": "^4.2.0",

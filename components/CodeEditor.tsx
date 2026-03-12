@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 
 loader.config({
   paths: {
-    vs: "https://registry.npmmirror.com/monaco-editor/0.45.0/files/min/vs",
+    vs: "/monaco/min/vs",
   },
 });
 

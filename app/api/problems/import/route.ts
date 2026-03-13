@@ -71,8 +71,19 @@ export async function POST(request: Request) {
       }
     }
 
+    // 修复：对题目目录进行排序，确保按 ID 顺序导入
+    const sortedProblemDirs = Array.from(problemDirs).sort((a, b) => {
+      // 尝试提取数字 (e.g. "100/" -> 100)
+      const numA = parseInt(a.replace(/\/$/, ""));
+      const numB = parseInt(b.replace(/\/$/, ""));
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
+
     // 4.2 处理每个题目目录
-    for (const problemDir of problemDirs) {
+    for (const problemDir of sortedProblemDirs) {
       try {
         // 4.2.1 读取题目信息
         const problemJsonEntry = zip.files[`${problemDir}problem.json`];

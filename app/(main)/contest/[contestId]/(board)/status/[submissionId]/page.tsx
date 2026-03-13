@@ -39,6 +39,13 @@ export default async function SubmissionDetail({ params }: Props) {
             displayName: true,
           },
         },
+        globalUser: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+          },
+        },
         problem: {
           select: {
             id: true,
@@ -164,7 +171,7 @@ export default async function SubmissionDetail({ params }: Props) {
           <div>
             <span className="font-bold text-gray-600">{dict.submission.user}:</span>
             <p className="text-gray-900">
-              {submission.user?.displayName || submission.user?.username}
+              {submission.user?.displayName || submission.globalUser?.displayName || submission.user?.username}
             </p>
           </div>
           <div>

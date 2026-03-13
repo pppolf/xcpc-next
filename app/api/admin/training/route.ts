@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentSuper } from "@/lib/auth";
+import { getCurrentSuper, UserJwtPayload } from "@/lib/auth";
 
 // 获取目录结构
 export async function GET() {
   const admin = await getCurrentSuper();
-  if (!admin) {
+  if (!admin || !(admin as UserJwtPayload).isGlobalAdmin) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
@@ -29,7 +29,7 @@ export async function GET() {
 // 创建节点 (文件夹或比赛)
 export async function POST(req: NextRequest) {
   const admin = await getCurrentSuper();
-  if (!admin) {
+  if (!admin || !(admin as UserJwtPayload).isGlobalAdmin) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 // 更新节点 (移动、重命名)
 export async function PUT(req: NextRequest) {
   const admin = await getCurrentSuper();
-  if (!admin) {
+  if (!admin || !(admin as UserJwtPayload).isGlobalAdmin) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
@@ -86,7 +86,7 @@ export async function PUT(req: NextRequest) {
 // 删除节点
 export async function DELETE(req: NextRequest) {
   const admin = await getCurrentSuper();
-  if (!admin) {
+  if (!admin || !(admin as UserJwtPayload).isGlobalAdmin) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

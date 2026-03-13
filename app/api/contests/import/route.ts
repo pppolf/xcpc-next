@@ -416,6 +416,11 @@ export async function POST(request: Request) {
         }
 
         // 4.2.6 导入比赛题目关联
+        // 修复：先按 displayId 排序，确保插入顺序符合预期 (A, B, C...)
+        contestProblemsData.sort((a, b) =>
+          a.displayId.localeCompare(b.displayId),
+        );
+
         for (const cpData of contestProblemsData) {
           // 映射 problemId
           const newProblemId = problemIdMap.get(cpData.problemId);

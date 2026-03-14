@@ -41,6 +41,7 @@ export default function AdminContestsPage({
     new Set(),
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [includeData, setIncludeData] = useState(true);
   const pageSize = 15;
 
   useEffect(() => {
@@ -87,7 +88,10 @@ export default function AdminContestsPage({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ contestIds: Array.from(selectedContestIds) }),
+        body: JSON.stringify({
+          contestIds: Array.from(selectedContestIds),
+          includeData,
+        }),
       });
 
       if (!response.ok) {
@@ -132,7 +136,16 @@ export default function AdminContestsPage({
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Contest Management</h1>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeData}
+              onChange={(e) => setIncludeData(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500"
+            />
+            Include Test Data
+          </label>
           <button
             onClick={handleExport}
             disabled={isLoading || selectedContestIds.size === 0}

@@ -1,6 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { verifyAuth } from "@/lib/auth";
+import {
+  getCurrentSuper,
+  getCurrentUser,
+  UserJwtPayload,
+  verifyAuth,
+} from "@/lib/auth";
 import { cookies } from "next/headers";
 import { ContestRole, ContestStatus } from "@/lib/generated/prisma/client";
 import VerdictBadge from "@/components/VerdictBadge";
@@ -24,7 +29,7 @@ export default async function SubmissionDetail({ params }: Props) {
   const [contestInfo, submission] = await Promise.all([
     prisma.contest.findUnique({
       where: { id: cid },
-      select: { status: true, config: true, endTime: true },
+      select: { status: true, config: true, endTime: true, type: true },
     }),
     prisma.submission.findFirst({
       where: {
@@ -57,6 +62,19 @@ export default async function SubmissionDetail({ params }: Props) {
   ]);
 
   if (!contestInfo || !submission) return notFound();
+
+  const user = await getCurrentUser();
+  const globalUser = await getCurrentSuper();
+  const userPayload = user as UserJwtPayload | null;
+
+  // 如果是私有比赛，且未登录比赛账号且不是超管，则重定向
+  if (
+    contestInfo.type === "PRIVATE" &&
+    !(globalUser as unknown as UserJwtPayload)?.isGlobalAdmin &&
+    (!userPayload || userPayload.contestId !== cid)
+  ) {
+    redirect(`/contest/${contestId}`);
+  }
 
   // 2. 获取当前用户信息
   const cookieStore = await cookies();
@@ -169,13 +187,19 @@ export default async function SubmissionDetail({ params }: Props) {
       <div className="bg-gray-50 border border-gray-200 rounded-sm p-6 mb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.user}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.user}:
+            </span>
             <p className="text-gray-900">
-              {submission.user?.displayName || submission.globalUser?.displayName || submission.user?.username}
+              {submission.user?.displayName ||
+                submission.globalUser?.displayName ||
+                submission.user?.username}
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.problem}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.problem}:
+            </span>
             <p className="text-gray-900">
               <Link
                 href={`/contest/${contestId}/problems/${contestProblem?.displayId}`}
@@ -186,29 +210,39 @@ export default async function SubmissionDetail({ params }: Props) {
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.language}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.language}:
+            </span>
             <p className="text-gray-900">
               {languageRecord[submission.language] || submission.language}
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.submitTime}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.submitTime}:
+            </span>
             <p className="text-gray-900">{submitTime}</p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.verdict}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.verdict}:
+            </span>
             <div className="mt-1">
               <VerdictBadge status={submission.verdict} />
             </div>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.time}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.time}:
+            </span>
             <p className="text-gray-900">
               {submission.timeUsed !== null ? `${submission.timeUsed} ms` : "-"}
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.memory}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.memory}:
+            </span>
             <p className="text-gray-900">
               {submission.memoryUsed !== null
                 ? `${submission.memoryUsed} KB`
@@ -216,7 +250,9 @@ export default async function SubmissionDetail({ params }: Props) {
             </p>
           </div>
           <div>
-            <span className="font-bold text-gray-600">{dict.submission.codeLength}:</span>
+            <span className="font-bold text-gray-600">
+              {dict.submission.codeLength}:
+            </span>
             <p className="text-gray-900">{submission.codeLength} bytes</p>
           </div>
         </div>

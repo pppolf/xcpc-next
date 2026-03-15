@@ -159,13 +159,12 @@ export async function submitQuestion(formData: FormData) {
 
 // 提交回复（通用）
 export async function submitReply(formData: FormData) {
-  try {
     const contestId = formData.get("contestId") as string;
     const clariId = Number(formData.get("clariId"));
     const content = formData.get("content") as string;
     const user = await getCurrentUser();
 
-    if (!user || !content) return { error: "Missing content or user" };
+    if (!user || !content) return ;
 
     await prisma.reply.create({
       data: {
@@ -176,27 +175,22 @@ export async function submitReply(formData: FormData) {
     });
 
     revalidatePath(`/contest/${contestId}/clarifications/${clariId}`);
-    return { success: true };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (e: any) {
-    return { error: e.message || "Failed to submit reply" };
-  }
+    return;
 }
 
 // 管理员发布公告 Action
 export async function publishAnnouncement(formData: FormData) {
-  try {
     const contestId = Number(formData.get("contestId"));
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const user = await getCurrentUser();
 
-    if (!user) return { error: "Unauthorized" };
+    if (!user) return;
 
     // 严格权限校验
     const role = (user as UserJwtPayload)?.role;
     if (role !== ContestRole.ADMIN && role !== ContestRole.JUDGE)
-      return { error: "Permission denied" };
+      return;
 
     await prisma.clarification.create({
       data: {
@@ -209,11 +203,7 @@ export async function publishAnnouncement(formData: FormData) {
       },
     });
     revalidatePath(`/contest/${contestId}/clarifications`);
-    return { success: true };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (e: any) {
-    return { error: e.message || "Failed to publish announcement" };
-  }
+    return;
 }
 
 // 切换公开/私有状态

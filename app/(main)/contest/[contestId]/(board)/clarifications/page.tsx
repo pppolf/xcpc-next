@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
-import { getClarificationData, submitQuestion } from "./actions";
+import { getClarificationData } from "./actions";
 import {
   MegaphoneIcon,
   ChatBubbleLeftRightIcon,
@@ -12,6 +12,7 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { ClariCategory } from "@/lib/generated/prisma/client";
 import { getDictionary } from "@/lib/get-dictionary";
+import ClarificationForm from "./ClarificationForm";
 
 interface Props {
   searchParams: Promise<{
@@ -39,10 +40,10 @@ export default async function ClarificationsPage({
 
   // 将 notifications 拆分为 公告(Notice) 和 公开提问(PublicQuestion)
   const announcements = notifications.filter(
-    (n) => n.category === ClariCategory.NOTICE
+    (n) => n.category === ClariCategory.NOTICE,
   );
   const publicQuestions = notifications.filter(
-    (n) => n.category === ClariCategory.QUESTION
+    (n) => n.category === ClariCategory.QUESTION,
   );
 
   const currentUser = await getCurrentUser();
@@ -252,70 +253,7 @@ export default async function ClarificationsPage({
 
       {/* --- Section 4: Ask Question Form (选手用) --- */}
       {!isAdmin && currentUser && (
-        <section className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 md:p-8">
-          {/* ... form content remains the same ... */}
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-2">
-            {dict.clarifications.askQuestion}
-          </h3>
-          <form action={submitQuestion} className="flex flex-col gap-5">
-            <input type="hidden" name="contestId" value={cid} />
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-              {/* Select Problem */}
-              <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                  {dict.clarifications.problem}
-                </label>
-                <select
-                  name="displayId"
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none"
-                >
-                  <option value="General">{dict.clarifications.general}</option>
-                  {problems.map((p) => (
-                    <option key={p.displayId} value={p.displayId}>
-                      Problem {p.displayId}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Title Input */}
-              <div className="md:col-span-3">
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                  {dict.clarifications.title}
-                </label>
-                <input
-                  name="title"
-                  required
-                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none"
-                  placeholder="e.g. Constraint clarification for input N"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                {dict.clarifications.content}
-              </label>
-              <textarea
-                name="content"
-                required
-                rows={4}
-                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-3 outline-none"
-                placeholder="Please describe your question specifically..."
-              ></textarea>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded shadow-sm transition-colors text-sm cursor-pointer"
-              >
-                {dict.clarifications.submitQuestion}
-              </button>
-            </div>
-          </form>
-        </section>
+        <ClarificationForm contestId={cid} problems={problems} dict={dict} />
       )}
     </div>
   );

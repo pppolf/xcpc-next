@@ -84,14 +84,25 @@ export default async function Problems({ params }: Props) {
   });
   const totalMap = new Map(totalStats.map((s) => [s.problemId, s._count._all]));
   const acMap = new Map(acStats.map((s) => [s.problemId, s._count._all]));
-  const userStats = await prisma.submission.findMany({
-    where: {
-      userId: userPayload?.userId,
-      contestId: contestId,
-      verdict: Verdict.ACCEPTED,
-      globalUserId: (globalUser as UserJwtPayload)?.userId,
-    },
-  });
+
+  const userId = userPayload?.userId;
+  const globalUserId = (globalUser as unknown as UserJwtPayload)?.userId;
+
+  const userStats =
+    userId || globalUserId
+      ? await prisma.submission.findMany({
+          where: {
+            userId,
+            contestId: contestId,
+            verdict: Verdict.ACCEPTED,
+            globalUserId,
+          },
+          select: {
+            problemId: true,
+          },
+        })
+      : [];
+
   const statsMap = new Map(userStats.map((s) => [s.problemId, 1]));
 
   const dict = await getDictionary();

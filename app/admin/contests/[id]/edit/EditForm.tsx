@@ -47,7 +47,11 @@ export default function EditForm({ contest }: Props) {
   const handleSubmit = async (formData: FormData) => {
     setIsSaving(true);
     try {
-      await updateContest(contest.id, formData);
+      const result = await updateContest(contest.id, formData);
+      if (result?.error) {
+        toast.error(result.error);
+        setIsSaving(false);
+      }
     } catch (err) {
       const e = err as Error;
       if (e.message === "NEXT_REDIRECT") {

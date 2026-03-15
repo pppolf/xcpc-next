@@ -12,36 +12,42 @@ export async function adminSubmit(
   code: string,
   language: string
 ) {
-  // 1. 身份验证 (确保是 Admin)
-  const token = (await cookies()).get("auth_token")?.value;
-  if (!token) throw new Error("Unauthorized");
+  try {
+    // 1. 身份验证 (确保是 Admin)
+    const token = (await cookies()).get("auth_token")?.value;
+    if (!token) return { error: "Unauthorized" };
 
-  const payload = await verifyAuth(token);
-  if (!payload.isGlobalAdmin)
-    throw new Error("Only admin can perform this action");
+    const payload = await verifyAuth(token);
+    if (!payload.isGlobalAdmin)
+      return { error: "Only admin can perform this action" };
 
-  // 2. 查找 Admin 的数据库 ID
-  // 注意：Token 里存的是 userId，对于 Admin 来说就是 global_users 表的 ID
-  const adminId = payload.userId;
+    // 2. 查找 Admin 的数据库 ID
+    // 注意：Token 里存的是 userId，对于 Admin 来说就是 global_users 表的 ID
+    const adminId = payload.userId;
 
-  // 3. 创建提交记录
-  const submission = await prisma.submission.create({
-    data: {
-      displayId: -1,
-      globalUserId: adminId, // 关联到 Admin
-      problemId: problemId,
-      language: language,
-      code: code,
-      codeLength: code.length,
-      verdict: Verdict.PENDING, // 待评测
-    },
-  });
-  await judgeQueue.add('judge', { 
-    submissionId: submission.id 
-  });
+    // 3. 创建提交记录
+    const submission = await prisma.submission.create({
+      data: {
+        displayId: -1,
+        globalUserId: adminId, // 关联到 Admin
+        problemId: problemId,
+        language: language,
+        code: code,
+        codeLength: code.length,
+        verdict: Verdict.PENDING, // 待评测
+      },
+    });
 
-  revalidatePath(`/admin/submissions`);
-  return { success: true, submissionId: submission.id };
+    await judgeQueue.add('judge', { 
+      submissionId: submission.id 
+    });
+
+    revalidatePath(`/admin/submissions`);
+    return { success: true, submissionId: submission.id };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to submit" };
+  }
 }
 
 export async function getProblemDetail(id: number) {

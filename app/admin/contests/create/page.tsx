@@ -11,11 +11,19 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MarkdownEditor from "@/components/MarkdownEditor";
+import { toast } from "sonner";
 
 export default function CreateContestPage() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [medalMode, setMedalMode] = useState<"ratio" | "fixed">("ratio");
   const [description, setDescription] = useState("");
+
+  async function handleSubmit(formData: FormData) {
+    const result = await createContest(formData);
+    if (result?.error) {
+      toast.error(result.error);
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto pb-12">
@@ -38,7 +46,7 @@ export default function CreateContestPage() {
       </div>
 
       <form
-        action={createContest}
+        action={handleSubmit}
         className="grid grid-cols-1 lg:grid-cols-3 gap-8"
       >
         {/* === 左侧主栏 (2/3 宽度) === */}

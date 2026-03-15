@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import CodeEditor from "@/components/CodeEditor";
 import { submitCode } from "./actions";
 import { useLanguage } from "@/context/LanguageContext";
+import { toast } from "sonner";
 
 const LANGUAGES = [
   { value: "c", label: "C" },
@@ -71,7 +72,10 @@ export default function SubmitForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await submitCode(Number(contestId), problemId, language, code);
+    const res = await submitCode(Number(contestId), problemId, language, code);
+    if (res?.error) {
+      toast.error(res.error);
+    }
   };
 
   return (

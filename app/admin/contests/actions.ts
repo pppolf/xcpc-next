@@ -40,29 +40,34 @@ export async function createContest(formData: FormData) {
 
   // 简单的校验
   if (!title || !startTimeStr || !endTimeStr) {
-    throw new Error("Missing required fields");
+    return { error: "Missing required fields" };
   }
 
   const startTime = new Date(startTimeStr);
   const endTime = new Date(endTimeStr);
 
   if (endTime <= startTime) {
-    throw new Error("End time must be after start time");
+    return { error: "End time must be after start time" };
   }
 
-  await prisma.contest.create({
-    data: {
-      title,
-      description,
-      startTime,
-      endTime,
-      type,
-      password: password || null,
-      status: ContestStatus.PENDING,
-      visible,
-      config: config,
-    },
-  });
+  try {
+    await prisma.contest.create({
+      data: {
+        title,
+        description,
+        startTime,
+        endTime,
+        type,
+        password: password || null,
+        status: ContestStatus.PENDING,
+        visible,
+        config: config,
+      },
+    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to create contest" };
+  }
 
   revalidatePath("/admin/contests");
   redirect("/admin/contests");

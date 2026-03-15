@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import MarkdownEditor from "@/components/MarkdownEditor";
+import { toast } from "sonner";
 
 interface ProblemData {
   id?: number;
@@ -31,10 +32,10 @@ export default function ProblemEditor({
   // 基础字段状态
   const [title, setTitle] = useState(initialData?.title || "");
   const [timeLimit, setTimeLimit] = useState(
-    initialData?.defaultTimeLimit || 1000
+    initialData?.defaultTimeLimit || 1000,
   );
   const [memoryLimit, setMemoryLimit] = useState(
-    initialData?.defaultMemoryLimit || 128
+    initialData?.defaultMemoryLimit || 128,
   );
   const [type, setType] = useState(initialData?.type || "default");
   const [hint, setHint] = useState(initialData?.hint || "");
@@ -47,19 +48,19 @@ export default function ProblemEditor({
       { title: "Problem Description", content: "" },
       { title: "Input", content: "" },
       { title: "Output", content: "" },
-    ]
+    ],
   );
 
   // 动态数组：Samples (样例)
   const [samples, setSamples] = useState<{ input: string; output: string }[]>(
-    initialData?.samples || [{ input: "", output: "" }]
+    initialData?.samples || [{ input: "", output: "" }],
   );
 
   // 辅助函数：处理数组变更
   const updateSection = (
     idx: number,
     field: "title" | "content",
-    val: string
+    val: string,
   ) => {
     const newSections = [...sections];
     newSections[idx][field] = val;
@@ -69,7 +70,7 @@ export default function ProblemEditor({
   const updateSample = (
     idx: number,
     field: "input" | "output",
-    val: string
+    val: string,
   ) => {
     const newSamples = [...samples];
     newSamples[idx][field] = val;
@@ -97,8 +98,11 @@ export default function ProblemEditor({
 
     // 动态导入 Server Action 以避免客户端打包问题
     const { saveProblem } = await import("@/app/admin/problems/actions");
-    await saveProblem(formData);
-    setLoading(false);
+    const result = await saveProblem(formData);
+    if (result?.error) {
+      toast.error(result.error);
+      setLoading(false);
+    }
   };
 
   return (

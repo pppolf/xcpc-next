@@ -5,7 +5,6 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { ContestRole, ClariCategory } from "@/lib/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 // 获取列表数据
 export async function getClarificationData(
@@ -115,86 +114,106 @@ export async function getClarificationDetail(
 
 // 提交新提问 (选手)
 export async function submitQuestion(formData: FormData) {
-  const contestId = Number(formData.get("contestId"));
-  const title = formData.get("title") as string;
-  const content = formData.get("content") as string;
-  const displayId = formData.get("displayId") as string; // 'A', 'B' or 'General'
+  try {
+    const contestId = Number(formData.get("contestId"));
+    const title = formData.get("title") as string;
+    const content = formData.get("content") as string;
+    const displayId = formData.get("displayId") as string; // 'A', 'B' or 'General'
 
-  const user = await getCurrentUser();
-  if (!user || !content || !title) return;
+    const user = await getCurrentUser();
+    if (!user || !content || !title) return { error: "Missing required fields" };
 
-  // 根据 displayId 找 problemId
-  let problemId = null;
-  if (displayId && displayId !== "General") {
-    const cp = await prisma.contestProblem.findUnique({
-      where: {
-        contestId_displayId: { contestId, displayId },
+    // 根据 displayId 找 problemId
+    let problemId = null;
+    let contestProblem = null;
+    if (displayId && displayId !== "General") {
+      contestProblem = await prisma.contestProblem.findFirst({
+        where: {
+          contestId,
+          displayId: displayId,
+        },
+      });
+      problemId = contestProblem?.problemId;
+    }
+
+    await prisma.clarification.create({
+      data: {
+        contestId,
+        userId: (user as UserJwtPayload).userId,
+        title,
+        content,
+        displayId: displayId === "General" ? null : displayId,
+        problemId: problemId,
+        category: ClariCategory.QUESTION,
+        isPublic: false,
       },
     });
-    problemId = cp?.problemId;
+
+    revalidatePath(`/contest/${contestId}/clarifications`);
+    return { success: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to submit question" };
   }
-
-  await prisma.clarification.create({
-    data: {
-      contestId,
-      userId: (user as UserJwtPayload).userId,
-      title,
-      content,
-      displayId: displayId === "General" ? null : displayId,
-      problemId: problemId,
-      category: ClariCategory.QUESTION,
-      isPublic: false,
-    },
-  });
-
-  revalidatePath(`/contest/${contestId}/clarifications`);
 }
 
 // 提交回复（通用）
 export async function submitReply(formData: FormData) {
-  const contestId = formData.get("contestId") as string;
-  const clariId = Number(formData.get("clariId"));
-  const content = formData.get("content") as string;
-  const user = await getCurrentUser();
+  try {
+    const contestId = formData.get("contestId") as string;
+    const clariId = Number(formData.get("clariId"));
+    const content = formData.get("content") as string;
+    const user = await getCurrentUser();
 
-  if (!user || !content) return;
+    if (!user || !content) return { error: "Missing content or user" };
 
-  await prisma.reply.create({
-    data: {
-      clarificationId: clariId,
-      userId: (user as UserJwtPayload).userId,
-      content,
-    },
-  });
+    await prisma.reply.create({
+      data: {
+        clarificationId: clariId,
+        userId: (user as UserJwtPayload).userId,
+        content,
+      },
+    });
 
-  revalidatePath(`/contest/${contestId}/clarifications/${clariId}`);
+    revalidatePath(`/contest/${contestId}/clarifications/${clariId}`);
+    return { success: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to submit reply" };
+  }
 }
 
 // 管理员发布公告 Action
 export async function publishAnnouncement(formData: FormData) {
-  const contestId = Number(formData.get("contestId"));
-  const title = formData.get("title") as string;
-  const content = formData.get("content") as string;
-  const user = await getCurrentUser();
+  try {
+    const contestId = Number(formData.get("contestId"));
+    const title = formData.get("title") as string;
+    const content = formData.get("content") as string;
+    const user = await getCurrentUser();
 
-  if (!user) return;
+    if (!user) return { error: "Unauthorized" };
 
-  // 严格权限校验
-  const role = (user as UserJwtPayload)?.role;
-  if (role !== ContestRole.ADMIN && role !== ContestRole.JUDGE) return;
+    // 严格权限校验
+    const role = (user as UserJwtPayload)?.role;
+    if (role !== ContestRole.ADMIN && role !== ContestRole.JUDGE)
+      return { error: "Permission denied" };
 
-  await prisma.clarification.create({
-    data: {
-      contestId,
-      userId: (user as UserJwtPayload).userId,
-      title,
-      content,
-      category: ClariCategory.NOTICE,
-      isPublic: true,
-    },
-  });
-
-  redirect(`/contest/${contestId}/clarifications`);
+    await prisma.clarification.create({
+      data: {
+        contestId,
+        userId: (user as UserJwtPayload).userId,
+        title,
+        content,
+        category: ClariCategory.NOTICE,
+        isPublic: true,
+      },
+    });
+    revalidatePath(`/contest/${contestId}/clarifications`);
+    return { success: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to publish announcement" };
+  }
 }
 
 // 切换公开/私有状态

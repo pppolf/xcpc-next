@@ -81,6 +81,10 @@ export default function TestInterface({ problem }: { problem: ProblemDetail }) {
     setIsSubmitting(true);
     try {
       const res = await adminSubmit(problem.id, code, language);
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
       if (res.success) {
         setLastId(res.submissionId);
         toast.success("Submitted successfully!");

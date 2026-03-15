@@ -93,10 +93,7 @@ export default function RankTable({
             <th className="w-12 min-w-12">Solved</th>
             <th className="w-16 min-w-16">Penalty</th>
             {contestProblems.map((cp, i) => (
-              <th
-                key={cp.problemId}
-                className="w-15 min-w-15 max-w-15 text-gray-600"
-              >
+              <th key={cp.problemId} className="w-15 min-w-15 max-w-15">
                 <div className="flex items-center justify-center gap-0.5">
                   <Link href={`/contest/${contestId}/problems/${cp.displayId}`}>
                     {String.fromCharCode(65 + i)}

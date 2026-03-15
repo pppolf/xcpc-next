@@ -49,30 +49,35 @@ export async function getProblem(id: number) {
 
 // 创建或更新题目
 export async function saveProblem(formData: FormData) {
-  const id = formData.get("id") ? Number(formData.get("id")) : null;
+  try {
+    const id = formData.get("id") ? Number(formData.get("id")) : null;
 
-  // 1. 解析基础数据
-  const data: ProblemFormData = {
-    title: formData.get("title") as string,
-    type: (formData.get("type") as string) || "default",
-    defaultTimeLimit: Number(formData.get("defaultTimeLimit")),
-    defaultMemoryLimit: Number(formData.get("defaultMemoryLimit")),
-    sections: JSON.parse(formData.get("sections") as string),
-    samples: JSON.parse(formData.get("samples") as string),
-    hint: formData.get("hint") as string,
-  };
+    // 1. 解析基础数据
+    const data: ProblemFormData = {
+      title: formData.get("title") as string,
+      type: (formData.get("type") as string) || "default",
+      defaultTimeLimit: Number(formData.get("defaultTimeLimit")),
+      defaultMemoryLimit: Number(formData.get("defaultMemoryLimit")),
+      sections: JSON.parse(formData.get("sections") as string),
+      samples: JSON.parse(formData.get("samples") as string),
+      hint: formData.get("hint") as string,
+    };
 
-  if (id) {
-    // 更新
-    await prisma.problem.update({
-      where: { id },
-      data,
-    });
-  } else {
-    // 创建
-    await prisma.problem.create({
-      data,
-    });
+    if (id) {
+      // 更新
+      await prisma.problem.update({
+        where: { id },
+        data,
+      });
+    } else {
+      // 创建
+      await prisma.problem.create({
+        data,
+      });
+    }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to save problem" };
   }
 
   revalidatePath("/admin/problems");
@@ -81,50 +86,60 @@ export async function saveProblem(formData: FormData) {
 
 // 删除题目
 export async function deleteProblem(id: number) {
-  await prisma.problem.delete({ where: { id } });
-  revalidatePath("/admin/problems");
+  try {
+    await prisma.problem.delete({ where: { id } });
+    revalidatePath("/admin/problems");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to delete problem" };
+  }
 }
 
 // 重测整题
 export async function rejudgeProblem(problemId: number) {
-  // 1. 获取该题目下所有非 PENDING/JUDGING 的提交
-  const submissions = await prisma.submission.findMany({
-    where: {
-      problemId: problemId,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  const submissionIds = submissions.map((s) => s.id);
-
-  if (submissionIds.length === 0) {
-    return;
-  }
-
-  // 2. 批量将状态重置为 PENDING
-  await prisma.submission.updateMany({
-    where: {
-      id: { in: submissionIds },
-    },
-    data: {
-      verdict: Verdict.PENDING,
-      timeUsed: null,
-      memoryUsed: null,
-      errorMessage: null,
-      passedTests: 0,
-      totalTests: 0,
-    },
-  });
-
-  // 3. 将所有 ID 推入判题队列
-  for (const id of submissionIds) {
-    await judgeQueue.add("judge", {
-      submissionId: id,
+  try {
+    // 1. 获取该题目下所有非 PENDING/JUDGING 的提交
+    const submissions = await prisma.submission.findMany({
+      where: {
+        problemId: problemId,
+      },
+      select: {
+        id: true,
+      },
     });
-  }
 
-  // 4. 刷新页面
-  revalidatePath("/admin/problems");
+    const submissionIds = submissions.map((s) => s.id);
+
+    if (submissionIds.length === 0) {
+      return;
+    }
+
+    // 2. 批量将状态重置为 PENDING
+    await prisma.submission.updateMany({
+      where: {
+        id: { in: submissionIds },
+      },
+      data: {
+        verdict: Verdict.PENDING,
+        timeUsed: null,
+        memoryUsed: null,
+        errorMessage: null,
+        passedTests: 0,
+        totalTests: 0,
+      },
+    });
+
+    // 3. 将所有 ID 推入判题队列
+    for (const id of submissionIds) {
+      await judgeQueue.add("judge", {
+        submissionId: id,
+      });
+    }
+
+    // 4. 刷新页面
+    revalidatePath("/admin/problems");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to rejudge problem" };
+  }
 }

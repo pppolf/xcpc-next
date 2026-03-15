@@ -36,14 +36,14 @@ export async function updateContest(contestId: number, formData: FormData) {
 
   // --- 校验 ---
   if (!title || !startTimeStr || !endTimeStr) {
-    throw new Error("Missing required fields");
+    return { error: "Missing required fields" };
   }
 
   const startTime = new Date(startTimeStr);
   const endTime = new Date(endTimeStr);
 
   if (endTime <= startTime) {
-    throw new Error("End time must be after start time");
+    return { error: "End time must be after start time" };
   }
 
   const now = new Date();
@@ -57,20 +57,25 @@ export async function updateContest(contestId: number, formData: FormData) {
     newStatus = ContestStatus.ENDED;
   }
 
-  await prisma.contest.update({
-    where: { id: contestId },
-    data: {
-      title,
-      description,
-      startTime,
-      endTime,
-      type,
-      password: password || null,
-      visible,
-      config: config,
-      status: newStatus,
-    },
-  });
+  try {
+    await prisma.contest.update({
+      where: { id: contestId },
+      data: {
+        title,
+        description,
+        startTime,
+        endTime,
+        type,
+        password: password || null,
+        visible,
+        config: config,
+        status: newStatus,
+      },
+    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    return { error: e.message || "Failed to update contest" };
+  }
 
   revalidatePath("/admin/contests");
   revalidatePath(`/admin/contests/${contestId}`);

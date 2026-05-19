@@ -18,11 +18,13 @@ interface VerdictCellProps {
     errorMessage?: string | null;
   };
   isGuest?: boolean;
+  showTestDetails?: boolean;
 }
 
 export default function VerdictCell({
   submission,
   isGuest = false,
+  showTestDetails = true,
 }: VerdictCellProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export default function VerdictCell({
         initialStatus={submission.verdict}
         initialPassed={submission.passedTests}
         initialTotal={submission.totalTests}
+        showTestDetails={showTestDetails}
       />
     );
   }

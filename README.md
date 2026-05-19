@@ -1,72 +1,114 @@
 <div align="center">
 
-# 🚀 NovaJudge
+# NovaJudge
 
-**专为 XCPC 算法竞赛打造的现代化、高性能轻量级评测平台**
+**面向 XCPC/ICPC 训练与现场赛的现代化轻量评测平台**
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/pppolf/NovaJudge?style=social)](https://github.com/pppolf/NovaJudge/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/pppolf/NovaJudge?style=social)](https://github.com/pppolf/NovaJudge/network/members)
-[![License](https://img.shields.io/github/license/pppolf/NovaJudge?color=blue)](https://github.com/pppolf/NovaJudge/blob/main/LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/pppolf/NovaJudge?color=green)](https://github.com/pppolf/NovaJudge/commits/main)
-
-<br/>
-
-**核心技术栈**
-
-![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![Go](https://img.shields.io/badge/Go_Judge-00ADD8?style=for-the-badge&logo=go&logoColor=white)
+[![License](https://img.shields.io/github/license/pppolf/NovaJudge?color=blue)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev/)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2d3748?logo=prisma)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-dc382d?logo=redis&logoColor=white)](https://redis.io/)
 
 </div>
 
-<br/>
+## 项目简介
 
-## 📖 简介 (Introduction)
+NovaJudge 是一套围绕 XCPC 赛制设计的 Online Judge 系统，覆盖从题库维护、比赛组织、队伍账号、实时评测、封榜榜单、答疑公告到气球配送的完整流程。
 
-**NovaJudge** 是一款基于 Next.js App Router 架构开发的全新一代 Online Judge 系统。区别于传统沉重的 OJ 平台，NovaJudge 追求**极致的轻量化、极速的渲染响应**以及**最纯粹的赛场体验**。
+它不是只做“提交代码并返回结果”的通用 OJ，而是更关注现场赛和校内训练的实际工作流：管理员要快速建赛、导题、导队伍，选手要稳定提交和查看状态，裁判要重测和排障，现场要有榜单、气球、CCS/Event Feed 等配套能力。
 
-底层的代码沙箱采用了业界领先的 [go-judge](https://github.com/criyle/go-judge)，结合 BullMQ 分布式队列与 Redis 内存缓存，完美支撑全校级别高并发选拔赛。
+底层评测接入 [go-judge](https://github.com/criyle/go-judge)，任务队列使用 BullMQ + Redis，数据层使用 PostgreSQL + Prisma，前端基于 Next.js App Router 与 React 构建。
 
-无论是作为高校算法协会的日常训练平台，还是承办标准的 ICPC/CCPC 线下赛，NovaJudge 都能为你提供最专业的服务保障。
+## 核心优势
 
-## ✨ 核心特性 (Features)
+- **为比赛现场设计**：内置比赛状态流转、私有赛账号、ACM 罚时榜、封榜/解榜、公告答疑、气球管理等现场赛关键功能。
+- **实时评测反馈**：提交状态通过 Redis 缓存与 SSE 推送更新，选手能及时看到等待、评测中、AC/WA/TLE/MLE/RE/CE 等状态。
+- **赛中信息保护**：比赛进行中普通参赛者只看到评测状态，不暴露 WA/TLE/RE 出现在第几个测试点；管理员和评委仍可完整排障。
+- **强管理后台**：提供比赛、题目、账号、提交、测试数据、附件、API Key、训练目录等集中管理能力。
+- **题目工程化维护**：支持 Markdown/LaTeX 题面、样例调试、测试数据上传、YAML 判题配置、SPJ、交互题与附件管理。
+- **易集成外部工具**：提供 API Key 认证接口与 ICPC CCS 兼容接口，可接入外部榜单、Resolver、现场展示和数据同步工具。
+- **可横向扩展的评测队列**：BullMQ 队列解耦 Web 与 Judge Worker，可按比赛规模扩展评测节点。
+- **部署依赖清晰**：PostgreSQL、Redis、Go-Judge 均可通过 Docker Compose 启动，本地开发和现场部署路径一致。
 
-### 🏆 专为 XCPC 比赛而生
+## 功能一览
 
-- **高性能静态榜单**：基于 Redis 缓存与 SWR 轮询，支持数百人同频观榜 0 延迟。
-- **完美的赛制支持**：内置 ACM 罚时计算规则、最后一小时封榜 (Scoreboard Freeze) 悬念机制。
-- **赛场互动系统**：内置赛中答疑 (Clarifications) 与裁判全局广播 (Announcements)。
-- **一键重测机制**：支持管理员赛中一键 Rejudge 某道题目，榜单自动重算。
+### 比赛与选手侧
 
-### ⚡ 现代化开发者体验
+- 比赛列表、公开赛/私有赛、比赛倒计时与状态展示。
+- 题目列表、题面渲染、样例、限制信息、气球颜色展示。
+- Monaco Editor 在线提交，支持 `C`、`C++23`、`Java 21`、`PyPy3`。
+- 提交状态页支持筛选、分页、个人提交视图和管理员全局视图。
+- 实时提交状态更新，支持 Pending、Judging、Accepted、Wrong Answer、TLE、MLE、Runtime Error、Compile Error、Presentation Error、System Error。
+- 比赛中隐藏普通参赛者的失败测试点，保护测试数据结构和赛题信息。
+- Clarification 答疑/公告系统，支持赛中问题和裁判回复。
 
-- **资源管理器式大厅**：突破传统的单调列表，比赛大厅采用类 Windows 文件系统的树形目录架构。
-- **沉浸式代码编辑**：集成 Monaco Editor，提供丝滑的代码高亮与智能缩进。
-- **无损题目导入导出**：支持标准 Polygon/FPS 格式，内置智能 ID 重写算法，彻底杜绝外源题目覆盖冲突。
-- **高并发判题队列**：基于 BullMQ 构建的强力任务队列，支持多 Worker 节点横向扩容。
+### 榜单与现场能力
 
----
+- ACM/ICPC 风格排名表，自动计算通过题数与罚时。
+- 支持封榜时段，封榜后普通视角隐藏未公开结果，管理员可查看完整信息。
+- 支持手动/自动解榜配置，为现场滚榜和颁奖保留悬念。
+- 气球中心支持根据 AC 生成气球任务、分配 Runner、标记配送完成。
+- 气球页提供二维码入口，方便现场志愿者移动端操作。
 
-## 🧩 现场赛生态工具链 (Ecosystem)
+### 管理后台
 
-NovaJudge 不仅是一个 Web 评测平台，更是一套为线下赛量身定制的完整解决方案。我们为其开发了专属的辅助周边工具链：
+- Dashboard 展示比赛数、题目数、提交数、用户数、Judge 状态、服务器资源和语言配置。
+- 比赛创建、编辑、显示/隐藏、导入/导出。
+- 比赛题目绑定、题号编辑、队伍账号导入与管理。
+- 题库创建、编辑、导入/导出、删除、批量重测。
+- 题面 Markdown 编辑，支持数学公式、代码块和附件资源。
+- 测试数据管理：上传、查看、编辑、删除数据文件和 `problem.yaml`。
+- 管理端样例调试与提交测试，方便出题阶段快速验证。
+- 提交详情查看、编译错误查看、单条提交重测。
+- API Key 管理，用于外部系统安全访问。
 
-- 🛠️ **[Nova Toolkit (现场赛工具箱) ➔](你可以换成实际链接)**
-  - **Nova Guard (选手端)**: 赛场防切屏监控、本地代码防丢备份。
-  - **Nova Warden (场务端)**: 气球分发追踪器 (Balloon Tracker)、赛中打印代码服务大屏。
+### 评测能力
 
-> **提示**：线下举办大型校赛或省赛时，强烈建议开启 Caddy 的 `tls internal` 内网 HTTPS 绿锁，并配合 Nova Toolkit 食用，以获得极致的专业赛场体验！
+- 基于 go-judge 的隔离执行环境。
+- 支持普通标准输出比对、Special Judge、Interactive Problem。
+- 支持按语言配置时间/内存倍率，Java 默认额外放宽资源限制。
+- Redis 记录评测进度，Worker 评测完成后写回数据库。
+- 支持按题目重测和按提交重测，榜单随结果自动更新。
 
----
+### 数据与集成
 
-## 🛠️ 快速部署 (Quick Start)
+- 比赛数据导入/导出：包含比赛信息、用户、题目、提交记录等。
+- 题目数据导入/导出：ZIP 包格式，包含 `problem.json`、`data/`、`assets/`。
+- API Key 认证的开放接口，便于外部平台拉取题目和提交。
+- ICPC CCS 兼容接口：contests、problems、teams、languages、submissions、judgements、runs、event-feed、ghost 等。
+- 支持 Event Feed，为 Resolver 和现场大屏提供数据基础。
 
-NovaJudge 采用全容器化部署，极其简单。请确保你的服务器已安装 `Docker` 和 `Docker Compose`。
+## 技术架构
 
-### 1. 克隆代码
+```text
+Browser
+  │
+  ▼
+Next.js App Router + React
+  │
+  ├─ Prisma ORM ───────── PostgreSQL
+  │
+  ├─ BullMQ Queue ─────── Redis
+  │                         │
+  │                         ▼
+  └──────────────────── Judge Worker ── go-judge
+```
+
+## 技术栈
+
+- **Web 框架**：Next.js 16、React 19、TypeScript
+- **样式与交互**：Tailwind CSS、Heroicons、Sonner、Monaco Editor
+- **数据库**：PostgreSQL、Prisma 7
+- **缓存与队列**：Redis、BullMQ
+- **评测内核**：go-judge
+- **题面与公式**：React Markdown、remark-gfm、KaTeX/MathJax
+- **部署基础设施**：Docker Compose
+
+## 快速开始
+
+### 1. 克隆项目
 
 ```bash
 git clone https://github.com/pppolf/NovaJudge.git
@@ -75,68 +117,137 @@ cd NovaJudge
 
 ### 2. 配置环境变量
 
-复制环境配置模板并填写你的数据库与 Redis 密码：
-
 ```bash
 cp .env.example .env
 ```
 
-### 3. 一键启动基础设施
+常用配置项：
 
-启动 PostgreSQL 数据库、Redis 队列以及 Go-Judge 沙箱容器：
+```env
+DATABASE_URL="postgresql://postgres:password@localhost:5432/xcpc_oj?schema=public"
+REDIS_URL="redis://localhost:6379"
+GO_JUDGE_API="http://localhost:5050"
+JWT_SECRET="please-change-this-secret"
+SUPER_ADMIN_USERNAME="admin"
+SUPER_ADMIN_PASSWORD="123456"
+JUDGE_CONCURRENCY=4
+```
+
+生产环境请务必修改 `JWT_SECRET`、超级管理员密码以及数据库密码。
+
+### 3. 启动基础服务
 
 ```bash
 docker-compose up -d
 ```
 
-### 4. 初始化数据库与项目
+该命令会启动：
+
+- PostgreSQL
+- Redis
+- Go-Judge
+
+### 4. 安装依赖并初始化数据库
 
 ```bash
 npm install
 npx prisma db push
 npm run prisma
+```
+
+### 5. 启动 Web 服务
+
+开发模式：
+
+```bash
+npm run dev
+```
+
+生产模式：
+
+```bash
 npm run build
 npm run start
 ```
 
-**判题队列服务启动**
+默认访问地址：`http://localhost:3001`
+
+### 6. 启动评测 Worker
+
+另开一个终端运行：
 
 ```bash
 npm run worker
 ```
 
-服务启动后，访问 `http://localhost:3001` 即可进入 NovaJudge。默认超管账号信息请参考 `.env` 配置文件。
+Web 服务负责接收提交，Worker 负责从队列中取出任务并调用 go-judge 完成评测。正式比赛时请确认 Web、Redis、PostgreSQL、Go-Judge、Worker 均处于可用状态。
 
----
+## 常用脚本
 
-## 📁 目录结构 (Structure)
+```bash
+npm run dev          # 启动开发服务器
+npm run build        # 构建生产版本
+npm run start        # 启动生产服务器
+npm run lint         # 运行 ESLint
+npm run prisma       # 生成 Prisma Client
+npm run worker       # 启动评测 Worker
+npm run worker:dev   # 以 watch 模式启动 Worker
+```
+
+## 目录结构
 
 ```text
 NovaJudge/
-├── app/
-│   ├── (main)/          # 用户端前台页面 (比赛大厅、题目、榜单)
-│   ├── admin/           # 管理员控制台
-│   └── api/             # Next.js 服务端路由 (RESTful API)
-├── components/          # React 全局复用 UI 组件
-├── lib/                 # 核心逻辑 (数据库实例、评测队列、身份认证)
-├── prisma/              # ORM 模型定义与迁移文件
-└── docker-compose.yml   # 基础设施容器编排
+├─ app/
+│  ├─ (main)/                 # 选手侧：比赛、题目、提交、榜单、答疑、气球
+│  ├─ admin/                  # 管理后台
+│  └─ api/                    # REST API 与 CCS API
+├─ components/                # 通用 UI 与管理端组件
+├─ context/                   # 前端上下文
+├─ docs/                      # API 文档与变更记录
+├─ lib/
+│  ├─ ccs/                    # CCS 数据转换与认证
+│  ├─ judge.ts                # 核心评测逻辑
+│  ├─ queue.ts                # BullMQ 队列
+│  ├─ redis.ts                # Redis 连接
+│  └─ prisma.ts               # Prisma Client
+├─ prisma/                    # 数据库 Schema
+├─ public/                    # 静态资源
+├─ uploads/                   # 题目数据与附件
+├─ worker.ts                  # 评测 Worker 与比赛状态调度
+└─ docker-compose.yml         # PostgreSQL / Redis / Go-Judge 编排
 ```
 
----
+## API 与 CCS
 
-## 🤝 贡献与支持 (Contributing)
+NovaJudge 提供两类对外接口：
 
-欢迎提交 Issue 和 Pull Request！如果你在部署或使用中遇到任何问题，欢迎在 GitHub Discussions 中讨论。
+- **平台 API**：如 `/api/contests/:contestId/problems`、`/api/contests/:contestId/submissions`，使用 `x-api-key` 认证。
+- **CCS API**：如 `/api/ccs/contests`、`/api/ccs/contests/:contestId/event-feed`，用于 ICPC 工具链和现场 Resolver。
 
-如果 NovaJudge 帮助你们协会成功举办了比赛，请毫不吝啬地给我们点亮一颗 **Star ⭐️** ！
+更详细的接口说明见 [docs/API_DOCS.md](docs/API_DOCS.md)。
 
-## 📄 开源协议 (License)
+## 适用场景
 
-本项目采用 [MIT License](https://www.google.com/search?q=LICENSE) 协议开源。
+- 校内 ICPC/CCPC 选拔赛
+- 算法协会日常训练赛
+- 课程实验或程序设计竞赛
+- 小中型线下赛现场系统
+- 题库维护、出题验题与重测流程
 
----
+## 部署建议
+
+- 现场赛建议将 Web、Worker、PostgreSQL、Redis、Go-Judge 分别纳入进程守护或容器编排。
+- Worker 可以按机器性能和并发需求横向扩展，但要合理设置 `JUDGE_CONCURRENCY`。
+- 生产环境请使用反向代理和 HTTPS，并保护好后台入口与 API Key。
+- 比赛前建议提前进行全题样例测试、压力提交测试、榜单冻结/解冻演练和气球流程演练。
+
+## 开源协议
+
+本项目基于 [MIT License](LICENSE) 开源。
 
 <div align="center">
-<b>Made with ❤️ by CWNU PAA (西华师范大学程序设计算法协会) @ Gao Ming</b>
+
+Made with care by CWNU PAA @ Gao Ming
+
 </div>

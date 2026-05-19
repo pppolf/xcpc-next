@@ -66,6 +66,7 @@ interface LiveVerdictProps {
   initialStatus: string;
   initialPassed?: number;
   initialTotal?: number;
+  showTestDetails?: boolean;
 }
 
 export default function LiveVerdict({
@@ -73,6 +74,7 @@ export default function LiveVerdict({
   initialStatus,
   initialPassed = 0,
   initialTotal = 0,
+  showTestDetails = true,
 }: LiveVerdictProps) {
   const [status, setStatus] = useState(initialStatus);
   const [passed, setPassed] = useState(initialPassed);
@@ -184,25 +186,27 @@ export default function LiveVerdict({
 
   // 动态生成文本：如果是 Judging，显示进度
   let displayText = config.text;
-  if (status === Verdict.JUDGING) {
+  if (!showTestDetails && status === Verdict.JUDGING) {
+    displayText = "Judging ...";
+  } else if (showTestDetails && status === Verdict.JUDGING) {
     displayText = `Running on test ${passed + 1} ...`;
-  } else if (status === Verdict.WRONG_ANSWER) {
+  } else if (showTestDetails && status === Verdict.WRONG_ANSWER) {
     displayText = `${VERDICT_CONFIG[Verdict.WRONG_ANSWER].text} on test ${
       passed + 1
     }`;
-  } else if (status === Verdict.TIME_LIMIT_EXCEEDED) {
+  } else if (showTestDetails && status === Verdict.TIME_LIMIT_EXCEEDED) {
     displayText = `${
       VERDICT_CONFIG[Verdict.TIME_LIMIT_EXCEEDED].text
     } on test ${passed + 1}`;
-  } else if (status === Verdict.MEMORY_LIMIT_EXCEEDED) {
+  } else if (showTestDetails && status === Verdict.MEMORY_LIMIT_EXCEEDED) {
     displayText = `${
       VERDICT_CONFIG[Verdict.MEMORY_LIMIT_EXCEEDED].text
     } on test ${passed + 1}`;
-  } else if (status === Verdict.PRESENTATION_ERROR) {
+  } else if (showTestDetails && status === Verdict.PRESENTATION_ERROR) {
     displayText = `${VERDICT_CONFIG[Verdict.PRESENTATION_ERROR].text} on test ${
       passed + 1
     }`;
-  } else if (status === Verdict.RUNTIME_ERROR) {
+  } else if (showTestDetails && status === Verdict.RUNTIME_ERROR) {
     displayText = `${VERDICT_CONFIG[Verdict.RUNTIME_ERROR].text} on test ${
       passed + 1
     }`;

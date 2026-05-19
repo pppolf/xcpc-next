@@ -106,6 +106,33 @@ export async function updateProblemDisplayId(
   }
 }
 
+export async function updateProblemColor(
+  contestProblemId: string,
+  newColor: string,
+  contestId: number,
+) {
+  try {
+    const color = newColor.trim();
+
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+      return { error: "Invalid color value" };
+    }
+
+    await prisma.contestProblem.update({
+      where: { id: contestProblemId },
+      data: { color: color.toLowerCase() },
+    });
+
+    revalidatePath(`/admin/contests/${contestId}/problems`);
+    revalidatePath(`/contest/${contestId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update problem color:", error);
+    return { error: "Failed to update color, please try again" };
+  }
+}
+
 export async function swapProblemDisplayIds(
   contestId: number,
   problemId1: number,

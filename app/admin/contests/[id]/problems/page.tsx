@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import EditableDisplayId from "@/components/admin/EditableDisplayId";
+import EditableProblemColor from "@/components/admin/EditableProblemColor";
 
 export default async function ContestProblemsPage({
   params,
@@ -134,10 +135,10 @@ export default async function ContestProblemsPage({
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div
-                            className="w-6 h-6 rounded-full border shadow-sm"
-                            style={{ backgroundColor: cp.color || "#ffffff" }}
-                            title={cp.color || "No color"}
+                          <EditableProblemColor
+                            contestProblemId={cp.id}
+                            contestId={contestId}
+                            initialColor={cp.color}
                           />
                         </td>
                         <td className="px-6 py-4">

@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis"; // 【新增】引入 redis
 import { NextRequest } from "next/server";
 import { Verdict } from "@/lib/generated/prisma/enums";
+import {
+  canViewSubmissionTestDetails,
+  hideSubmissionProgress,
+} from "@/lib/submission-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +15,7 @@ export async function GET(
 ) {
   const submissionId = (await params).id;
   const encoder = new TextEncoder();
+  const canViewTestDetails = await canViewSubmissionTestDetails(submissionId);
 
   const redisKey = `submission:${submissionId}:progress`;
 
@@ -21,7 +26,12 @@ export async function GET(
         passedTests: number;
         totalTests: number;
       }) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        const payload = canViewTestDetails
+          ? data
+          : hideSubmissionProgress(data);
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
+        );
       };
 
       let lastKnownVerdict: Verdict | null = null;

@@ -128,6 +128,8 @@ export default async function Status({ params, searchParams }: Props) {
     config?.frozenDuration !== 0 &&
     (freezeTime ? new Date().getTime() >= freezeTime : false);
   const isContestEnded = contestInfo.status === ContestStatus.ENDED;
+  const showTestDetails =
+    contestInfo.status !== ContestStatus.RUNNING || Boolean(isAdmin);
   const canViewAll =
     (isContestEnded && !isFrozen) || isAdmin || isGuest || false;
   const canSearch =
@@ -267,6 +269,15 @@ export default async function Status({ params, searchParams }: Props) {
         verdict: "FROZEN",
       };
     }
+
+    if (!showTestDetails) {
+      return {
+        ...submission,
+        passedTests: 0,
+        totalTests: 0,
+      };
+    }
+
     return submission;
   });
 
@@ -420,7 +431,10 @@ export default async function Status({ params, searchParams }: Props) {
                       {isGuest && !isContestEnded ? (
                         <VerdictCell submission={submission} isGuest={true} />
                       ) : (
-                        <VerdictCell submission={submission} />
+                        <VerdictCell
+                          submission={submission}
+                          showTestDetails={showTestDetails}
+                        />
                       )}
                     </td>
                   </tr>

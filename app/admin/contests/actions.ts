@@ -86,6 +86,7 @@ export async function getContests(page = 1, pageSize = 20) {
           select: {
             problems: true,
             users: true,
+            submissions: true,
           },
         },
       },
@@ -102,4 +103,64 @@ export async function toggleContestVisibility(id: number, visible: boolean) {
   });
   revalidatePath("/admin/contests");
   revalidatePath("/");
+}
+
+export async function deleteContest(id: number) {
+  try {
+    const contest = await prisma.contest.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!contest) {
+      return { error: "Contest not found" };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const contestUsers = await tx.user.findMany({
+        where: { contestId: id },
+        select: { id: true },
+      });
+      const contestUserIds = contestUsers.map((user) => user.id);
+
+      await tx.reply.deleteMany({
+        where: {
+          OR: [
+            { clarification: { contestId: id } },
+            ...(contestUserIds.length
+              ? [{ userId: { in: contestUserIds } }]
+              : []),
+          ],
+        },
+      });
+
+      await tx.clarification.deleteMany({ where: { contestId: id } });
+      await tx.balloon.deleteMany({ where: { contestId: id } });
+      await tx.printJob.deleteMany({ where: { contestId: id } });
+
+      await tx.submission.deleteMany({
+        where: {
+          OR: [
+            { contestId: id },
+            ...(contestUserIds.length
+              ? [{ userId: { in: contestUserIds } }]
+              : []),
+          ],
+        },
+      });
+
+      await tx.contestProblem.deleteMany({ where: { contestId: id } });
+      await tx.user.deleteMany({ where: { contestId: id } });
+      await tx.trainingNode.deleteMany({ where: { contestId: id } });
+      await tx.contest.delete({ where: { id } });
+    });
+
+    revalidatePath("/admin/contests");
+    revalidatePath("/");
+    return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (e: any) {
+    console.error("Failed to delete contest:", e);
+    return { error: e.message || "Failed to delete contest" };
+  }
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getContests, toggleContestVisibility } from "./actions";
 import Pagination from "@/components/Pagination";
+import DeleteContestButton from "./DeleteContestButton";
 import {
   PlusIcon,
   UserGroupIcon,
@@ -27,6 +28,7 @@ interface Contest {
   _count: {
     problems: number;
     users: number;
+    submissions: number;
   };
 }
 
@@ -130,6 +132,16 @@ export default function AdminContestsPage({
     } catch {
       toast.error("Failed to update visibility");
     }
+  }
+
+  function handleContestDeleted(id: number) {
+    setContests(contests.filter((contest) => contest.id !== id));
+    setSelectedContestIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setTotal((current) => Math.max(0, current - 1));
   }
 
   return (
@@ -283,10 +295,17 @@ export default function AdminContestsPage({
                           <UserGroupIcon className="w-4 h-4" />
                           {contest._count.users}
                         </span>
+                        <span
+                          className="flex items-center gap-1"
+                          title="Submissions"
+                        >
+                          <PlayIcon className="w-4 h-4" />
+                          {contest._count.submissions}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-3">
+                      <div className="flex items-center gap-3">
                         <Link
                           href={`/admin/contests/${contest.id}/problems`}
                           className="text-xs font-bold border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md hover:bg-white hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm bg-gray-50"
@@ -305,6 +324,11 @@ export default function AdminContestsPage({
                         >
                           Settings
                         </Link>
+                        <DeleteContestButton
+                          contestId={contest.id}
+                          contestTitle={contest.title}
+                          onDeleted={handleContestDeleted}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -313,7 +337,7 @@ export default function AdminContestsPage({
               {contests.length === 0 && (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-6 py-8 text-center text-gray-400 italic"
                   >
                     No contests found. Create one to get started.

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getProblems } from "./actions";
 import {
@@ -15,11 +16,9 @@ import RejudgeButton from "./RejudgeProblemButton";
 import DeleteProblemButton from "./DeleteProblemButton";
 import { toast } from "sonner";
 
-export default function ProblemsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
+export default function ProblemsPage() {
+  const searchParams = useSearchParams();
+  const currentPage = Number(searchParams.get("page")) || 1;
   const [problems, setProblems] = useState<Array<{
     id: number;
     title: string;
@@ -30,17 +29,16 @@ export default function ProblemsPage({
   const [selectedProblemIds, setSelectedProblemIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  async function loadProblems() {
-    const page = Number((await searchParams).page) || 1;
+  async function loadProblems(page: number) {
     const { problems: loadedProblems, total: loadedTotal } = await getProblems(page);
     setProblems(loadedProblems);
     setTotal(loadedTotal);
+    setSelectedProblemIds(new Set());
   }
 
   useEffect(() => {
-    loadProblems();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+    loadProblems(currentPage);
+  }, [currentPage]);
 
   function toggleProblemSelection(problemId: number) {
     const newSelected = new Set(selectedProblemIds);

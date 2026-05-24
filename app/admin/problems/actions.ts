@@ -102,6 +102,7 @@ export async function rejudgeProblem(problemId: number) {
     const submissions = await prisma.submission.findMany({
       where: {
         problemId: problemId,
+        verdict: { not: Verdict.ACCEPTED },
       },
       select: {
         id: true,
@@ -111,7 +112,7 @@ export async function rejudgeProblem(problemId: number) {
     const submissionIds = submissions.map((s) => s.id);
 
     if (submissionIds.length === 0) {
-      return;
+      return { success: true, queued: 0 };
     }
 
     // 2. 批量将状态重置为 PENDING
@@ -138,6 +139,7 @@ export async function rejudgeProblem(problemId: number) {
 
     // 4. 刷新页面
     revalidatePath("/admin/problems");
+    return { success: true, queued: submissionIds.length };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     return { error: e.message || "Failed to rejudge problem" };

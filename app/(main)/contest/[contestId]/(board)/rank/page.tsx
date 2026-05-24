@@ -13,6 +13,7 @@ import Pagination from "@/components/Pagination";
 import { ContestConfig } from "@/app/(main)/page";
 import UnfreezeButton from "./UnfreezeButton";
 import ExportEventFeedButton from "./ExportEventFeedButton";
+import ExportRankResultsButton from "./ExportRankResultsButton";
 import { getDictionary } from "@/lib/get-dictionary";
 import { Metadata } from "next";
 
@@ -735,7 +736,12 @@ export default async function Rank({ params, searchParams }: Props) {
         <h2 className="text-2xl font-serif font-bold text-gray-800 pl-2 flex items-center">
           Rank
           {showUnfreezeButton && <UnfreezeButton contest={contestInfo} />}
-          {canSeeLiveBoard && <ExportEventFeedButton contestId={cid} />}
+          {canSeeLiveBoard && (
+            <span className="ml-2 flex items-center gap-2">
+              <ExportRankResultsButton contestId={cid} />
+              <ExportEventFeedButton contestId={cid} />
+            </span>
+          )}
         </h2>
         <RankSearch
           schools={allSchools.map((s) => s.school).filter(Boolean) as string[]}

@@ -36,6 +36,19 @@ export async function rejudgeSubmission(submissionId: string) {
   const payload = await verifyAuth(token);
   if (!payload.isGlobalAdmin) throw new Error("Permission denied");
 
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    select: { verdict: true },
+  });
+
+  if (!submission) {
+    return { error: "Submission not found" };
+  }
+
+  if (submission.verdict === Verdict.ACCEPTED) {
+    return { error: "Accepted submissions are not rejudged." };
+  }
+
   // 2. 重置提交状态
   await prisma.submission.update({
     where: { id: submissionId },
@@ -57,4 +70,5 @@ export async function rejudgeSubmission(submissionId: string) {
 
   // 4. 刷新页面
   revalidatePath("/admin/submissions");
+  return { success: true };
 }

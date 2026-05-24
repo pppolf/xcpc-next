@@ -25,7 +25,12 @@ export default function RejudgeButton({
     startTransition(async () => {
       try {
         // 调用 Server Action
-        await rejudgeSubmission(submissionId);
+        const result = await rejudgeSubmission(submissionId);
+
+        if (result?.error) {
+          toast.error(result.error);
+          return;
+        }
 
         // 强制刷新当前路由
         router.refresh();
@@ -42,7 +47,7 @@ export default function RejudgeButton({
       <ConfirmModal
         isOpen={isConfirmOpen}
         title="Rejudge Submission"
-        message="Are you sure you want to rejudge this submission? This will clear current verdict."
+        message="Rejudge this non-AC submission? Accepted submissions will be kept untouched."
         confirmText="Rejudge"
         onConfirm={confirmRejudge}
         onCancel={() => setIsConfirmOpen(false)}

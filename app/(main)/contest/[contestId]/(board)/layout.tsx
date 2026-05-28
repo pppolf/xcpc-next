@@ -36,10 +36,10 @@ export default async function ContestLayout({ children, params }: Props) {
   const timerEndTime = isRunningVp ? latestVp.endedAt : contest.endTime;
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="w-full overflow-x-hidden print:bg-white">
       <ContestNoticeSniffer contestId={Number(contestId)} />
-      <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <div className="bg-white shadow-sm border border-gray-100 rounded-sm p-4 md:p-6">
+      <div className="w-full max-w-7xl mx-auto px-4 py-6 space-y-6 print:max-w-none print:px-0 print:py-0 print:space-y-0 print:bg-white">
+        <div className="bg-white shadow-sm border border-gray-100 rounded-sm p-4 md:p-6 print:hidden">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div className="w-full md:w-auto">
               <h1 className="text-xl md:text-3xl font-serif font-bold text-gray-900 mb-2 wrap-break-word">
@@ -84,7 +84,7 @@ export default async function ContestLayout({ children, params }: Props) {
             />
           </div>
         </div>
-        <div className="w-full">{children}</div>
+        <div className="w-full print:bg-white">{children}</div>
       </div>
     </div>
   );

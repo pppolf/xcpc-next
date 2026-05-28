@@ -12,6 +12,7 @@ import { ContestConfig } from "@/app/(main)/page";
 import UnfreezeButton from "./UnfreezeButton";
 import ExportEventFeedButton from "./ExportEventFeedButton";
 import ExportRankResultsButton from "./ExportRankResultsButton";
+import ExportRankPdfButton from "./ExportRankPdfButton";
 import { getDictionary } from "@/lib/get-dictionary";
 import { Metadata } from "next";
 import {
@@ -1060,6 +1061,7 @@ export default async function Rank({ params, searchParams }: Props) {
           )}
         </h2>
         <div className="flex flex-wrap items-center gap-3 print:hidden">
+          <ExportRankPdfButton contestId={contestId} />
           <IncludeVpToggle defaultChecked={shouldIncludeVpInRank} />
           <RankSearch
             schools={

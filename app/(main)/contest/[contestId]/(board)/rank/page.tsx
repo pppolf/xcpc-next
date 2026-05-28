@@ -652,6 +652,7 @@ export default async function Rank({ params, searchParams }: Props) {
   const dict = await getDictionary();
 
   const globalRanks: TeamRankData[] = [];
+  const globalUpsolvingRanks: TeamRankData[] = [];
   // 收集所有在本比赛中有提交的全局用户
   const globalSubmissionUsers = showUpsolving
     ? await prisma.submission.findMany({
@@ -740,16 +741,8 @@ export default async function Rank({ params, searchParams }: Props) {
               s.verdict !== Verdict.COMPILE_ERROR &&
               s.verdict !== Verdict.SYSTEM_ERROR,
           );
-          const afterContestSubmissions = showUpsolving
-            ? previousVpSubs.filter(
-                (s) =>
-                  s.problemId === cp.problemId &&
-                  s.verdict !== Verdict.COMPILE_ERROR &&
-                  s.verdict !== Verdict.SYSTEM_ERROR,
-              )
-            : [];
-          if (rawSubmissions.length === 0 && afterContestSubmissions.length === 0)
-            return null;
+          const afterContestSubmissions: typeof rawSubmissions = [];
+          if (rawSubmissions.length === 0) return null;
           const contestSubmissions = rawSubmissions.filter(
             (s) => new Date(s.submittedAt).getTime() <= end,
           );
@@ -865,9 +858,6 @@ export default async function Rank({ params, searchParams }: Props) {
               upsolvedSubmissionId = afterContestAC.displayId;
             }
           }
-          if (upsolved) {
-            solved++;
-          }
           let finalLinkSubmissionId: number | undefined;
           if (finalShowAccepted) {
             finalLinkSubmissionId = shouldShowFrozenState
@@ -897,22 +887,77 @@ export default async function Rank({ params, searchParams }: Props) {
           };
         }),
       );
-      globalRanks.push({
-        rank: "*",
-        id: currentVp?.id ?? `global-upsolve-${gu.id}`,
-        username: gu.username,
-        displayName: gu.displayName,
-        members: null,
-        school: null,
-        category: "VP",
-        isVirtual: true,
-        solved,
-        penalty: Math.floor(penalty),
-        problems,
-      });
+      if (currentVp) {
+        globalRanks.push({
+          rank: "*",
+          id: currentVp.id,
+          username: gu.username,
+          displayName: gu.displayName,
+          members: null,
+          school: null,
+          category: "VP",
+          isVirtual: true,
+          solved,
+          penalty: Math.floor(penalty),
+          problems,
+        });
+      }
+
+      if (showUpsolving && previousVpSubs.length > 0) {
+        let upsolvedCount = 0;
+        const upsolvingProblems = contestProblems.map((cp) => {
+          const submissions = previousVpSubs.filter(
+            (s) =>
+              s.problemId === cp.problemId &&
+              s.verdict !== Verdict.COMPILE_ERROR &&
+              s.verdict !== Verdict.SYSTEM_ERROR,
+          );
+          const acceptedSubmission = submissions.find(
+            (s) => s.verdict === Verdict.ACCEPTED,
+          );
+
+          if (!acceptedSubmission) return null;
+
+          upsolvedCount++;
+          return {
+            problemId: cp.problemId,
+            displayId: cp.displayId,
+            color: cp.color,
+            firstBlood: false,
+            accepted: false,
+            time: "",
+            tries: submissions.filter(
+              (s) =>
+                s.submittedAt <= acceptedSubmission.submittedAt &&
+                s.verdict !== Verdict.ACCEPTED,
+            ).length,
+            frozenTries: 0,
+            unfrozenTries: 0,
+            firstAcceptedSubmissionId: acceptedSubmission.displayId,
+            upsolved: true,
+          };
+        });
+
+        if (upsolvedCount > 0) {
+          globalUpsolvingRanks.push({
+            rank: "*",
+            id: `global-upsolve-${gu.id}`,
+            username: gu.username,
+            displayName: gu.displayName,
+            members: null,
+            school: null,
+            category: null,
+            isVirtual: false,
+            solved: upsolvedCount,
+            penalty: 0,
+            problems: upsolvingProblems,
+          });
+        }
+      }
     }
     // 排序：按解决问题数量降序
     globalRanks.sort((a, b) => b.solved - a.solved);
+    globalUpsolvingRanks.sort((a, b) => b.solved - a.solved);
   }
 
   if (shouldIncludeVpInRank && globalRanks.length > 0) {
@@ -977,7 +1022,7 @@ export default async function Rank({ params, searchParams }: Props) {
   const visibleRankTables = [
     ...(myRank ? [myRank] : []),
     ...displayTeamRankings,
-    ...(showUpsolving ? globalRanks : []),
+    ...(showUpsolving ? globalUpsolvingRanks : []),
   ];
   const maxTeamTextWidth = visibleRankTables.reduce((maxWidth, team) => {
     const prefixWidth =
@@ -1065,11 +1110,11 @@ export default async function Rank({ params, searchParams }: Props) {
             isFrozen={isFrozen}
             teamColumnWidthPercent={teamColumnWidthPercent}
           />
-          {showUpsolving && globalRanks.length > 0 && (
+          {showUpsolving && globalUpsolvingRanks.length > 0 && (
             <div className="mt-2">
               <RankTable
                 contestId={contestId}
-                teams={globalRanks}
+                teams={globalUpsolvingRanks}
                 isMyTeam={false}
                 isContestEnded={canOpenRankSubmissions}
                 contestProblems={contestProblems}

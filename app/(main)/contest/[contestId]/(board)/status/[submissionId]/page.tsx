@@ -13,6 +13,7 @@ import Link from "next/link";
 import CodeViewer from "./CodeViewer";
 import { ContestConfig } from "@/app/(main)/page";
 import { getDictionary } from "@/lib/get-dictionary";
+import { getRunningVirtualParticipation } from "@/lib/virtual-participation";
 
 interface Props {
   params: Promise<{
@@ -84,6 +85,10 @@ export default async function SubmissionDetail({ params }: Props) {
   // 3. 权限校验逻辑
   const isContestEnded = contestInfo.status === ContestStatus.ENDED;
   const isGlobalAdmin = !!globalUser?.isGlobalAdmin;
+  const runningVp =
+    globalUser?.userId && !isGlobalAdmin
+      ? await getRunningVirtualParticipation(cid, String(globalUser.userId))
+      : null;
 
   const config = contestInfo.config as ContestConfig;
   const freezeTime =
@@ -92,7 +97,7 @@ export default async function SubmissionDetail({ params }: Props) {
     config.frozenDuration !== 0 &&
     (freezeTime ? new Date().getTime() >= freezeTime : false);
 
-  if (payload?.userId || isGlobalAdmin) {
+  if (payload?.userId || globalUser?.userId || isGlobalAdmin) {
     let currentUser = null;
     if (payload?.userId) {
       currentUser = await prisma.user.findUnique({
@@ -116,14 +121,20 @@ export default async function SubmissionDetail({ params }: Props) {
     // 2. 管理员/评委总能看所有的
     // 3. 普通用户只能在比赛结束后看其他人的
 
-    const isOwner = submission?.user?.id === currentUser?.id;
+    const isOwner =
+      submission?.user?.id === currentUser?.id ||
+      (submission?.globalUser?.id === globalUser?.userId &&
+        (!runningVp || submission.virtualParticipationId === runningVp.id));
 
     const isAdmin =
       isGlobalAdmin ||
       currentUser?.role === ContestRole.ADMIN ||
       currentUser?.role === ContestRole.JUDGE;
+    const isGlobalParticipant = Boolean(globalUser?.userId && !isGlobalAdmin);
     const hasPermission =
-      isOwner || isAdmin || (isContestEnded && !isFrozen && !isOwner);
+      isOwner ||
+      isAdmin ||
+      (!isGlobalParticipant && isContestEnded && !isFrozen && !isOwner);
 
     if (!hasPermission) {
       return notFound();

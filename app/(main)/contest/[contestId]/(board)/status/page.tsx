@@ -10,11 +10,12 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import VerdictCell from "@/components/VerdictCell";
 import StatusControls from "./StatusControls";
 import SearchAndFilter from "./SearchAndFilter";
-import { verifyAuth } from "@/lib/auth";
+import { getCurrentSuper, verifyAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { ContestConfig } from "@/app/(main)/page";
 import { getDictionary } from "@/lib/get-dictionary";
 import { Metadata } from "next";
+import { getLatestVirtualParticipation } from "@/lib/virtual-participation";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const contestId = parseInt((await params).contestId);
@@ -99,6 +100,7 @@ export default async function Status({ params, searchParams }: Props) {
     });
   }
 
+  const globalUser = await getCurrentSuper();
   const superAdminToken = cookieStore.get("auth_token")?.value;
   let superAdmin = null;
   if (superAdminToken) {
@@ -119,7 +121,16 @@ export default async function Status({ params, searchParams }: Props) {
       currentUser.contestId === cid &&
       (currentUser.role === ContestRole.ADMIN ||
         currentUser.role === ContestRole.JUDGE));
-  const isGuest = !currentUser && !isAdmin;
+  const latestVp =
+    !currentUser && globalUser?.userId && !isAdmin
+      ? await getLatestVirtualParticipation(cid, String(globalUser.userId))
+      : null;
+  const now = new Date();
+  const isRunningVp =
+    latestVp?.status === "RUNNING" &&
+    latestVp.startedAt <= now &&
+    latestVp.endedAt >= now;
+  const isGuest = !currentUser && !globalUser && !isAdmin;
   const config = contestInfo.config as ContestConfig;
   const freezeTime = config?.frozenDuration
     ? contestInfo.endTime.getTime() - config?.frozenDuration * 60 * 1000
@@ -131,9 +142,11 @@ export default async function Status({ params, searchParams }: Props) {
   const showTestDetails =
     contestInfo.status !== ContestStatus.RUNNING || Boolean(isAdmin);
   const canViewAll =
-    (isContestEnded && !isFrozen) || isAdmin || isGuest || false;
+    !isRunningVp &&
+    ((isContestEnded && !isFrozen) || isAdmin || isGuest || Boolean(latestVp));
   const canSearch =
-    (isContestEnded && !isFrozen) || isAdmin || isGuest || false;
+    !isRunningVp &&
+    ((isContestEnded && !isFrozen) || isAdmin || isGuest || Boolean(latestVp));
 
   // 用户选择查看所有提交且有权限
   const userWantsViewAll = viewAll === "true";
@@ -148,6 +161,8 @@ export default async function Status({ params, searchParams }: Props) {
 
   if (finalUserId) {
     where.userId = finalUserId;
+  } else if (!shouldViewAll && latestVp) {
+    where.virtualParticipationId = latestVp.id;
   }
 
   // 问题筛选
@@ -213,6 +228,12 @@ export default async function Status({ params, searchParams }: Props) {
               id: true,
               displayName: true,
               username: true,
+            },
+          },
+          virtualParticipation: {
+            select: {
+              id: true,
+              attemptNo: true,
             },
           },
           problem: {
@@ -305,6 +326,8 @@ export default async function Status({ params, searchParams }: Props) {
   const statusLabel =
     !shouldViewAll && currentUser
       ? "(Your Submissions)"
+      : !shouldViewAll && latestVp
+        ? `(Your latest VP #${latestVp.attemptNo})`
       : isContestEnded
         ? "(Contest Ended - All Submissions Visible)"
         : "";
@@ -327,7 +350,9 @@ export default async function Status({ params, searchParams }: Props) {
             verdictRecord={verdictRecord}
             languageRecord={languageRecord}
           />
-          {currentUser && <StatusControls canViewAll={canViewAll} />}
+          {(currentUser || latestVp) && (
+            <StatusControls canViewAll={canViewAll} />
+          )}
         </div>
       </div>
 
@@ -392,6 +417,11 @@ export default async function Status({ params, searchParams }: Props) {
                         submission.user?.username ||
                         submission.globalUser?.displayName ||
                         "Unknown"}
+                      {submission.virtualParticipation && (
+                        <span className="ml-2 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
+                          VP #{submission.virtualParticipation.attemptNo}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-2 text-gray-900">
                       <Link

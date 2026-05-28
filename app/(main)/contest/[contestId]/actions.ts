@@ -1,12 +1,14 @@
 "use server";
 
-import { signAuth } from "@/lib/auth";
+import { getCurrentSuper, signAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { startVirtualParticipation } from "@/lib/virtual-participation";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 function redirectToContestLogin(contestId: number, error?: string): never {
   const searchParams = new URLSearchParams();
@@ -73,4 +75,16 @@ export async function loginContestUser(contestId: number, formData: FormData) {
 
   // 5. 重定向到比赛主页
   redirect(`/contest/${contestId}?login=true`);
+}
+
+export async function startContestVirtualParticipation(contestId: number) {
+  const globalUser = await getCurrentSuper();
+  if (!globalUser?.userId) {
+    redirect(`/?login=true`);
+  }
+
+  await startVirtualParticipation(contestId, String(globalUser.userId));
+  revalidatePath(`/contest/${contestId}`);
+  revalidatePath(`/contest/${contestId}/rank`);
+  redirect(`/contest/${contestId}/problems`);
 }

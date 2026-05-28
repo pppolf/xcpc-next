@@ -1,73 +1,213 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "@headlessui/react";
 
+type EnvSetting = {
+  key: string;
+  label: string;
+  description: string;
+  placeholder: string;
+  restartRequired: boolean;
+  value: string;
+};
+
+type SettingsResponse = {
+  allowExternalLogin: boolean;
+  envSettings: EnvSetting[];
+};
+
 export default function SystemSettingsPage() {
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [allowExternalLogin, setAllowExternalLogin] = useState(true);
+  const [envSettings, setEnvSettings] = useState<EnvSetting[]>([]);
+  const [envValues, setEnvValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch("/api/admin/settings")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load settings");
+        return res.json() as Promise<SettingsResponse>;
+      })
       .then((data) => {
         setAllowExternalLogin(data.allowExternalLogin);
-        setLoading(false);
+        setEnvSettings(data.envSettings || []);
+        setEnvValues(
+          Object.fromEntries(
+            (data.envSettings || []).map((item) => [item.key, item.value]),
+          ),
+        );
       })
       .catch(() => {
-        toast.error("加载配置失败");
+        toast.error("Failed to load settings");
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, []);
 
-  const handleToggle = async (checked: boolean) => {
-    setAllowExternalLogin(checked);
+  const hasRestartRequiredSetting = useMemo(
+    () => envSettings.some((item) => item.restartRequired),
+    [envSettings],
+  );
+
+  const saveSettings = async (nextAllowExternalLogin = allowExternalLogin) => {
+    setSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowExternalLogin: checked }),
+        body: JSON.stringify({
+          allowExternalLogin: nextAllowExternalLogin,
+          envSettings: envValues,
+        }),
       });
-      if (!res.ok) throw new Error();
-      toast.success("保存成功");
+
+      if (!res.ok) throw new Error("Failed to save settings");
+
+      const data = (await res.json()) as SettingsResponse;
+      setAllowExternalLogin(data.allowExternalLogin);
+      setEnvSettings(data.envSettings || []);
+      setEnvValues(
+        Object.fromEntries(
+          (data.envSettings || []).map((item) => [item.key, item.value]),
+        ),
+      );
+      toast.success("Settings saved");
     } catch {
-      toast.error("保存失败");
-      setAllowExternalLogin(!checked); // revert
+      toast.error("Failed to save settings");
+      throw new Error("Failed to save settings");
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (loading) return <div className="p-8">加载中...</div>;
+  const handleToggle = async (checked: boolean) => {
+    const previous = allowExternalLogin;
+    setAllowExternalLogin(checked);
+    try {
+      await saveSettings(checked);
+    } catch {
+      setAllowExternalLogin(previous);
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      await saveSettings();
+    } catch {
+      // Toast is handled in saveSettings.
+    }
+  };
+
+  if (loading) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">系统设置</h1>
+    <div className="mx-auto max-w-5xl space-y-6 p-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
+        <p className="mt-2 text-sm text-gray-500">
+          Manage global login behavior and runtime service links.
+        </p>
+      </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between">
+      <section className="rounded-lg bg-white p-6 shadow">
+        <div className="flex items-center justify-between gap-6">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">允许外部登录</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              开启后，用户可以通过第三方认证系统登录。关闭此选项通常用于内网比赛环境，仅允许使用比赛账号或管理员账号登录。
+            <h2 className="text-lg font-medium text-gray-900">
+              Allow External Login
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              When enabled, users can sign in through the configured external
+              identity provider.
             </p>
           </div>
-          
+
           <Switch
             checked={allowExternalLogin}
             onChange={handleToggle}
+            disabled={saving}
             className={`${
               allowExternalLogin ? "bg-blue-600" : "bg-gray-200"
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+            } relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60`}
           >
             <span
               className={`${
                 allowExternalLogin ? "translate-x-6" : "translate-x-1"
-              } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              } inline-block h-4 w-4 rounded-full bg-white transition-transform`}
             />
           </Switch>
         </div>
-      </div>
+      </section>
+
+      <form onSubmit={handleSubmit} className="rounded-lg bg-white p-6 shadow">
+        <div className="flex flex-col gap-2 border-b border-gray-200 pb-5">
+          <h2 className="text-lg font-medium text-gray-900">
+            Environment Links
+          </h2>
+          <p className="text-sm text-gray-500">
+            These values are written to the project .env file. Current web
+            requests will see updated values after saving, but database, Redis,
+            judge, and worker connections may require a process restart.
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-5">
+          {envSettings.map((setting) => (
+            <label key={setting.key} className="block">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-gray-900">
+                  {setting.label}
+                </span>
+                <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                  {setting.key}
+                </code>
+                {setting.restartRequired && (
+                  <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                    restart required
+                  </span>
+                )}
+              </div>
+              <input
+                value={envValues[setting.key] || ""}
+                onChange={(event) =>
+                  setEnvValues((current) => ({
+                    ...current,
+                    [setting.key]: event.target.value,
+                  }))
+                }
+                placeholder={setting.placeholder}
+                spellCheck={false}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                {setting.description}
+              </p>
+            </label>
+          ))}
+        </div>
+
+        {hasRestartRequiredSetting && (
+          <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Infrastructure links are loaded when Prisma, Redis, BullMQ, and the
+            worker start. Save updates the .env file, then restart the affected
+            services before relying on those new connections.
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Link Settings"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

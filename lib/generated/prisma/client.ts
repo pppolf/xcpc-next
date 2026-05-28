@@ -90,6 +90,11 @@ export type ContestProblem = Prisma.ContestProblemModel
  */
 export type Submission = Prisma.SubmissionModel
 /**
+ * Model VirtualParticipation
+ * 
+ */
+export type VirtualParticipation = Prisma.VirtualParticipationModel
+/**
  * Model Clarification
  * 
  */

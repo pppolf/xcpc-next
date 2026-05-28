@@ -14,6 +14,11 @@ import ExportEventFeedButton from "./ExportEventFeedButton";
 import ExportRankResultsButton from "./ExportRankResultsButton";
 import { getDictionary } from "@/lib/get-dictionary";
 import { Metadata } from "next";
+import {
+  getLatestVirtualParticipationsForContest,
+  getRunningVirtualParticipation,
+} from "@/lib/virtual-participation";
+import IncludeVpToggle from "./IncludeVpToggle";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const contestId = parseInt((await params).contestId);
@@ -77,11 +82,18 @@ function getMedalCounts(total: number, config: ContestConfig | null) {
   };
 }
 
+function getTextDisplayWidth(text: string | null | undefined) {
+  return Array.from(text || "").reduce((width, char) => {
+    return width + (char.charCodeAt(0) > 255 ? 2 : 1);
+  }, 0);
+}
+
 interface Props {
   searchParams: Promise<{
     teamName?: string;
     school?: string;
     category?: string;
+    includeVp?: string;
   }>;
   params: Promise<{
     contestId: string;
@@ -90,9 +102,10 @@ interface Props {
 
 export default async function Rank({ params, searchParams }: Props) {
   const { contestId } = await params;
-  const { teamName, school, category } = await searchParams;
+  const { teamName, school, category, includeVp } = await searchParams;
 
   const cid = parseInt(contestId);
+  const shouldIncludeVpInRank = includeVp !== "0";
 
   // 1. 获取比赛信息
   const contestInfo = await prisma.contest.findUnique({
@@ -143,6 +156,23 @@ export default async function Rank({ params, searchParams }: Props) {
   // 3. 构建查询条件
   const config = contestInfo.config as ContestConfig;
   const now = new Date();
+  const runningViewerVp =
+    !payload?.userId && glabelPayload?.userId && !glabelPayload.isGlobalAdmin
+      ? await getRunningVirtualParticipation(
+          cid,
+          String(glabelPayload.userId),
+          now,
+        )
+      : null;
+  const effectiveNow = runningViewerVp
+    ? new Date(
+        Math.min(
+          contestInfo.startTime.getTime() +
+            (now.getTime() - runningViewerVp.startedAt.getTime()),
+          contestInfo.endTime.getTime(),
+        ),
+      )
+    : now;
   const freezeTime =
     contestInfo.endTime.getTime() - config?.frozenDuration * 60 * 1000;
 
@@ -151,7 +181,7 @@ export default async function Rank({ params, searchParams }: Props) {
   // 如果 contestInfo.freezeTime 存在，且当前时间超过了它，就是封榜状态
   const isFrozen =
     config?.frozenDuration !== 0 &&
-    (freezeTime ? now.getTime() >= freezeTime : false);
+    (freezeTime ? effectiveNow.getTime() >= freezeTime : false);
 
   // 管理员可以看到实时榜单
   const canSeeLiveBoard = isGlobalAdmin || isContestAdmin;
@@ -199,12 +229,18 @@ export default async function Rank({ params, searchParams }: Props) {
 
   // === 预先计算所有题目的一血 (全局最早AC) ===
   // 避免在循环中查询数据库 (N+1问题)
+  const latestVirtualParticipations =
+    await getLatestVirtualParticipationsForContest(cid);
+
   const allAcSubmissions = await prisma.submission.findMany({
     where: {
       contestId: cid,
       verdict: Verdict.ACCEPTED,
+      virtualParticipationId: null,
+      ...(runningViewerVp ? { submittedAt: { lte: effectiveNow } } : {}),
     },
     select: {
+      id: true,
       problemId: true,
       displayId: true,
       submittedAt: true,
@@ -215,17 +251,48 @@ export default async function Rank({ params, searchParams }: Props) {
   });
 
   // Map<ProblemId, SubmissionId>
-  const firstBloodMap = new Map<number, number>();
+  const firstBloodMap = new Map<
+    number,
+    { submissionId: string; relativeTimeMs: number }
+  >();
   for (const sub of allAcSubmissions) {
     // 因为是按时间正序排列的，第一次遇到某个 problemId，就是该题的一血
-    if (!firstBloodMap.has(sub.problemId)) {
-      firstBloodMap.set(sub.problemId, sub.displayId);
+    const relativeTimeMs =
+      sub.submittedAt.getTime() - contestInfo.startTime.getTime();
+    const current = firstBloodMap.get(sub.problemId);
+    if (!current || relativeTimeMs < current.relativeTimeMs) {
+      firstBloodMap.set(sub.problemId, { submissionId: sub.id, relativeTimeMs });
+    }
+  }
+
+  for (const vp of latestVirtualParticipations) {
+    for (const sub of vp.submissions) {
+      if (sub.verdict !== Verdict.ACCEPTED) continue;
+
+      const submittedAt = sub.submittedAt.getTime();
+      if (
+        submittedAt < vp.startedAt.getTime() ||
+        submittedAt > vp.endedAt.getTime()
+      ) {
+        continue;
+      }
+
+      const relativeTimeMs = submittedAt - vp.startedAt.getTime();
+      const current = firstBloodMap.get(sub.problemId);
+      if (!current || relativeTimeMs < current.relativeTimeMs) {
+        firstBloodMap.set(sub.problemId, {
+          submissionId: sub.id,
+          relativeTimeMs,
+        });
+      }
     }
   }
 
   // 6. 计算排名
   const startTimeMs = contestInfo.startTime.getTime();
-  const end = contestInfo.endTime.getTime();
+  const end = runningViewerVp
+    ? effectiveNow.getTime()
+    : contestInfo.endTime.getTime();
   const freezeTimeMs = freezeTime ? new Date(freezeTime).getTime() : Infinity;
 
   // 排行榜数据接口定义
@@ -238,6 +305,7 @@ export default async function Rank({ params, searchParams }: Props) {
     members: string | null;
     school: string | null;
     category: string | null;
+    isVirtual?: boolean;
     solved: number;
     penalty: number;
     problems: Array<{
@@ -279,9 +347,13 @@ export default async function Rank({ params, searchParams }: Props) {
           const contestSubmissions = rawSubmissions.filter(
             (s) => new Date(s.submittedAt).getTime() <= end,
           );
-          const afterContestSubmissions = rawSubmissions.filter(
-            (s) => new Date(s.submittedAt).getTime() > end,
-          );
+          const afterContestSubmissions = runningViewerVp
+            ? []
+            : rawSubmissions.filter(
+                (s) =>
+                  new Date(s.submittedAt).getTime() >
+                  contestInfo.endTime.getTime(),
+              );
 
           // 按时间排序
           const submissions = contestSubmissions.sort(
@@ -297,6 +369,7 @@ export default async function Rank({ params, searchParams }: Props) {
           let isAccepted = false;
           let acceptedTimeMs = 0;
           let acceptedSubId = 0;
+          let acceptedSubmissionId = "";
           let waCountBeforeAcc = 0;
 
           // 1. 先计算【真实】情况（用于管理员或检测是否AC）
@@ -306,6 +379,7 @@ export default async function Rank({ params, searchParams }: Props) {
               acceptedTimeMs =
                 new Date(sub.submittedAt).getTime() - startTimeMs;
               acceptedSubId = sub.displayId;
+              acceptedSubmissionId = sub.id;
               break; // AC 后不再计算罚时次数
             }
             waCountBeforeAcc++;
@@ -384,19 +458,19 @@ export default async function Rank({ params, searchParams }: Props) {
             ? isAcceptedBeforeFreeze
             : isAccepted;
 
-          const globalFirstBloodId = firstBloodMap.get(cp.problemId);
+          const globalFirstBlood = firstBloodMap.get(cp.problemId);
 
-          if (showAsAccepted && globalFirstBloodId) {
-            const myDisplayACId = shouldShowFrozenState
+          if (showAsAccepted && globalFirstBlood) {
+            const myAcceptedSubmissionId = shouldShowFrozenState
               ? submissions.find(
                   (s) =>
                     s.verdict === Verdict.ACCEPTED &&
                     new Date(s.submittedAt).getTime() < freezeTimeMs,
-                )?.displayId
-              : acceptedSubId;
+                )?.id
+              : acceptedSubmissionId;
 
             // 如果当前展示的提交 ID 等于全局一血 ID，那就是一血
-            if (myDisplayACId === globalFirstBloodId) {
+            if (myAcceptedSubmissionId === globalFirstBlood.submissionId) {
               firstBlood = true;
             }
           }
@@ -487,6 +561,7 @@ export default async function Rank({ params, searchParams }: Props) {
         members: team.members,
         school: team.school,
         category: team.category,
+        isVirtual: false,
         solved,
         penalty: Math.floor(penalty),
         problems,
@@ -521,14 +596,11 @@ export default async function Rank({ params, searchParams }: Props) {
     if (index < medalCounts.gold) team.medal = "Gold";
     else if (index < medalCounts.gold + medalCounts.silver)
       team.medal = "Silver";
-    else if (
-      index <
-      medalCounts.gold + medalCounts.silver + medalCounts.bronze
-    )
+    else if (index < medalCounts.gold + medalCounts.silver + medalCounts.bronze)
       team.medal = "Bronze";
   });
 
-  const displayTeamRankings = allTeamRankings.filter((team) => {
+  let displayTeamRankings = allTeamRankings.filter((team) => {
     if (
       teamName &&
       !`${team.displayName || ""} ${team.username}`
@@ -573,27 +645,31 @@ export default async function Rank({ params, searchParams }: Props) {
   const isContestEnded =
     contestInfo.status === ContestStatus.ENDED || now > contestInfo.endTime;
   const showUnfreezeButton = canSeeLiveBoard && isContestEnded && isFrozen;
+  const canOpenRankSubmissions = isContestEnded && !runningViewerVp;
 
   const dict = await getDictionary();
 
   const globalRanks: TeamRankData[] = [];
   // 收集所有在本比赛中有提交的全局用户
-  const globalUserIdsDistinct = await prisma.submission.findMany({
-    where: { contestId: cid, globalUserId: { not: null } },
-    select: { globalUserId: true },
-    distinct: ["globalUserId"],
-  });
-  const globalIds = globalUserIdsDistinct
-    .map((s) => s.globalUserId)
-    .filter((v): v is string => !!v);
+  const globalIds = latestVirtualParticipations.map((vp) => vp.globalUserId);
   if (globalIds.length > 0) {
     const globalUsers = await prisma.globalUser.findMany({
       where: { id: { in: globalIds } },
       select: { id: true, username: true, displayName: true },
     });
     for (const gu of globalUsers) {
+      const currentVp = latestVirtualParticipations.find(
+        (vp) => vp.globalUserId === gu.id,
+      );
+      if (!currentVp) continue;
+      const vpStartTimeMs = currentVp.startedAt.getTime();
+      const vpEndTimeMs = currentVp.endedAt.getTime();
       const globalSubs = await prisma.submission.findMany({
-        where: { contestId: cid, globalUserId: gu.id },
+        where: {
+          contestId: cid,
+          globalUserId: gu.id,
+          virtualParticipationId: currentVp.id,
+        },
         select: {
           id: true,
           displayId: true,
@@ -607,6 +683,9 @@ export default async function Rank({ params, searchParams }: Props) {
       let penalty = 0;
       const problems = await Promise.all(
         contestProblems.map(async (cp) => {
+          const startTimeMs = vpStartTimeMs;
+          const end = vpEndTimeMs;
+          const shouldShowFrozenState = false;
           const rawSubmissions = globalSubs.filter(
             (s) =>
               s.problemId === cp.problemId &&
@@ -617,9 +696,7 @@ export default async function Rank({ params, searchParams }: Props) {
           const contestSubmissions = rawSubmissions.filter(
             (s) => new Date(s.submittedAt).getTime() <= end,
           );
-          const afterContestSubmissions = rawSubmissions.filter(
-            (s) => new Date(s.submittedAt).getTime() > end,
-          );
+          const afterContestSubmissions: typeof rawSubmissions = [];
           const submissions = contestSubmissions.sort(
             (a, b) =>
               new Date(a.submittedAt).getTime() -
@@ -628,6 +705,7 @@ export default async function Rank({ params, searchParams }: Props) {
           let isAccepted = false;
           let acceptedTimeMs = 0;
           let acceptedSubId = 0;
+          let acceptedSubmissionId = "";
           let waCountBeforeAcc = 0;
           for (const sub of submissions) {
             if (sub.verdict === Verdict.ACCEPTED) {
@@ -635,6 +713,7 @@ export default async function Rank({ params, searchParams }: Props) {
               acceptedTimeMs =
                 new Date(sub.submittedAt).getTime() - startTimeMs;
               acceptedSubId = sub.displayId;
+              acceptedSubmissionId = sub.id;
               break;
             }
             waCountBeforeAcc++;
@@ -686,16 +765,16 @@ export default async function Rank({ params, searchParams }: Props) {
           const showAsAccepted = shouldShowFrozenState
             ? isAcceptedBeforeFreeze
             : isAccepted;
-          const globalFirstBloodId = firstBloodMap.get(cp.problemId);
-          if (showAsAccepted && globalFirstBloodId) {
-            const myDisplayACId = shouldShowFrozenState
+          const globalFirstBlood = firstBloodMap.get(cp.problemId);
+          if (showAsAccepted && globalFirstBlood) {
+            const myAcceptedSubmissionId = shouldShowFrozenState
               ? submissions.find(
                   (s) =>
                     s.verdict === Verdict.ACCEPTED &&
                     new Date(s.submittedAt).getTime() < freezeTimeMs,
-                )?.displayId
-              : acceptedSubId;
-            if (myDisplayACId === globalFirstBloodId) {
+                )?.id
+              : acceptedSubmissionId;
+            if (myAcceptedSubmissionId === globalFirstBlood.submissionId) {
               firstBlood = true;
             }
           }
@@ -764,12 +843,13 @@ export default async function Rank({ params, searchParams }: Props) {
       );
       globalRanks.push({
         rank: "*",
-        id: gu.id,
+        id: currentVp.id,
         username: gu.username,
         displayName: gu.displayName,
         members: null,
         school: null,
-        category: "GLOBAL",
+        category: "VP",
+        isVirtual: true,
         solved,
         penalty: Math.floor(penalty),
         problems,
@@ -778,6 +858,92 @@ export default async function Rank({ params, searchParams }: Props) {
     // 排序：按解决问题数量降序
     globalRanks.sort((a, b) => b.solved - a.solved);
   }
+
+  if (shouldIncludeVpInRank && globalRanks.length > 0) {
+    const combinedRankings = [...allTeamRankings, ...globalRanks];
+    combinedRankings.sort((a, b) => {
+      if (a.solved !== b.solved) return b.solved - a.solved;
+      return a.penalty - b.penalty;
+    });
+
+    for (let i = 0; i < combinedRankings.length; i++) {
+      if (isStarTeam(combinedRankings[i].category)) {
+        combinedRankings[i].rank = "*";
+      } else if (
+        i > 0 &&
+        combinedRankings[i].solved === combinedRankings[i - 1].solved &&
+        combinedRankings[i].penalty === combinedRankings[i - 1].penalty
+      ) {
+        combinedRankings[i].rank = combinedRankings[i - 1].rank;
+      } else {
+        combinedRankings[i].rank = i + 1;
+      }
+    }
+
+    displayTeamRankings = combinedRankings.filter((team) => {
+      if (
+        teamName &&
+        !`${team.displayName || ""} ${team.username}`
+          .toLowerCase()
+          .includes(teamName.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (
+        school &&
+        !`${team.school || ""}`.toLowerCase().includes(school.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (category) {
+        if (category === "0") {
+          return team.category === "0" || team.category === "2";
+        }
+        return team.category === category;
+      }
+
+      return true;
+    });
+  }
+
+  const myVpRank =
+    !payload?.userId && glabelPayload?.userId && !glabelPayload.isGlobalAdmin
+      ? globalRanks.find((team) => {
+          const vp = latestVirtualParticipations.find(
+            (participation) => participation.id === team.id,
+          );
+          return vp?.globalUserId === String(glabelPayload.userId);
+        })
+      : null;
+  const myRank = myTeamRank || myVpRank;
+  const visibleRankTables = [
+    ...(myRank ? [myRank] : []),
+    ...displayTeamRankings,
+    ...(!shouldIncludeVpInRank ? globalRanks : []),
+  ];
+  const maxTeamTextWidth = visibleRankTables.reduce((maxWidth, team) => {
+    const prefixWidth =
+      (team.category === "1" || team.category === "2" ? 2 : 0) +
+      (team.isVirtual ? 4 : 0);
+
+    return Math.max(
+      maxWidth,
+      prefixWidth + getTextDisplayWidth(team.displayName || team.username),
+      getTextDisplayWidth(team.members || team.username),
+      getTextDisplayWidth(team.school),
+    );
+  }, 0);
+  const desiredTeamColumnWidthPercent = Math.max(
+    12,
+    Math.min(24, maxTeamTextWidth * 0.65 + 6),
+  );
+  const maxTeamColumnWidthPercent = contestProblems.length >= 12 ? 16 : 22;
+  const teamColumnWidthPercent = Math.min(
+    desiredTeamColumnWidthPercent,
+    maxTeamColumnWidthPercent,
+  );
 
   return (
     <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-6">
@@ -792,12 +958,17 @@ export default async function Rank({ params, searchParams }: Props) {
             </span>
           )}
         </h2>
-        <RankSearch
-          schools={allSchools.map((s) => s.school).filter(Boolean) as string[]}
-          categories={
-            allCategories.map((c) => c.category).filter(Boolean) as string[]
-          }
-        />
+        <div className="flex items-center gap-3 print:hidden">
+          <IncludeVpToggle defaultChecked={shouldIncludeVpInRank} />
+          <RankSearch
+            schools={
+              allSchools.map((s) => s.school).filter(Boolean) as string[]
+            }
+            categories={
+              allCategories.map((c) => c.category).filter(Boolean) as string[]
+            }
+          />
+        </div>
       </div>
 
       {shouldShowFrozenState && (
@@ -815,15 +986,16 @@ export default async function Rank({ params, searchParams }: Props) {
         </div>
       ) : (
         <>
-          {myTeamRank && (
+          {myRank && (
             <div className="mb-4 print:hidden">
               <RankTable
                 contestId={contestId}
-                teams={[myTeamRank]}
+                teams={[myRank]}
                 isMyTeam={true}
-                isContestEnded={contestInfo.status === ContestStatus.ENDED}
+                isContestEnded={canOpenRankSubmissions}
                 contestProblems={contestProblems}
                 isFrozen={isFrozen}
+                teamColumnWidthPercent={teamColumnWidthPercent}
               />
             </div>
           )}
@@ -832,25 +1004,26 @@ export default async function Rank({ params, searchParams }: Props) {
             contestId={contestId}
             teams={displayTeamRankings}
             isMyTeam={false}
-            isContestEnded={contestInfo.status === ContestStatus.ENDED}
+            isContestEnded={canOpenRankSubmissions}
             contestProblems={contestProblems}
             isFrozen={isFrozen}
+            teamColumnWidthPercent={teamColumnWidthPercent}
           />
-          {globalRanks.length > 0 && (
+          {!shouldIncludeVpInRank && globalRanks.length > 0 && (
             <div className="mt-2">
               <RankTable
                 contestId={contestId}
                 teams={globalRanks}
                 isMyTeam={false}
-                isContestEnded={contestInfo.status === ContestStatus.ENDED}
+                isContestEnded={canOpenRankSubmissions}
                 contestProblems={contestProblems}
                 isFrozen={isFrozen}
+                teamColumnWidthPercent={teamColumnWidthPercent}
               />
             </div>
           )}
         </>
       )}
-
     </div>
   );
 }

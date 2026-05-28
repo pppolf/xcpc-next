@@ -394,6 +394,7 @@ export const ModelName = {
   Problem: 'Problem',
   ContestProblem: 'ContestProblem',
   Submission: 'Submission',
+  VirtualParticipation: 'VirtualParticipation',
   Clarification: 'Clarification',
   Reply: 'Reply',
   TrainingNode: 'TrainingNode'
@@ -412,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "systemSetting" | "globalUser" | "apiKey" | "user" | "contest" | "balloon" | "printJob" | "problem" | "contestProblem" | "submission" | "clarification" | "reply" | "trainingNode"
+    modelProps: "systemSetting" | "globalUser" | "apiKey" | "user" | "contest" | "balloon" | "printJob" | "problem" | "contestProblem" | "submission" | "virtualParticipation" | "clarification" | "reply" | "trainingNode"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1156,6 +1157,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    VirtualParticipation: {
+      payload: Prisma.$VirtualParticipationPayload<ExtArgs>
+      fields: Prisma.VirtualParticipationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VirtualParticipationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VirtualParticipationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>
+        }
+        findFirst: {
+          args: Prisma.VirtualParticipationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VirtualParticipationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>
+        }
+        findMany: {
+          args: Prisma.VirtualParticipationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>[]
+        }
+        create: {
+          args: Prisma.VirtualParticipationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>
+        }
+        createMany: {
+          args: Prisma.VirtualParticipationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VirtualParticipationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>[]
+        }
+        delete: {
+          args: Prisma.VirtualParticipationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>
+        }
+        update: {
+          args: Prisma.VirtualParticipationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>
+        }
+        deleteMany: {
+          args: Prisma.VirtualParticipationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VirtualParticipationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VirtualParticipationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>[]
+        }
+        upsert: {
+          args: Prisma.VirtualParticipationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VirtualParticipationPayload>
+        }
+        aggregate: {
+          args: Prisma.VirtualParticipationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVirtualParticipation>
+        }
+        groupBy: {
+          args: Prisma.VirtualParticipationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VirtualParticipationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VirtualParticipationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VirtualParticipationCountAggregateOutputType> | number
+        }
+      }
+    }
     Clarification: {
       payload: Prisma.$ClarificationPayload<ExtArgs>
       fields: Prisma.ClarificationFieldRefs
@@ -1563,6 +1638,7 @@ export const SubmissionScalarFieldEnum = {
   displayId: 'displayId',
   userId: 'userId',
   globalUserId: 'globalUserId',
+  virtualParticipationId: 'virtualParticipationId',
   contestId: 'contestId',
   problemId: 'problemId',
   language: 'language',
@@ -1578,6 +1654,22 @@ export const SubmissionScalarFieldEnum = {
 } as const
 
 export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof typeof SubmissionScalarFieldEnum]
+
+
+export const VirtualParticipationScalarFieldEnum = {
+  id: 'id',
+  contestId: 'contestId',
+  globalUserId: 'globalUserId',
+  attemptNo: 'attemptNo',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  finishedAt: 'finishedAt',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VirtualParticipationScalarFieldEnum = (typeof VirtualParticipationScalarFieldEnum)[keyof typeof VirtualParticipationScalarFieldEnum]
 
 
 export const ClarificationScalarFieldEnum = {
@@ -1942,6 +2034,7 @@ export type GlobalOmitConfig = {
   problem?: Prisma.ProblemOmit
   contestProblem?: Prisma.ContestProblemOmit
   submission?: Prisma.SubmissionOmit
+  virtualParticipation?: Prisma.VirtualParticipationOmit
   clarification?: Prisma.ClarificationOmit
   reply?: Prisma.ReplyOmit
   trainingNode?: Prisma.TrainingNodeOmit

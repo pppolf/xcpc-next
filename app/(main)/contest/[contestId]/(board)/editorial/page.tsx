@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import path from "node:path";
+import { getRunningVirtualParticipation } from "@/lib/virtual-participation";
 
 interface Props {
   params: Promise<{
@@ -71,6 +72,12 @@ export default async function EditorialPage({ params }: Props) {
   const superUser = (await getCurrentSuper()) as UserJwtPayload | null;
   const isGlobalAdmin = !!superUser?.isGlobalAdmin;
   const isContestUser = user?.contestId === contestId;
+  const runningVp =
+    superUser?.userId && !isGlobalAdmin
+      ? await getRunningVirtualParticipation(contestId, String(superUser.userId))
+      : null;
+
+  if (runningVp) notFound();
 
   if (contest.type === ContestType.PRIVATE && !isGlobalAdmin && !isContestUser) {
     redirect(`/contest/${contestId}`);

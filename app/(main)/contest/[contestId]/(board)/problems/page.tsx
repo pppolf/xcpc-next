@@ -5,6 +5,10 @@ import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
 import { getDictionary } from "@/lib/get-dictionary";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import {
+  getLatestVirtualParticipation,
+  getRunningVirtualParticipation,
+} from "@/lib/virtual-participation";
 
 interface Props {
   params: Promise<{
@@ -55,6 +59,11 @@ export default async function Problems({ params }: Props) {
   if (
     contestInfo.type === "PRIVATE" &&
     !(globalUser as unknown as UserJwtPayload)?.isGlobalAdmin &&
+    !(
+      globalUser &&
+      (contestInfo.status === ContestStatus.ENDED ||
+        new Date() >= contestInfo.endTime)
+    ) &&
     (!userPayload || userPayload.contestId !== contestId)
   ) {
     redirect(`/contest/${contestId}`);
@@ -72,6 +81,17 @@ export default async function Problems({ params }: Props) {
     },
   });
 
+  const userId = userPayload?.userId;
+  const globalUserId = (globalUser as unknown as UserJwtPayload)?.userId;
+  const runningVp =
+    !userId && globalUserId
+      ? await getRunningVirtualParticipation(contestId, String(globalUserId))
+      : null;
+  const latestVp =
+    !userId && globalUserId
+      ? await getLatestVirtualParticipation(contestId, String(globalUserId))
+      : null;
+
   // 封榜统计逻辑
   const config = contestInfo?.config as { frozenDuration?: number } | null;
   const frozenDuration = config?.frozenDuration ?? 0;
@@ -88,9 +108,24 @@ export default async function Problems({ params }: Props) {
     };
   }
 
+  if (runningVp) {
+    const now = new Date();
+    dateFilter = {
+      submittedAt: {
+        lte: new Date(
+          Math.min(
+            contestInfo.startTime.getTime() +
+              (now.getTime() - runningVp.startedAt.getTime()),
+            contestInfo.endTime.getTime(),
+          ),
+        ),
+      },
+    };
+  }
+
   const totalStats = await prisma.submission.groupBy({
     by: ["problemId"],
-    where: { contestId: contestId },
+    where: { contestId: contestId, virtualParticipationId: null, ...dateFilter },
     _count: { _all: true },
   });
 
@@ -99,6 +134,7 @@ export default async function Problems({ params }: Props) {
     where: {
       contestId: contestId,
       verdict: Verdict.ACCEPTED,
+      virtualParticipationId: null,
       ...dateFilter,
     },
     _count: { _all: true },
@@ -106,17 +142,61 @@ export default async function Problems({ params }: Props) {
   const totalMap = new Map(totalStats.map((s) => [s.problemId, s._count._all]));
   const acMap = new Map(acStats.map((s) => [s.problemId, s._count._all]));
 
-  const userId = userPayload?.userId;
-  const globalUserId = (globalUser as unknown as UserJwtPayload)?.userId;
+  if (latestVp) {
+    const [vpTotalStats, vpAcStats] = await Promise.all([
+      prisma.submission.groupBy({
+        by: ["problemId"],
+        where: {
+          contestId,
+          virtualParticipationId: latestVp.id,
+          submittedAt: {
+            gte: latestVp.startedAt,
+            lte: latestVp.endedAt,
+          },
+        },
+        _count: { _all: true },
+      }),
+      prisma.submission.groupBy({
+        by: ["problemId"],
+        where: {
+          contestId,
+          virtualParticipationId: latestVp.id,
+          verdict: Verdict.ACCEPTED,
+          submittedAt: {
+            gte: latestVp.startedAt,
+            lte: latestVp.endedAt,
+          },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+
+    for (const stat of vpTotalStats) {
+      totalMap.set(
+        stat.problemId,
+        (totalMap.get(stat.problemId) || 0) + stat._count._all,
+      );
+    }
+
+    for (const stat of vpAcStats) {
+      acMap.set(
+        stat.problemId,
+        (acMap.get(stat.problemId) || 0) + stat._count._all,
+      );
+    }
+  }
 
   const userStats =
     userId || globalUserId
       ? await prisma.submission.findMany({
           where: {
-            userId,
             contestId: contestId,
             verdict: Verdict.ACCEPTED,
-            globalUserId,
+            ...(userId
+              ? { userId }
+              : latestVp
+                ? { virtualParticipationId: latestVp.id }
+                : { id: "__never__" }),
           },
           select: {
             problemId: true,

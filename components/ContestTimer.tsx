@@ -7,12 +7,14 @@ interface Props {
   startTime: string | Date;
   endTime: string | Date;
   frozenDuration?: number;
+  endedLabel?: string;
 }
 
 export default function ContestTimer({
   startTime,
   endTime,
   frozenDuration,
+  endedLabel = "Contest Ended",
 }: Props) {
   const start = new Date(startTime).getTime();
   const end = new Date(endTime).getTime();
@@ -67,7 +69,7 @@ export default function ContestTimer({
   if (now > end) {
     return (
       <div className="flex items-center gap-2 text-gray-500 font-bold bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
-        <span>Contest Ended</span>
+        <span>{endedLabel}</span>
       </div>
     );
   }

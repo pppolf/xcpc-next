@@ -18,6 +18,10 @@ import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
 import { getDictionary } from "@/lib/get-dictionary";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import {
+  getLatestVirtualParticipation,
+  getRunningVirtualParticipation,
+} from "@/lib/virtual-participation";
 
 type Problem = {
   id: number;
@@ -100,11 +104,25 @@ export default async function ProblemDetail({ params }: Props) {
   const user = await getCurrentUser();
   const globalUser = await getCurrentSuper();
   const userPayload = user as UserJwtPayload | null;
+  const globalUserId = (globalUser as unknown as UserJwtPayload)?.userId;
+  const runningVp =
+    !userPayload?.userId && globalUserId
+      ? await getRunningVirtualParticipation(cid, String(globalUserId))
+      : null;
+  const latestVp =
+    !userPayload?.userId && globalUserId
+      ? await getLatestVirtualParticipation(cid, String(globalUserId))
+      : null;
 
   // 如果是私有比赛，且未登录比赛账号且不是超管，则重定向
   if (
     contestProblem.contest.type === "PRIVATE" &&
     !(globalUser as unknown as UserJwtPayload)?.isGlobalAdmin &&
+    !(
+      globalUser &&
+      (contestProblem.contest.status === ContestStatus.ENDED ||
+        new Date() >= contestProblem.contest.endTime)
+    ) &&
     (!userPayload || userPayload.contestId !== cid)
   ) {
     redirect(`/contest/${contestId}`);
@@ -133,18 +151,71 @@ export default async function ProblemDetail({ params }: Props) {
     };
   }
 
-  const totalStats = await prisma.submission.count({
-    where: { contestId: cid, problemId: problem.id },
-  });
+  if (runningVp) {
+    const now = new Date();
+    dateFilter = {
+      submittedAt: {
+        lte: new Date(
+          Math.min(
+            contestProblem.contest.startTime.getTime() +
+              (now.getTime() - runningVp.startedAt.getTime()),
+            contestProblem.contest.endTime.getTime(),
+          ),
+        ),
+      },
+    };
+  }
 
-  const acStats = await prisma.submission.count({
-    where: {
-      contestId: cid,
-      problemId: problem.id,
-      verdict: Verdict.ACCEPTED,
-      ...dateFilter,
-    },
-  });
+  const [officialTotalStats, officialAcStats, vpTotalStats, vpAcStats] =
+    await Promise.all([
+      prisma.submission.count({
+        where: {
+          contestId: cid,
+          problemId: problem.id,
+          virtualParticipationId: null,
+          ...dateFilter,
+        },
+      }),
+      prisma.submission.count({
+        where: {
+          contestId: cid,
+          problemId: problem.id,
+          verdict: Verdict.ACCEPTED,
+          virtualParticipationId: null,
+          ...dateFilter,
+        },
+      }),
+      latestVp
+        ? prisma.submission.count({
+            where: {
+              contestId: cid,
+              problemId: problem.id,
+              virtualParticipationId: latestVp.id,
+              submittedAt: {
+                gte: latestVp.startedAt,
+                lte: latestVp.endedAt,
+              },
+            },
+          })
+        : Promise.resolve(0),
+      latestVp
+        ? prisma.submission.count({
+            where: {
+              contestId: cid,
+              problemId: problem.id,
+              virtualParticipationId: latestVp.id,
+              verdict: Verdict.ACCEPTED,
+              submittedAt: {
+                gte: latestVp.startedAt,
+                lte: latestVp.endedAt,
+              },
+            },
+          })
+        : Promise.resolve(0),
+    ]);
+
+  const totalStats = officialTotalStats + vpTotalStats;
+  const acStats = officialAcStats + vpAcStats;
   const info = {
     timeLimit: problem?.defaultTimeLimit || 0,
     memoryLimit: problem?.defaultMemoryLimit || 0,

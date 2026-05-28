@@ -87,6 +87,21 @@ export const en = {
     language: "Language",
     code: "Source Code",
   },
+  virtualParticipation: {
+    title: "Virtual Participation",
+    subtitle: "Replay this contest on your own timeline.",
+    description:
+      "You can start multiple VP attempts. The rank list only uses your latest attempt; previous VP submissions remain as upsolving records.",
+    latestAttempt: "Latest attempt",
+    attempt: "Attempt #{attempt}",
+    start: "Start",
+    end: "End",
+    continueButton: "Continue VP",
+    startButton: "Start VP",
+    restartButton: "Restart VP",
+    statusRunning: "Running",
+    statusFinished: "Finished",
+  },
 };
 
 export const zh = {
@@ -177,6 +192,21 @@ export const zh = {
     problem: "返回题目",
     language: "语言",
     code: "源代码",
+  },
+  virtualParticipation: {
+    title: "虚拟参赛",
+    subtitle: "比赛结束后，按自己的时间轴重新参赛。",
+    description:
+      "可以多次开始 VP。排行榜只使用最近一次 VP 成绩，之前的 VP 提交会作为补题记录保留。",
+    latestAttempt: "最近一次",
+    attempt: "第 {attempt} 次",
+    start: "开始",
+    end: "结束",
+    continueButton: "继续 VP",
+    startButton: "开始 VP",
+    restartButton: "重新开始 VP",
+    statusRunning: "进行中",
+    statusFinished: "已结束",
   },
 };
 

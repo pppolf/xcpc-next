@@ -8,16 +8,25 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import { loginContestUser } from "./actions";
+import { loginContestUser, startContestVirtualParticipation } from "./actions";
 import {
+  ArrowPathIcon,
+  ArrowRightIcon,
   CalendarDaysIcon,
+  ClockIcon,
   GlobeAltIcon,
   LockClosedIcon,
+  PlayIcon,
   TrophyIcon,
 } from "@heroicons/react/24/outline";
 import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 import { getDictionary } from "@/lib/get-dictionary";
 import { Metadata } from "next";
+import Link from "next/link";
+import {
+  getLatestVirtualParticipation,
+  isVpEnabled,
+} from "@/lib/virtual-participation";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const contestId = parseInt((await params).contestId);
@@ -101,7 +110,35 @@ export default async function ContestLogin({
     }
   }
 
+  const now = new Date();
+  const contestEnded =
+    contest.status === ContestStatus.ENDED || now >= contest.endTime;
+  const canUseVp =
+    contestEnded && globalSession?.userId && isVpEnabled(contest.config);
+  const latestVp = canUseVp
+    ? await getLatestVirtualParticipation(id, String(globalSession.userId))
+    : null;
+  const latestVpRunning =
+    latestVp?.status === "RUNNING" &&
+    latestVp.startedAt <= now &&
+    latestVp.endedAt >= now;
+
   const dict = await getDictionary();
+  const latestVpAttemptText = latestVp
+    ? dict.virtualParticipation.attempt.replace(
+        "{attempt}",
+        String(latestVp.attemptNo),
+      )
+    : "";
+  const formatVpTime = (date: Date) =>
+    date.toLocaleString("zh-CN", {
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   return (
     <div className="flex flex-col max-w-7xl mx-auto md:flex-row gap-12 mt-10">
@@ -471,6 +508,107 @@ export default async function ContestLogin({
                 </div>
               )}
             </div>
+
+            {canUseVp && (
+              <section className="mt-6 overflow-hidden rounded-lg border border-blue-200 bg-linear-to-br from-blue-50 via-white to-indigo-50 shadow-sm">
+                <div className="border-b border-blue-100 px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
+                      <ClockIcon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-bold text-blue-950">
+                          {dict.virtualParticipation.title}
+                        </h3>
+                        {latestVp && (
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                              latestVpRunning
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-gray-200 bg-gray-50 text-gray-600"
+                            }`}
+                          >
+                            {latestVpRunning
+                              ? dict.virtualParticipation.statusRunning
+                              : dict.virtualParticipation.statusFinished}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs font-medium text-blue-800">
+                        {dict.virtualParticipation.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-blue-700">
+                    {dict.virtualParticipation.description}
+                  </p>
+                </div>
+
+                {latestVp && (
+                  <div className="grid gap-3 border-b border-blue-100 bg-white/75 px-5 py-4 text-xs text-gray-700">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold text-gray-500">
+                        {dict.virtualParticipation.latestAttempt}
+                      </span>
+                      <span className="font-mono font-semibold text-gray-900">
+                        {latestVpAttemptText}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div className="rounded-md border border-blue-100 bg-blue-50/50 px-3 py-2">
+                        <p className="font-semibold text-blue-700">
+                          {dict.virtualParticipation.start}
+                        </p>
+                        <p className="mt-1 font-mono text-gray-900">
+                          {formatVpTime(latestVp.startedAt)}
+                        </p>
+                      </div>
+                      <div className="rounded-md border border-blue-100 bg-blue-50/50 px-3 py-2">
+                        <p className="font-semibold text-blue-700">
+                          {dict.virtualParticipation.end}
+                        </p>
+                        <p className="mt-1 font-mono text-gray-900">
+                          {formatVpTime(latestVp.endedAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3 px-5 py-4">
+                  {latestVpRunning && (
+                    <Link
+                      href={`/contest/${contest.id}/problems`}
+                      className="inline-flex items-center gap-2 rounded-sm bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-700"
+                    >
+                      <ArrowRightIcon className="h-4 w-4" />
+                      {dict.virtualParticipation.continueButton}
+                    </Link>
+                  )}
+                  <form
+                    action={async () => {
+                      "use server";
+                      await startContestVirtualParticipation(contest.id);
+                    }}
+                  >
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 rounded-sm bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-800"
+                    >
+                      {latestVp ? (
+                        <ArrowPathIcon className="h-4 w-4" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4" />
+                      )}
+                      {latestVp
+                        ? dict.virtualParticipation.restartButton
+                        : dict.virtualParticipation.startButton}
+                    </button>
+                  </form>
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>

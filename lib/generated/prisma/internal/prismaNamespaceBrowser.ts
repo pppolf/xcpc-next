@@ -61,6 +61,7 @@ export const ModelName = {
   Problem: 'Problem',
   ContestProblem: 'ContestProblem',
   Submission: 'Submission',
+  VirtualParticipation: 'VirtualParticipation',
   Clarification: 'Clarification',
   Reply: 'Reply',
   TrainingNode: 'TrainingNode'
@@ -228,6 +229,7 @@ export const SubmissionScalarFieldEnum = {
   displayId: 'displayId',
   userId: 'userId',
   globalUserId: 'globalUserId',
+  virtualParticipationId: 'virtualParticipationId',
   contestId: 'contestId',
   problemId: 'problemId',
   language: 'language',
@@ -243,6 +245,22 @@ export const SubmissionScalarFieldEnum = {
 } as const
 
 export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof typeof SubmissionScalarFieldEnum]
+
+
+export const VirtualParticipationScalarFieldEnum = {
+  id: 'id',
+  contestId: 'contestId',
+  globalUserId: 'globalUserId',
+  attemptNo: 'attemptNo',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  finishedAt: 'finishedAt',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VirtualParticipationScalarFieldEnum = (typeof VirtualParticipationScalarFieldEnum)[keyof typeof VirtualParticipationScalarFieldEnum]
 
 
 export const ClarificationScalarFieldEnum = {

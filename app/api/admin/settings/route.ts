@@ -2,6 +2,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSuper, UserJwtPayload } from "@/lib/auth";
+import {
+  getManagedEnvSettings,
+  updateManagedEnvSettings,
+} from "@/lib/env-settings";
 
 export async function GET() {
   const admin = await getCurrentSuper();
@@ -20,7 +24,12 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json(setting);
+  const envSettings = await getManagedEnvSettings();
+
+  return NextResponse.json({
+    ...setting,
+    envSettings,
+  });
 }
 
 export async function PUT(req: NextRequest) {
@@ -31,20 +40,31 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { allowExternalLogin } = body;
+    const { allowExternalLogin, envSettings } = body;
 
     const setting = await prisma.systemSetting.upsert({
       where: { id: "default" },
       update: {
-        allowExternalLogin,
+        ...(typeof allowExternalLogin === "boolean"
+          ? { allowExternalLogin }
+          : {}),
       },
       create: {
         id: "default",
-        allowExternalLogin,
+        allowExternalLogin:
+          typeof allowExternalLogin === "boolean" ? allowExternalLogin : true,
       },
     });
 
-    return NextResponse.json(setting);
+    const nextEnvSettings =
+      envSettings && typeof envSettings === "object"
+        ? await updateManagedEnvSettings(envSettings)
+        : await getManagedEnvSettings();
+
+    return NextResponse.json({
+      ...setting,
+      envSettings: nextEnvSettings,
+    });
   } catch (e) {
     console.error(e);
     return new NextResponse("Error updating settings", { status: 500 });

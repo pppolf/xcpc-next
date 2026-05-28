@@ -1,6 +1,7 @@
 import { getCurrentSuper, getCurrentUser, UserJwtPayload } from "@/lib/auth";
 import { ContestStatus, ContestType } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getRunningVirtualParticipation } from "@/lib/virtual-participation";
 import fs from "node:fs/promises";
 import { NextResponse } from "next/server";
 import path from "node:path";
@@ -50,6 +51,16 @@ export async function GET(
   const superUser = (await getCurrentSuper()) as UserJwtPayload | null;
   const isGlobalAdmin = !!superUser?.isGlobalAdmin;
   const isContestUser = user?.contestId === id;
+  const runningVp =
+    superUser?.userId && !isGlobalAdmin
+      ? await getRunningVirtualParticipation(id, String(superUser.userId))
+      : null;
+
+  if (runningVp) {
+    return new NextResponse("Editorial is not available during VP", {
+      status: 403,
+    });
+  }
 
   if (contest.type === ContestType.PRIVATE && !isGlobalAdmin && !isContestUser) {
     return new NextResponse("Forbidden", { status: 403 });

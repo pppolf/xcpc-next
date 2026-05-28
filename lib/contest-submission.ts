@@ -2,6 +2,10 @@ import { ContestRole, Verdict } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { judgeQueue } from "@/lib/queue";
 import { redis } from "@/lib/redis";
+import {
+  getRunningVirtualParticipation,
+  isVpEnabled,
+} from "@/lib/virtual-participation";
 
 type ContestFreezeConfig = {
   frozenDuration?: number;
@@ -119,8 +123,30 @@ export async function createContestSubmission({
         "Submissions are disabled while the ended contest is still frozen.",
       );
     }
-  } else if (!isEnded) {
-    throw new Error("Global users can submit only after the contest ends.");
+  }
+
+  let virtualParticipationId: string | null = null;
+
+  if (actor.type === "global") {
+    if (!isEnded) {
+      throw new Error("Virtual participation is available after the contest ends.");
+    }
+
+    if (!isVpEnabled(contest.config)) {
+      throw new Error("Virtual participation is not enabled for this contest.");
+    }
+
+    const vp = await getRunningVirtualParticipation(
+      contestId,
+      actor.globalUserId,
+      now,
+    );
+
+    if (!vp) {
+      throw new Error("Start virtual participation before submitting.");
+    }
+
+    virtualParticipationId = vp.id;
   }
 
   const nextId = await getNextDisplayId(contestId);
@@ -134,6 +160,7 @@ export async function createContestSubmission({
       problemId: contestProblem.problemId,
       userId: actor.type === "contest" ? actor.userId : null,
       globalUserId: actor.type === "global" ? actor.globalUserId : null,
+      virtualParticipationId,
       verdict: Verdict.PENDING,
       codeLength: code.length,
     },

@@ -88,6 +88,7 @@ model GlobalUser {
   updatedAt   DateTime     @updatedAt
   submissions Submission[]
   apiKeys     ApiKey[]
+  virtualParticipations VirtualParticipation[]
 
   @@map("global_users")
 }
@@ -162,6 +163,7 @@ model Contest {
   problems       ContestProblem[]
   submissions    Submission[]
   clarifications Clarification[]
+  virtualParticipations VirtualParticipation[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -290,6 +292,9 @@ model Submission {
   globalUserId String?
   globalUser   GlobalUser? @relation(fields: [globalUserId], references: [id])
 
+  virtualParticipationId String?
+  virtualParticipation   VirtualParticipation? @relation(fields: [virtualParticipationId], references: [id])
+
   contestId Int?
   contest   Contest? @relation(fields: [contestId], references: [id])
 
@@ -312,8 +317,38 @@ model Submission {
   balloon     Balloon?
 
   @@index([contestId, userId])
+  @@index([contestId, globalUserId])
   @@index([contestId, problemId])
+  @@index([virtualParticipationId])
   @@map("submissions")
+}
+
+model VirtualParticipation {
+  id String @id @default(uuid())
+
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  globalUserId String
+  globalUser   GlobalUser @relation(fields: [globalUserId], references: [id], onDelete: Cascade)
+
+  attemptNo Int
+
+  startedAt  DateTime @default(now())
+  endedAt    DateTime
+  finishedAt DateTime?
+  status     String   @default("RUNNING")
+
+  submissions Submission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([contestId, globalUserId, attemptNo])
+  @@index([contestId, globalUserId, startedAt])
+  @@index([contestId])
+  @@index([globalUserId])
+  @@map("virtual_participations")
 }
 
 // ================= 答疑模块 =================

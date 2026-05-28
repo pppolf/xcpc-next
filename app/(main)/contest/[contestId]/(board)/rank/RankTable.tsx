@@ -11,6 +11,7 @@ interface Team {
   members: string | null;
   school: string | null;
   category: string | null;
+  isVirtual?: boolean;
   solved: number;
   penalty: number;
   problems: Array<{
@@ -41,6 +42,7 @@ interface RankTableProps {
   isContestEnded: boolean;
   contestProblems: ContestProblem[];
   isFrozen: boolean;
+  teamColumnWidthPercent: number;
 }
 
 export default function RankTable({
@@ -50,7 +52,21 @@ export default function RankTable({
   isContestEnded,
   contestProblems,
   isFrozen,
+  teamColumnWidthPercent,
 }: RankTableProps) {
+  const rankColumnWidthPercent = 5;
+  const solvedColumnWidthPercent = 6;
+  const penaltyColumnWidthPercent = 7;
+  const problemColumnWidthPercent =
+    contestProblems.length > 0
+      ? (100 -
+          rankColumnWidthPercent -
+          teamColumnWidthPercent -
+          solvedColumnWidthPercent -
+          penaltyColumnWidthPercent) /
+        contestProblems.length
+      : 0;
+
   // 获取单元格背景色
   const getCellColor = (prob: Team["problems"][0]) => {
     if (!prob) return "";
@@ -87,8 +103,20 @@ export default function RankTable({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-center text-xs border-collapse">
+    <div className="overflow-hidden">
+      <table className="w-full table-fixed border-collapse text-center text-xs">
+        <colgroup>
+          <col style={{ width: `${rankColumnWidthPercent}%` }} />
+          <col style={{ width: `${teamColumnWidthPercent}%` }} />
+          <col style={{ width: `${solvedColumnWidthPercent}%` }} />
+          <col style={{ width: `${penaltyColumnWidthPercent}%` }} />
+          {contestProblems.map((cp) => (
+            <col
+              key={cp.problemId}
+              style={{ width: `${problemColumnWidthPercent}%` }}
+            />
+          ))}
+        </colgroup>
         <thead>
           <tr
             className={`h-15 text-base font-serif font-bold border-b-2 border-gray-400 ${
@@ -97,20 +125,20 @@ export default function RankTable({
                 : "bg-white text-gray-700"
             }`}
           >
-            <th className="w-12 min-w-12">Rank</th>
-            <th className="w-34 min-w-34">Team</th>
-            <th className="w-12 min-w-12">Solved</th>
-            <th className="w-16 min-w-16">Penalty</th>
+            <th className="overflow-hidden px-1">Rank</th>
+            <th className="overflow-hidden px-1">Team</th>
+            <th className="overflow-hidden px-1">Solved</th>
+            <th className="overflow-hidden px-1">Penalty</th>
             {contestProblems.map((cp, i) => (
-              <th key={cp.problemId} className="w-15 min-w-15 max-w-15">
-                <div className="flex items-center justify-center gap-0.5">
+              <th key={cp.problemId} className="overflow-hidden px-0.5">
+                <div className="flex min-w-0 items-center justify-center gap-0.5">
                   <Link href={`/contest/${contestId}/problems/${cp.displayId}`}>
                     {String.fromCharCode(65 + i)}
                   </Link>
                   <svg
                     viewBox="0 0 512 512"
-                    width="22"
-                    height="22"
+                    width="18"
+                    height="18"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
@@ -140,10 +168,10 @@ export default function RankTable({
               >
                 {typeof team.rank === "number" ? team.rank : `${team.rank}`}
               </td>
-              <td>
-                <div className="flex flex-col items-center max-h-full max-w-full">
+              <td className="overflow-hidden">
+                <div className="flex min-w-0 max-w-full flex-col items-center">
                   <div
-                    className="font-bold text-blue-900 truncate w-full max-w-50 px-2"
+                    className="block w-full min-w-0 truncate px-2 font-bold text-blue-900"
                     title={team.displayName || team.username || ""}
                   >
                     {team.category === "1"
@@ -151,16 +179,21 @@ export default function RankTable({
                       : team.category === "2"
                         ? "👧"
                         : ""}
+                    {team.isVirtual && (
+                      <span className="mr-1 rounded border border-blue-200 bg-blue-50 px-1 text-[10px] font-bold text-blue-700">
+                        VP
+                      </span>
+                    )}
                     {team.displayName || team.username}
                   </div>
                   <div
-                    className="text-gray-900 truncate w-full max-w-50 px-2 text-xs"
+                    className="block w-full min-w-0 truncate px-2 text-xs text-gray-900"
                     title={team.members || team.username || ""}
                   >
                     {team.members || team.username}
                   </div>
                   <div
-                    className="text-gray-900 truncate w-full max-w-50 px-2 text-xs"
+                    className="block w-full min-w-0 truncate px-2 text-xs text-gray-900"
                     title={team.school || ""}
                   >
                     {team.school}
@@ -182,7 +215,7 @@ export default function RankTable({
                 return (
                   <td
                     key={idx}
-                    className={`p-0.5 border border-white relative group ${
+                    className={`relative group overflow-hidden border border-white p-0.5 ${
                       isFrozenCell ? "bg-blue-700 text-white" : cellBg
                     }`}
                   >
@@ -214,13 +247,15 @@ export default function RankTable({
 
                     {/* 内容区域 */}
                     {prob && (
-                      <div className="flex flex-col justify-center h-full text-xs gap-1 font-bold">
+                      <div className="flex h-full min-w-0 max-w-full flex-col justify-center gap-1 whitespace-nowrap text-[clamp(8px,0.86vw,11px)] font-bold leading-tight tabular-nums">
                         {prob.accepted ? (
                           // 1. 已 AC
                           <>
-                            <span>{prob.time}</span>
+                            <span className="block truncate px-0.5">
+                              {prob.time}
+                            </span>
                             {prob.tries > 0 && (
-                              <span className="text-[12px] font-normal opacity-80">
+                              <span className="block truncate px-0.5 text-[11px] font-normal opacity-80">
                                 (-{prob.tries})
                               </span>
                             )}
@@ -232,7 +267,9 @@ export default function RankTable({
                               // Upsolved前有WA (- tries)
                               <div className="flex flex-col justify-center items-center">
                                 <span className="text-lg font-bold">+</span>
-                                <span>(-{prob.tries})</span>
+                                <span className="block max-w-full truncate px-0.5">
+                                  (-{prob.tries})
+                                </span>
                               </div>
                             ) : (
                               // Upsolved前有WA +
@@ -245,17 +282,21 @@ export default function RankTable({
                           <>
                             {prob.unfrozenTries > 0 ? (
                               // 封榜前有WA (? frozen / - unfrozen)
-                              <span>
+                              <span className="block truncate px-0.5">
                                 (? {prob.frozenTries} / -{prob.unfrozenTries})
                               </span>
                             ) : (
                               // 封榜前无WA (? frozen)
-                              <span>(? {prob.frozenTries})</span>
+                              <span className="block truncate px-0.5">
+                                (? {prob.frozenTries})
+                              </span>
                             )}
                           </>
                         ) : prob.tries > 0 ? (
                           // 3. 只有封榜前的 WA (红色)
-                          <span>(-{prob.tries})</span>
+                          <span className="block truncate px-0.5">
+                            (-{prob.tries})
+                          </span>
                         ) : null}
                       </div>
                     )}

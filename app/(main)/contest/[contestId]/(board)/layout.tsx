@@ -1,7 +1,9 @@
 import { Contest, ContestConfig } from "@/app/(main)/page";
 import ContestNoticeSniffer from "@/components/ContestNoticeSniffer";
 import ContestTimer from "@/components/ContestTimer";
+import { getCurrentSuper } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getLatestVirtualParticipation } from "@/lib/virtual-participation";
 
 interface Props {
   children: React.ReactNode;
@@ -21,6 +23,17 @@ export default async function ContestLayout({ children, params }: Props) {
   const frozenDuration = Number(
     (contest.config as ContestConfig)?.frozenDuration || 0,
   );
+  const globalUser = await getCurrentSuper();
+  const latestVp = globalUser?.userId
+    ? await getLatestVirtualParticipation(Number(contestId), String(globalUser.userId))
+    : null;
+  const now = new Date();
+  const isRunningVp =
+    latestVp?.status === "RUNNING" &&
+    latestVp.startedAt <= now &&
+    latestVp.endedAt >= now;
+  const timerStartTime = isRunningVp ? latestVp.startedAt : contest.startTime;
+  const timerEndTime = isRunningVp ? latestVp.endedAt : contest.endTime;
 
   return (
     <div className="w-full overflow-x-hidden">
@@ -46,25 +59,28 @@ export default async function ContestLayout({ children, params }: Props) {
                 <span>
                   Status:{" "}
                   <span className="font-bold text-red-600">
-                    {contest.status}
+                    {isRunningVp ? "VP Running" : contest.status}
                   </span>
                 </span>
               </div>
             </div>
 
             <div className="text-left md:text-right w-full md:w-auto">
-              <div className="text-xs text-gray-400 uppercase">Ends At</div>
+              <div className="text-xs text-gray-400 uppercase">
+                {isRunningVp ? `VP #${latestVp.attemptNo} Ends At` : "Ends At"}
+              </div>
               <div className="text-sm md:text-base text-gray-800 font-mono wrap-break-word">
-                {contest.endTime.toLocaleString()}
+                {timerEndTime.toLocaleString()}
               </div>
             </div>
           </div>
 
           <div className="mt-6 w-full">
             <ContestTimer
-              startTime={contest.startTime}
-              endTime={contest.endTime}
-              frozenDuration={frozenDuration}
+              startTime={timerStartTime}
+              endTime={timerEndTime}
+              frozenDuration={isRunningVp ? 0 : frozenDuration}
+              endedLabel={isRunningVp ? "VP Ended" : "Contest Ended"}
             />
           </div>
         </div>

@@ -83,16 +83,16 @@ export default function SearchAndFilter({
   }, [currentUserSearch]);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full flex-wrap items-start gap-3 sm:w-auto sm:items-center">
       {/* 用户搜索框 */}
-      <div className="relative">
+      <div className="relative min-w-0 flex-1 sm:flex-none">
         <input
           type="text"
           placeholder="Search user..."
           value={inputValue}
           onChange={(e) => handleSearchInput(e.target.value)}
           disabled={!canSearch}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed sm:w-48"
         />
         {!canSearch && (
           <div className="absolute top-full mt-1 text-xs text-gray-400 whitespace-nowrap">
@@ -102,7 +102,7 @@ export default function SearchAndFilter({
       </div>
 
       {/* 筛选按钮和下拉菜单 */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={`px-3 py-2 text-sm font-medium rounded-sm border transition-colors ${
@@ -115,7 +115,7 @@ export default function SearchAndFilter({
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-sm shadow-lg z-10 p-4 space-y-4">
+          <div className="absolute right-0 top-full z-10 mt-2 w-[calc(100vw-1.5rem)] max-w-80 bg-white border border-gray-200 rounded-sm shadow-lg p-4 space-y-4">
             {/* Problem 筛选 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

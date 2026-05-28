@@ -66,6 +66,7 @@ export default function RankTable({
           penaltyColumnWidthPercent) /
         contestProblems.length
       : 0;
+  const tableMinWidth = Math.max(760, 360 + contestProblems.length * 64);
 
   // 获取单元格背景色
   const getCellColor = (prob: Team["problems"][0]) => {
@@ -103,8 +104,11 @@ export default function RankTable({
   };
 
   return (
-    <div className="overflow-hidden">
-      <table className="w-full table-fixed border-collapse text-center text-xs">
+    <div className="w-full overflow-x-auto overscroll-x-contain">
+      <table
+        className="w-full table-fixed border-collapse text-center text-xs"
+        style={{ minWidth: `${tableMinWidth}px` }}
+      >
         <colgroup>
           <col style={{ width: `${rankColumnWidthPercent}%` }} />
           <col style={{ width: `${teamColumnWidthPercent}%` }} />

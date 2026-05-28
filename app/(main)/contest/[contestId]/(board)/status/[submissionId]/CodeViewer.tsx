@@ -71,6 +71,7 @@ export default function CodeViewer({ code, language }: Props) {
         language={language}
         height="600px"
         readOnly={true}
+        wordWrap="off"
       />
     </div>
   );

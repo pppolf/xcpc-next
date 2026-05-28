@@ -209,8 +209,8 @@ export default async function Problems({ params }: Props) {
   const dict = await getDictionary();
 
   return (
-    <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-6">
-      <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6 pl-2">
+    <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-3 sm:p-6">
+      <h2 className="mb-6 text-2xl font-serif font-bold text-gray-800 sm:pl-2">
         {dict.problemList.title}
       </h2>
       {contestInfo?.status === ContestStatus.PENDING ? (
@@ -218,24 +218,24 @@ export default async function Problems({ params }: Props) {
           {dict.contestList.noContestsFound}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm font-serif text-left text-gray-600">
-            <thead className="text-lg text-gray-700 bg-white border-b border-gray-400 border-t">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-190 w-full text-sm font-serif text-left text-gray-600">
+            <thead className="whitespace-nowrap text-base text-gray-700 bg-white border-b border-gray-400 border-t sm:text-lg">
               <tr>
-                <th scope="col" className="px-6 py-2 w-24">
+                <th scope="col" className="w-20 px-3 py-2 text-center sm:w-24 sm:px-6">
                   {dict.problemDetail.status}
                 </th>
-                <th scope="col" className="px-6 py-2 w-24">
+                <th scope="col" className="w-20 px-3 py-2 sm:w-24 sm:px-6">
                   ID
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.problemDetail.title}
                 </th>
-                <th scope="col" className="px-6 py-2 w-80">
+                <th scope="col" className="w-52 px-3 py-2 sm:w-80 sm:px-6">
                   {dict.problemDetail.ratio} ({dict.problemDetail.accepted} /{" "}
                   {dict.problemDetail.submissions})
                 </th>
-                <th scope="col" className="px-6 py-2 w-24">
+                <th scope="col" className="w-20 px-3 py-2 text-center sm:w-24 sm:px-6">
                   {dict.problemDetail.balloon}
                 </th>
               </tr>
@@ -249,44 +249,47 @@ export default async function Problems({ params }: Props) {
                 return (
                   <tr
                     key={prob.id}
-                    className="odd:bg-white even:bg-[#f4f7fa] border-b border-gray-300 hover:bg-blue-50 transition-colors h-10 text-base"
-                  >
-                    <td className="px-6 py-2 flex justify-center">
-                      {(statsMap.get(prob.problemId) || 0) !== 0 && (
-                        <svg
-                          className="icon"
-                          viewBox="0 0 1024 1024"
-                          version="1.1"
-                          xmlns="http://www.w3.org/2000/svg"
-                          p-id="13161"
-                          width="22"
-                          height="22"
-                        >
-                          <path
-                            d="M86.528 491.666286a45.787429 45.787429 0 0 1 64.731429 0l247.954285 247.954285 506.88-506.806857a45.787429 45.787429 0 0 1 64.731429 64.731429L431.616 836.754286a45.787429 45.787429 0 0 1-64.658286 0L86.528 556.324571a45.787429 45.787429 0 0 1 0-64.658285z"
-                            fill="#2CA641"
-                            p-id="13162"
-                          ></path>
-                        </svg>
-                      )}
+                    className="h-10 border-b border-gray-300 text-sm transition-colors odd:bg-white even:bg-[#f4f7fa] hover:bg-blue-50 sm:text-base"
+                    >
+                    <td className="px-3 py-2 sm:px-6">
+                      <div className="flex min-h-6 items-center justify-center">
+                        {(statsMap.get(prob.problemId) || 0) !== 0 && (
+                          <svg
+                            className="icon"
+                            viewBox="0 0 1024 1024"
+                            version="1.1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            p-id="13161"
+                            width="22"
+                            height="22"
+                          >
+                            <path
+                              d="M86.528 491.666286a45.787429 45.787429 0 0 1 64.731429 0l247.954285 247.954285 506.88-506.806857a45.787429 45.787429 0 0 1 64.731429 64.731429L431.616 836.754286a45.787429 45.787429 0 0 1-64.658286 0L86.528 556.324571a45.787429 45.787429 0 0 1 0-64.658285z"
+                              fill="#2CA641"
+                              p-id="13162"
+                            ></path>
+                          </svg>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-6 py-2 text-gray-900">
+                    <td className="px-3 py-2 text-gray-900 sm:px-6">
                       <div className="flex gap-2 items-center">
                         {prob.displayId}
                       </div>
                     </td>
-                    <td className="px-6 py-2 novajudge-problem-link">
+                    <td className="max-w-0 px-3 py-2 novajudge-problem-link sm:px-6">
                       <Link
                         href={`/contest/${contestId}/problems/${prob.displayId}`}
-                        className="text-blue-600 hover:underline hover:text-blue-800"
+                        className="block truncate text-blue-600 hover:underline hover:text-blue-800"
+                        title={prob.problem.title}
                       >
                         {prob.problem.title}
                       </Link>
                     </td>
-                    <td className="px-6 py-2 text-left">
+                    <td className="whitespace-nowrap px-3 py-2 text-left sm:px-6">
                       {rate.toFixed(2)}% ({acceptedCount} / {totalCount})
                     </td>
-                    <td className="px-6 py-2">
+                    <td className="px-3 py-2 sm:px-6">
                       <div className="flex items-center justify-center">
                         <svg
                           viewBox="0 0 512 512"

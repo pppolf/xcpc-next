@@ -22,7 +22,7 @@ export default function StatusControls({
 
   return (
     <div className="flex items-center gap-4">
-      <label className="flex items-center gap-2 cursor-pointer">
+      <label className="flex flex-wrap items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
           checked={viewAll && canViewAll}
@@ -34,7 +34,7 @@ export default function StatusControls({
           View All Submissions
         </span>
         {!canViewAll && (
-          <span className="text-xs text-gray-400 ml-1">
+          <span className="text-xs text-gray-400">
             (Available after contest ends)
           </span>
         )}

@@ -645,14 +645,14 @@ export default function Navbar() {
 
           {user && !user.contestId && (
             <Link href="/train" className={mobileLinkClass("/train")}>
-              训练中心
+              {dict.nav.train}
             </Link>
           )}
 
           {contestId && (
             <>
               <div className="px-4 py-2 mt-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                比赛菜单
+                {dict.nav.contestMenu}
               </div>
               <Link
                 href={getContestLink("")}
@@ -694,7 +694,7 @@ export default function Navbar() {
                     "text-red-600",
                   )}
                 >
-                  Editorial
+                  {dict.nav.editorial}
                 </Link>
               )}
               {canRequestPrint && (
@@ -733,7 +733,7 @@ export default function Navbar() {
                     "text-slate-700",
                   )}
                 >
-                  Print Queue
+                  {dict.nav.printQueue}
                 </Link>
               )}
             </>
@@ -742,7 +742,7 @@ export default function Navbar() {
           {isAdmin && (
             <>
               <div className="px-4 py-2 mt-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                管理
+                {dict.nav.adminMenu}
               </div>
               <Link
                 href="/admin"

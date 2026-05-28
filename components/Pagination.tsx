@@ -63,57 +63,59 @@ export default function Pagination({
   };
 
   const baseClass =
-    "relative inline-flex items-center px-4 py-2 text-sm font-medium border border-blue-200 transition-colors focus:z-10 cursor-pointer ";
+    "relative inline-flex h-9 min-w-9 shrink-0 items-center justify-center px-2 py-2 text-sm font-medium border border-blue-200 transition-colors focus:z-10 cursor-pointer sm:px-4 ";
   const normalClass = "bg-white text-blue-600 hover:bg-blue-50 cursor-pointer ";
   const activeClass = "z-10 bg-blue-600 text-white border-blue-600 cursor-pointer ";
   const disabledClass = "bg-gray-50 text-gray-300 cursor-not-allowed cursor-pointer ";
 
   return (
-    <div className={`flex flex-col items-start gap-2 ${className}`}>
+    <div className={`flex w-full max-w-full flex-col items-start gap-2 ${className}`}>
       {totalPages > 1 && (
-        <nav
-          className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-          aria-label="Pagination"
-        >
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className={`${baseClass} rounded-l-md ${
-              currentPage === 1 ? disabledClass : normalClass
-            }`}
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain pb-1">
+          <nav
+            className="isolate inline-flex min-w-max -space-x-px rounded-md shadow-sm"
+            aria-label="Pagination"
           >
-            <span className="sr-only">Previous</span>
-            <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          {pages.map((p, idx) => (
             <button
-              key={idx}
-              onClick={() => handlePageChange(p)}
-              disabled={p === '...'}
-              className={`${baseClass} ${
-                p === currentPage
-                  ? activeClass
-                  : p === '...'
-                    ? "bg-white text-gray-700 cursor-default border-blue-200 hover:bg-white"
-                    : normalClass
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`${baseClass} rounded-l-md ${
+                currentPage === 1 ? disabledClass : normalClass
               }`}
             >
-              {p}
+              <span className="sr-only">Previous</span>
+              <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
             </button>
-          ))}
 
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className={`${baseClass} rounded-r-md ${
-              currentPage === totalPages ? disabledClass : normalClass
-            }`}
-          >
-            <span className="sr-only">Next</span>
-            <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </nav>
+            {pages.map((p, idx) => (
+              <button
+                key={idx}
+                onClick={() => handlePageChange(p)}
+                disabled={p === '...'}
+                className={`${baseClass} ${
+                  p === currentPage
+                    ? activeClass
+                    : p === '...'
+                      ? "bg-white text-gray-700 cursor-default border-blue-200 hover:bg-white"
+                      : normalClass
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`${baseClass} rounded-r-md ${
+                currentPage === totalPages ? disabledClass : normalClass
+              }`}
+            >
+              <span className="sr-only">Next</span>
+              <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </nav>
+        </div>
       )}
 
       <div className="text-sm text-gray-500">

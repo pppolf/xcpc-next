@@ -14,6 +14,10 @@ export const en = {
     print: "Print",
     printQueue: "Print Queue",
     editorial: "Editorial",
+    train: "Training",
+    contestMenu: "Contest Menu",
+    staffMenu: "Staff Menu",
+    adminMenu: "Admin",
   },
   contestList: {
     title: "Contests",
@@ -120,6 +124,10 @@ export const zh = {
     print: "打印",
     printQueue: "打印队列",
     editorial: "题解",
+    train: "训练中心",
+    contestMenu: "比赛菜单",
+    staffMenu: "工作人员",
+    adminMenu: "管理",
   },
   contestList: {
     title: "比赛列表",

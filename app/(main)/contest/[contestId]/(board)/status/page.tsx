@@ -335,13 +335,15 @@ export default async function Status({ params, searchParams }: Props) {
   const dict = await getDictionary();
 
   return (
-    <div className="bg-white w-full mx-auto px-4 shadow-sm border border-gray-100 rounded-sm p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-3 sm:p-6">
+      <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-serif font-bold text-gray-800">
           {dict.submission.title}{" "}
-          <span className="text-sm text-gray-500">{statusLabel}</span>
+          <span className="block text-sm text-gray-500 sm:inline">
+            {statusLabel}
+          </span>
         </h2>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <SearchAndFilter
             canSearch={canSearch}
             problems={allProblems}
@@ -367,32 +369,42 @@ export default async function Status({ params, searchParams }: Props) {
             : "You have no submissions yet."}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-center">
-            <thead className="text-base font-serif text-gray-800 bg-white border-b border-gray-400 border-t-2 font-bold">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[760px] w-full table-fixed text-center text-sm lg:min-w-0">
+            <colgroup>
+              <col className="w-16" />
+              <col className="w-32" />
+              <col className="w-32" />
+              <col className="w-16" />
+              <col className="w-20" />
+              <col className="w-24" />
+              <col className="w-20" />
+              <col className="w-36" />
+            </colgroup>
+            <thead className="whitespace-nowrap bg-white font-serif text-sm font-bold text-gray-800 border-b border-gray-400 border-t-2 sm:text-base">
               <tr>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   Run ID
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.submitTime}
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.user}
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.problem}
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.time}
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.memory}
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.language}
                 </th>
-                <th scope="col" className="px-6 py-2">
+                <th scope="col" className="px-3 py-2 sm:px-6">
                   {dict.submission.status}
                 </th>
               </tr>
@@ -404,26 +416,67 @@ export default async function Status({ params, searchParams }: Props) {
                 const submitTime = new Date(
                   submission.submittedAt,
                 ).toLocaleString("zh-CN");
+                const submitterName =
+                  submission.user?.displayName ||
+                  submission.user?.username ||
+                  submission.globalUser?.displayName ||
+                  "Unknown";
+                const timeText =
+                  isGuest && !isContestEnded
+                    ? "-"
+                    : submission.timeUsed !== null
+                      ? `${submission.timeUsed} ms`
+                      : "-";
+                const memoryText =
+                  isGuest && !isContestEnded
+                    ? "-"
+                    : submission.memoryUsed !== null
+                      ? `${submission.memoryUsed} KB`
+                      : "-";
+                const languageText = isGuest && !isContestEnded
+                  ? "-"
+                  : languageRecord[submission.language];
+                const verdictTitle = (() => {
+                  if (isGuest && !isContestEnded) return String(submission.verdict);
+                  if (!showTestDetails) return String(submission.verdict);
+                  if (submission.verdict === Verdict.WRONG_ANSWER)
+                    return `Wrong Answer on test ${submission.passedTests + 1}`;
+                  if (submission.verdict === Verdict.TIME_LIMIT_EXCEEDED)
+                    return `Time Limit Exceeded on test ${submission.passedTests + 1}`;
+                  if (submission.verdict === Verdict.MEMORY_LIMIT_EXCEEDED)
+                    return `Memory Limit Exceeded on test ${submission.passedTests + 1}`;
+                  if (submission.verdict === Verdict.RUNTIME_ERROR)
+                    return `Runtime Error on test ${submission.passedTests + 1}`;
+                  return String(submission.verdict);
+                })();
 
                 return (
                   <tr
                     key={submission.id}
-                    className="odd:bg-white even:bg-[#e7f3ff] border-b border-gray-100 hover:bg-blue-50 transition-colors h-10 text-[18px] text-center font-[Menlo] text-gray-700"
+                    className="h-10 border-b border-gray-100 text-center font-[Menlo] text-sm text-gray-700 transition-colors odd:bg-white even:bg-[#e7f3ff] hover:bg-blue-50 sm:text-[18px]"
                   >
-                    <td className="px-6 py-2">{submission.displayId}</td>
-                    <td className="px-6 py-2 text-sm">{submitTime}</td>
-                    <td className="px-6 py-2 text-gray-900">
-                      {submission.user?.displayName ||
-                        submission.user?.username ||
-                        submission.globalUser?.displayName ||
-                        "Unknown"}
-                      {submission.virtualParticipation && (
-                        <span className="ml-2 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
-                          VP #{submission.virtualParticipation.attemptNo}
-                        </span>
-                      )}
+                    <td className="overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 sm:px-4">
+                      {submission.displayId}
                     </td>
-                    <td className="px-6 py-2 text-gray-900">
+                    <td
+                      className="overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 text-sm sm:px-4"
+                      title={submitTime}
+                    >
+                      {submitTime}
+                    </td>
+                    <td className="px-3 py-2 text-gray-900 sm:px-4">
+                      <div className="mx-auto flex max-w-32 items-center justify-center gap-2 sm:max-w-36">
+                        <span className="truncate" title={submitterName}>
+                          {submitterName}
+                        </span>
+                        {submission.virtualParticipation && (
+                          <span className="shrink-0 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
+                            VP #{submission.virtualParticipation.attemptNo}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 text-gray-900 sm:px-4">
                       <Link
                         href={`/contest/${contestId}/problems/${problemDisplayId}`}
                         className="text-blue-500 hover:underline hover:text-blue-800"
@@ -431,21 +484,22 @@ export default async function Status({ params, searchParams }: Props) {
                         {problemDisplayId}
                       </Link>
                     </td>
-                    <td className="px-6 py-2">
-                      {isGuest && !isContestEnded
-                        ? "-"
-                        : submission.timeUsed !== null
-                          ? `${submission.timeUsed} ms`
-                          : "-"}
+                    <td
+                      className="overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 sm:px-4"
+                      title={timeText}
+                    >
+                      {timeText}
                     </td>
-                    <td className="px-6 py-2">
-                      {isGuest && !isContestEnded
-                        ? "-"
-                        : submission.memoryUsed !== null
-                          ? `${submission.memoryUsed} KB`
-                          : "-"}
+                    <td
+                      className="overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 sm:px-4"
+                      title={memoryText}
+                    >
+                      {memoryText}
                     </td>
-                    <td className="px-6 py-2">
+                    <td
+                      className="overflow-hidden text-ellipsis whitespace-nowrap px-3 py-2 sm:px-4"
+                      title={languageText}
+                    >
                       {isGuest && !isContestEnded ? (
                         "-"
                       ) : (
@@ -457,15 +511,20 @@ export default async function Status({ params, searchParams }: Props) {
                         </Link>
                       )}
                     </td>
-                    <td className="px-6 py-2">
-                      {isGuest && !isContestEnded ? (
-                        <VerdictCell submission={submission} isGuest={true} />
-                      ) : (
-                        <VerdictCell
-                          submission={submission}
-                          showTestDetails={showTestDetails}
-                        />
-                      )}
+                    <td className="overflow-hidden px-3 py-2 sm:px-4">
+                      <div
+                        className="mx-auto max-w-full overflow-hidden text-ellipsis whitespace-nowrap [&>button]:max-w-full [&>button]:overflow-hidden [&>span]:max-w-full [&>span]:overflow-hidden [&>span>span]:truncate"
+                        title={verdictTitle}
+                      >
+                        {isGuest && !isContestEnded ? (
+                          <VerdictCell submission={submission} isGuest={true} />
+                        ) : (
+                          <VerdictCell
+                            submission={submission}
+                            showTestDetails={showTestDetails}
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

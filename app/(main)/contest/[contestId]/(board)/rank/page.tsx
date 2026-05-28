@@ -1047,9 +1047,9 @@ export default async function Rank({ params, searchParams }: Props) {
   );
 
   return (
-    <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-6">
-      <div className="flex justify-between items-center border-b mb-4 pb-4">
-        <h2 className="text-2xl font-serif font-bold text-gray-800 pl-2 flex items-center">
+    <div className="bg-white w-full mx-auto shadow-sm border border-gray-100 rounded-sm p-3 sm:p-6">
+      <div className="flex flex-col gap-3 border-b mb-4 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-2xl font-serif font-bold text-gray-800 sm:pl-2 flex flex-wrap items-center gap-y-2">
           Rank
           {showUnfreezeButton && <UnfreezeButton contest={contestInfo} />}
           {canSeeLiveBoard && (
@@ -1059,7 +1059,7 @@ export default async function Rank({ params, searchParams }: Props) {
             </span>
           )}
         </h2>
-        <div className="flex items-center gap-3 print:hidden">
+        <div className="flex flex-wrap items-center gap-3 print:hidden">
           <IncludeVpToggle defaultChecked={shouldIncludeVpInRank} />
           <RankSearch
             schools={

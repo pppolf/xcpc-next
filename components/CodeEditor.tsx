@@ -15,6 +15,7 @@ interface CodeEditorProps {
   onChange?: (value: string) => void;
   height?: string;
   readOnly?: boolean;
+  wordWrap?: "on" | "off";
 }
 
 const LANGUAGE_MAP: Record<string, string> = {
@@ -30,6 +31,7 @@ export default function CodeEditor({
   onChange,
   height = "500px",
   readOnly = false,
+  wordWrap = "on",
 }: CodeEditorProps) {
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const [, setMounted] = useState(false);
@@ -70,7 +72,7 @@ export default function CodeEditor({
             automaticLayout: true,
             tabSize: 4,
             fontFamily: "'Fira Code', 'Consolas', monospace",
-            wordWrap: "on",
+            wordWrap,
             overviewRulerBorder: true,
             fixedOverflowWidgets: true,
           }}

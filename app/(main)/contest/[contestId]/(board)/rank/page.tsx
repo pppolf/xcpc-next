@@ -164,6 +164,8 @@ export default async function Rank({ params, searchParams }: Props) {
           now,
         )
       : null;
+  const isViewerRunningVp = Boolean(runningViewerVp);
+  const showUpsolving = !isViewerRunningVp;
   const effectiveNow = runningViewerVp
     ? new Date(
         Math.min(
@@ -347,13 +349,13 @@ export default async function Rank({ params, searchParams }: Props) {
           const contestSubmissions = rawSubmissions.filter(
             (s) => new Date(s.submittedAt).getTime() <= end,
           );
-          const afterContestSubmissions = runningViewerVp
-            ? []
-            : rawSubmissions.filter(
+          const afterContestSubmissions = showUpsolving
+            ? rawSubmissions.filter(
                 (s) =>
                   new Date(s.submittedAt).getTime() >
                   contestInfo.endTime.getTime(),
-              );
+              )
+            : [];
 
           // 按时间排序
           const submissions = contestSubmissions.sort(
@@ -679,6 +681,26 @@ export default async function Rank({ params, searchParams }: Props) {
         },
         orderBy: { submittedAt: "asc" },
       });
+      const previousVpSubs = showUpsolving
+        ? await prisma.submission.findMany({
+            where: {
+              contestId: cid,
+              globalUserId: gu.id,
+              AND: [
+                { virtualParticipationId: { not: null } },
+                { virtualParticipationId: { not: currentVp.id } },
+              ],
+            },
+            select: {
+              id: true,
+              displayId: true,
+              problemId: true,
+              verdict: true,
+              submittedAt: true,
+            },
+            orderBy: { submittedAt: "asc" },
+          })
+        : [];
       let solved = 0;
       let penalty = 0;
       const problems = await Promise.all(
@@ -696,7 +718,14 @@ export default async function Rank({ params, searchParams }: Props) {
           const contestSubmissions = rawSubmissions.filter(
             (s) => new Date(s.submittedAt).getTime() <= end,
           );
-          const afterContestSubmissions: typeof rawSubmissions = [];
+          const afterContestSubmissions = showUpsolving
+            ? previousVpSubs.filter(
+                (s) =>
+                  s.problemId === cp.problemId &&
+                  s.verdict !== Verdict.COMPILE_ERROR &&
+                  s.verdict !== Verdict.SYSTEM_ERROR,
+              )
+            : [];
           const submissions = contestSubmissions.sort(
             (a, b) =>
               new Date(a.submittedAt).getTime() -
@@ -921,7 +950,7 @@ export default async function Rank({ params, searchParams }: Props) {
   const visibleRankTables = [
     ...(myRank ? [myRank] : []),
     ...displayTeamRankings,
-    ...(!shouldIncludeVpInRank ? globalRanks : []),
+    ...(showUpsolving ? globalRanks : []),
   ];
   const maxTeamTextWidth = visibleRankTables.reduce((maxWidth, team) => {
     const prefixWidth =
@@ -1009,7 +1038,7 @@ export default async function Rank({ params, searchParams }: Props) {
             isFrozen={isFrozen}
             teamColumnWidthPercent={teamColumnWidthPercent}
           />
-          {!shouldIncludeVpInRank && globalRanks.length > 0 && (
+          {showUpsolving && globalRanks.length > 0 && (
             <div className="mt-2">
               <RankTable
                 contestId={contestId}
